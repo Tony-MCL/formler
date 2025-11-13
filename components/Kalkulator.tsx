@@ -18,17 +18,35 @@ type ResultState = {
   raw: string;
 };
 
-/** Formater pen verdi med "ingen meningsløse nuller" */
-function formatPrettyNumber(value: number): string {
-  const abs = Math.abs(value);
-  if ((abs >= 1000 || abs !== 0 && abs < 0.01)) {
-    return value.toExponential(3);
+/** Formater pen verdi med rett antall desimaler basert på enhet */
+function formatPrettyNumber(value: number, unit?: string): string {
+  let decimals = 2;
+
+  if (unit) {
+    const u = unit.toLowerCase();
+
+    // kilo-enheter: kV, kA, kW, kWh, kΩ → 1 desimal
+    if (u.startsWith("k")) {
+      decimals = 1;
+    }
+    // milli-enheter: mV, mA, mW, mΩ → 2 desimaler (beholder 2)
+    else if (u.startsWith("m")) {
+      decimals = 2;
+    } else {
+      decimals = 2;
+    }
   }
-  return value.toFixed(3).replace(/\.?0+$/, "");
+
+  const str = value.toFixed(decimals);
+  // fjern overflødige nuller og punktum
+  return str.replace(/(\.\d*?[1-9])0+$/u, "$1").replace(/\.0+$/u, "");
 }
 
-/** Skaler verdier til kV, kA, mA, kW, kWh der det er naturlig */
-function scaleValue(value: number, unit?: string): { value: number; unit?: string } {
+/** Skaler verdier til kV, kA, mA, kW, kWh, kΩ, mΩ der det er naturlig */
+function scaleValue(
+  value: number,
+  unit?: string
+): { value: number; unit?: string } {
   const abs = Math.abs(value);
   if (!unit) return { value, unit };
 
@@ -48,6 +66,12 @@ function scaleValue(value: number, unit?: string): { value: number; unit?: strin
     case "Wh":
       if (abs >= 1000) return { value: value / 1000, unit: "kWh" };
       return { value, unit: "Wh" };
+    case "Ω":
+    case "ohm":
+    case "Ohm":
+      if (abs >= 1000) return { value: value / 1000, unit: "kΩ" };
+      if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mΩ" };
+      return { value, unit: "Ω" };
     default:
       return { value, unit };
   }
@@ -129,10 +153,10 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     const baseUnit = res.unit ?? outVar?.unit;
     const scaled = scaleValue(res.value, baseUnit);
 
-    const prettyNumber = formatPrettyNumber(scaled.value);
-    const prettyText = baseUnit
+    const prettyNumber = formatPrettyNumber(scaled.value, scaled.unit);
+    const prettyText = scaled.unit
       ? `${prettyNumber} ${scaled.unit}`
-      : `${prettyNumber}${scaled.unit ? " " + scaled.unit : ""}`;
+      : prettyNumber;
 
     const rawNumber = res.value.toPrecision(6);
     const rawText = baseUnit ? `${rawNumber} ${baseUnit}` : rawNumber;
