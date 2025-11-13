@@ -5,14 +5,20 @@ import { getFormulaById } from "../lib/formulas";
 import type { FormulaId } from "../lib/types";
 import MathText from "./MathText";
 import Kalkulator from "./Kalkulator";
+import PDFExport from "./PDFExport";
+import { useI18n } from "../lib/i18n";
 
 type FormelVisningProps = {
   formulaId: FormulaId;
   onGoHome?: () => void;
 };
 
-export default function FormelVisning({ formulaId, onGoHome }: FormelVisningProps) {
+export default function FormelVisning({
+  formulaId,
+  onGoHome
+}: FormelVisningProps) {
   const formula = getFormulaById(formulaId);
+  const { basePath } = useI18n();
 
   if (!formula) {
     return (
@@ -25,23 +31,40 @@ export default function FormelVisning({ formulaId, onGoHome }: FormelVisningProp
 
   return (
     <section className="card">
-      {/* Hjem-knapp øverst i kortet */}
-      {onGoHome && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
-          <button
-            type="button"
-            className="button"
-            onClick={onGoHome}
-            aria-label="Til forside"
-            style={{
-              fontSize: "0.85rem",
-              paddingInline: "0.7rem"
-            }}
-          >
-            ← Hjem
-          </button>
+      {/* Vannmerke – kun for print */}
+      <img
+        src={`${basePath}/images/mcl-watermark.png`}
+        alt=""
+        className="print-watermark"
+      />
+
+      {/* Topp-rad: Hjem + PDF-knapp */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "0.5rem",
+          marginBottom: "0.5rem"
+        }}
+      >
+        <div>
+          {onGoHome && (
+            <button
+              type="button"
+              className="button"
+              onClick={onGoHome}
+              aria-label="Til forside"
+              style={{
+                fontSize: "0.85rem",
+                paddingInline: "0.7rem"
+              }}
+            >
+              ← Hjem
+            </button>
+          )}
         </div>
-      )}
+        <PDFExport />
+      </div>
 
       <h2 className="main-hero-title">{formula.name}</h2>
       {formula.description && (
