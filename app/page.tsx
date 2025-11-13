@@ -25,32 +25,33 @@ export default function HomePage() {
       ? "Beregninger for elkraft og maskiner, med pen visning og innebygde kalkulatorer."
       : t(heroSubKey);
 
-  const handleToggleSidebar = () => setSidebarOpen((prev) => !prev);
-  const handleCloseSidebar = () => setSidebarOpen(false);
-
   return (
     <div className="page-root">
       <header className="header">
         <div className="header-inner container">
-          <div className="brand">
+
+          {/* VENSTRE SIDE – logo + sidebar-toggle */}
+          <div className="header-left">
             <img
               src={`${basePath}/images/mcl-logo.png`}
               alt="Morning Coffee Labs"
+              className="brand-logo"
             />
+            <button
+              className="button sidebar-toggle"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              aria-label="Toggle sidebar"
+            >
+              ☰
+            </button>
             <div className="brand-text">
               <div className="brand-title">{appName}</div>
               <div className="brand-subtitle">Morning Coffee Labs</div>
             </div>
           </div>
 
+          {/* HØYRE SIDE – språk + tema */}
           <div className="toolbar">
-            <button
-              className="button sidebar-toggle"
-              onClick={handleToggleSidebar}
-              aria-label="Toggle sidebar"
-            >
-              ☰
-            </button>
             <LangToggle />
             <ThemeToggle />
           </div>
@@ -58,7 +59,7 @@ export default function HomePage() {
       </header>
 
       <div className="app-shell container">
-        <Sidebar open={sidebarOpen} onClose={handleCloseSidebar} />
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <main className="app-main">
           <section className="card main-hero">
@@ -66,12 +67,11 @@ export default function HomePage() {
             <p className="main-hero-sub">{heroSub}</p>
             <ul className="main-hero-list">
               <li>Fokus på elkraft, motorer og generatorer i første versjon.</li>
-              <li>Formler med pen mattevisning (brøker, potenser, symboler).</li>
-              <li>Klar for kalkulatorer, varianter og PDF-eksport i senere faser.</li>
+              <li>Pen mattevisning (brøker, potenser, symboler).</li>
+              <li>Klar for kalkulator og PDF-eksport i senere faser.</li>
             </ul>
             <p className="main-hero-footnote">
-              Start ved å velge en kategori eller formel i menyen til venstre.  
-              Etter hvert vil hver formel få egen visning med forklaring og kalkulator.
+              Start ved å velge en kategori eller formel i menyen til venstre.
             </p>
           </section>
         </main>
