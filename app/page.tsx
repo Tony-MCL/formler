@@ -16,27 +16,26 @@ export default function HomePage() {
 
   const appName =
     t(appNameKey) === appNameKey ? "Digital Formelsamling" : t(appNameKey);
+
   const heroTitle =
     t(heroTitleKey) === heroTitleKey
       ? "Formler du faktisk bruker – samlet på ett sted"
       : t(heroTitleKey);
+
   const heroSub =
     t(heroSubKey) === heroSubKey
       ? "Beregninger for elkraft og maskiner, med pen visning og innebygde kalkulatorer."
       : t(heroSubKey);
 
-  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
-  const closeSidebar = () => setSidebarOpen(false);
-
   return (
     <div className="page-root">
       <header className="header">
-        {/* DESKTOP-HEADER */}
+        {/* DESKTOP */}
         <div className="header-inner header-desktop container">
           <div className="header-left">
             <button
               className="button sidebar-toggle"
-              onClick={toggleSidebar}
+              onClick={() => setSidebarOpen((prev) => !prev)}
               aria-label="Toggle sidebar"
             >
               ☰
@@ -47,11 +46,11 @@ export default function HomePage() {
               alt="Morning Coffee Labs"
               className="brand-logo"
             />
+          </div>
 
-            <div className="brand-text">
-              <div className="brand-title">{appName}</div>
-              <div className="brand-subtitle">Morning Coffee Labs</div>
-            </div>
+          {/* Midtstilt tittel */}
+          <div className="header-center">
+            <div className="brand-title">{appName}</div>
           </div>
 
           <div className="toolbar">
@@ -60,7 +59,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* MOBIL-HEADER */}
+        {/* MOBIL */}
         <div className="header-inner header-mobile container">
           <div className="header-mobile-top">
             <img
@@ -74,11 +73,12 @@ export default function HomePage() {
             <div className="header-mobile-left">
               <button
                 className="button sidebar-toggle"
-                onClick={toggleSidebar}
+                onClick={() => setSidebarOpen((prev) => !prev)}
                 aria-label="Toggle sidebar"
               >
                 ☰
               </button>
+
               <span className="brand-title">{appName}</span>
             </div>
 
@@ -91,17 +91,19 @@ export default function HomePage() {
       </header>
 
       <div className="app-shell container">
-        <Sidebar open={sidebarOpen} onClose={closeSidebar} />
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <main className="app-main">
           <section className="card main-hero">
             <h1 className="main-hero-title">{heroTitle}</h1>
             <p className="main-hero-sub">{heroSub}</p>
+
             <ul className="main-hero-list">
               <li>Fokus på elkraft, motorer og generatorer i første versjon.</li>
               <li>Pen mattevisning (brøker, potenser, symboler).</li>
               <li>Klar for kalkulator og PDF-eksport i senere faser.</li>
             </ul>
+
             <p className="main-hero-footnote">
               Start ved å velge en kategori eller formel i menyen til venstre.
             </p>
