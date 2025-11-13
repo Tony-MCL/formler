@@ -474,17 +474,18 @@ a {
 
 @media print {
   .print-watermark {
-    display: block;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 60%;
-    max-width: 900px;
-    height: auto;
-    opacity: 0.08;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: -1;
+    display: block !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 75% !important;      /* større */
+    max-width: 1200px !important;
+    height: auto !important;
+    transform: translate(-50%, -50%) !important;
+    opacity: 0.18 !important;    /* sterkere */
+    z-index: 9999 !important;    /* foran alt */
+    mix-blend-mode: multiply !important;
+    pointer-events: none !important;
   }
 }
 
