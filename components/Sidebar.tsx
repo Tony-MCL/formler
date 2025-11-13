@@ -2,14 +2,17 @@
 
 import React, { useEffect, useState } from "react";
 import { getFormulasGroupedByCategory } from "../lib/formulas";
+import type { FormulaId } from "../lib/types";
 
 type SidebarProps = {
   open: boolean;
   onClose: () => void;
+  selectedFormulaId: FormulaId;
+  onSelectFormula: (id: FormulaId) => void;
 };
 
 type SidebarItemView = {
-  id: string;
+  id: FormulaId;
   label: string;
   hint?: string;
 };
@@ -20,10 +23,14 @@ type SidebarGroupView = {
   items: SidebarItemView[];
 };
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
+export default function Sidebar({
+  open,
+  onClose,
+  selectedFormulaId,
+  onSelectFormula
+}: SidebarProps) {
   const [isMobile, setIsMobile] = useState(false);
 
-  // Sjekk skjermbredde for å vite om vi skal bruke slide-in + backdrop
   useEffect(() => {
     const update = () => {
       if (typeof window !== "undefined") {
@@ -88,23 +95,31 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <div key={group.id} className="sidebar-section">
               <div className="sidebar-section-title">{group.title}</div>
               <ul className="sidebar-list">
-                {group.items.map((item) => (
-                  <li key={item.id} className="sidebar-item">
-                    <button
-                      type="button"
-                      className="sidebar-link"
-                      onClick={() => {
-                        // I Fase 3 kobler vi dette mot FormelVisning
-                        console.log("Select formula:", item.id);
-                      }}
-                    >
-                      <span className="sidebar-item-label">{item.label}</span>
-                      {item.hint && (
-                        <span className="sidebar-item-hint">{item.hint}</span>
-                      )}
-                    </button>
-                  </li>
-                ))}
+                {group.items.map((item) => {
+                  const isActive = item.id === selectedFormulaId;
+                  return (
+                    <li key={item.id} className="sidebar-item">
+                      <button
+                        type="button"
+                        className="sidebar-link"
+                        onClick={() => {
+                          onSelectFormula(item.id);
+                          if (isMobile) {
+                            onClose();
+                          }
+                        }}
+                      >
+                        <span className="sidebar-item-label">
+                          {isActive ? "• " : ""}
+                          {item.label}
+                        </span>
+                        {item.hint && (
+                          <span className="sidebar-item-hint">{item.hint}</span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
