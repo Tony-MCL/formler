@@ -24,7 +24,7 @@ body {
 
 /* mindre høyde */
 .header-inner {
-  padding: 0.35rem 1rem;
+  padding: 0.6rem 1rem;
 }
 
 /* Desktop header layout */
@@ -50,8 +50,9 @@ body {
 
 /* Logo */
 .brand-logo {
-  height: 26px;     /* litt lavere */
+  height: 34px;     /* litt lavere */
   width: auto;
+  border-radius: 8px;
 }
 
 /* Tittel */
