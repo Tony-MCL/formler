@@ -8,11 +8,14 @@ import FormelVisning from "../components/FormelVisning";
 import { useI18n } from "../lib/i18n";
 import type { FormulaId } from "../lib/types";
 
+type ViewMode = "home" | "formula";
+
 export default function HomePage() {
   const { t, basePath } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedFormulaId, setSelectedFormulaId] =
     useState<FormulaId>("ohm");
+  const [viewMode, setViewMode] = useState<ViewMode>("home");
 
   const appNameKey = "fm_app_name";
   const heroTitleKey = "fm_hero_title";
@@ -31,6 +34,15 @@ export default function HomePage() {
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const closeSidebar = () => setSidebarOpen(false);
+
+  const handleSelectFormula = (id: FormulaId) => {
+    setSelectedFormulaId(id);
+    setViewMode("formula");
+  };
+
+  const handleGoHome = () => {
+    setViewMode("home");
+  };
 
   return (
     <div className="page-root">
@@ -99,26 +111,35 @@ export default function HomePage() {
           open={sidebarOpen}
           onClose={closeSidebar}
           selectedFormulaId={selectedFormulaId}
-          onSelectFormula={setSelectedFormulaId}
+          onSelectFormula={handleSelectFormula}
         />
 
         <main className="app-main">
-          {/* Hero-intro på topp */}
-          <section className="card main-hero" style={{ marginBottom: "1rem" }}>
-            <h1 className="main-hero-title">{heroTitle}</h1>
-            <p className="main-hero-sub">{heroSub}</p>
-            <ul className="main-hero-list">
-              <li>Fokus på elkraft, motorer og generatorer i første versjon.</li>
-              <li>Formler med pen visning i hovedpanelet.</li>
-              <li>Klar for kalkulator og PDF-eksport i senere faser.</li>
-            </ul>
-            <p className="main-hero-footnote">
-              Velg en formel i menyen til venstre for å se detaljer og varianter.
-            </p>
-          </section>
+          {viewMode === "home" && (
+            <section className="card main-hero" style={{ marginBottom: "1rem" }}>
+              <h1 className="main-hero-title">{heroTitle}</h1>
+              <p className="main-hero-sub">{heroSub}</p>
+              <ul className="main-hero-list">
+                <li>
+                  Fokus på elkraft, motorer og generatorer i første versjon.
+                </li>
+                <li>Formler med pen visning og innebygd kalkulator.</li>
+                <li>
+                  Klar for PDF-eksport og flere fagområder i senere versjoner.
+                </li>
+              </ul>
+              <p className="main-hero-footnote">
+                Velg en formel i menyen til venstre for å starte.
+              </p>
+            </section>
+          )}
 
-          {/* Formelvisning under hero */}
-          <FormelVisning formulaId={selectedFormulaId} />
+          {viewMode === "formula" && (
+            <FormelVisning
+              formulaId={selectedFormulaId}
+              onGoHome={handleGoHome}
+            />
+          )}
         </main>
       </div>
     </div>
