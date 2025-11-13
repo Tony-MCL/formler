@@ -1,71 +1,62 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { getFormulasGroupedByCategory } from "../lib/formulas";
 
 type SidebarProps = {
   open: boolean;
   onClose: () => void;
 };
 
-type SidebarGroup = {
+type SidebarItemView = {
   id: string;
-  title: string;
-  items: { id: string; label: string; hint?: string }[];
+  label: string;
+  hint?: string;
 };
 
-const GROUPS: SidebarGroup[] = [
-  {
-    id: "core",
-    title: "Grunnleggende elkraft",
-    items: [
-      { id: "ohm", label: "Ohms lov", hint: "U, I, R" },
-      { id: "power", label: "Effekt", hint: "P, U, I, cos φ" },
-      { id: "energy", label: "Energi", hint: "E, P, t" }
-    ]
-  },
-  {
-    id: "systems",
-    title: "Systemer og nett",
-    items: [
-      { id: "it-tn", label: "Nett-typer (IT/TN)", hint: "230 V / 400 V" },
-      { id: "short-circuit", label: "Kortslutningsnivå", hint: "Ik, Zk" }
-    ]
-  },
-  {
-    id: "machines",
-    title: "Motorer og generatorer",
-    items: [
-      { id: "synchronous", label: "Synkronmaskin", hint: "ns, p, f" },
-      { id: "induction", label: "Asynkronmotor", hint: "s, M, η" }
-    ]
-  }
-];
+type SidebarGroupView = {
+  id: string;
+  title: string;
+  items: SidebarItemView[];
+};
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const [isMobile, setIsMobile] = useState(false);
 
-  // Sjekk skjermbredde én gang og ved resize
+  // Sjekk skjermbredde for å vite om vi skal bruke slide-in + backdrop
   useEffect(() => {
-    const check = () => {
+    const update = () => {
       if (typeof window !== "undefined") {
         setIsMobile(window.innerWidth <= 768);
       }
     };
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
-  // På desktop: skjul sidebar helt når den er lukket
+  // På desktop: ikke vis sidebar i det hele tatt når den er lukket
   if (!open && !isMobile) {
     return null;
   }
 
   const stopClick: React.MouseEventHandler = (e) => e.stopPropagation();
 
+  const groups: SidebarGroupView[] = getFormulasGroupedByCategory().map(
+    ({ category, formulas }) => ({
+      id: category.id,
+      title: category.title,
+      items: formulas.map((formula) => ({
+        id: formula.id,
+        label: formula.name,
+        hint: formula.tags && formula.tags.length > 0 ? formula.tags[0] : undefined
+      }))
+    })
+  );
+
   return (
     <>
-      {/* Backdrop kun på mobil når menyen er åpen */}
+      {/* Backdrop kun på mobil */}
       {open && isMobile && (
         <button
           className="sidebar-backdrop"
@@ -93,7 +84,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         <nav className="sidebar-nav">
-          {GROUPS.map((group) => (
+          {groups.map((group) => (
             <div key={group.id} className="sidebar-section">
               <div className="sidebar-section-title">{group.title}</div>
               <ul className="sidebar-list">
@@ -103,7 +94,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                       type="button"
                       className="sidebar-link"
                       onClick={() => {
-                        // Fase 1: bare visuell feedback
+                        // I Fase 3 kobler vi dette mot FormelVisning
                         console.log("Select formula:", item.id);
                       }}
                     >
