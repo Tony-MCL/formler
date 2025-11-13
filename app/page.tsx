@@ -25,15 +25,18 @@ export default function HomePage() {
       ? "Beregninger for elkraft og maskiner, med pen visning og innebygde kalkulatorer."
       : t(heroSubKey);
 
+  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
     <div className="page-root">
       <header className="header">
-        <div className="header-inner container">
-          {/* VENSTRE SIDE – sidebar-toggle helt ytterst, så logo, så tekst */}
+        {/* DESKTOP-HEADER */}
+        <div className="header-inner header-desktop container">
           <div className="header-left">
             <button
               className="button sidebar-toggle"
-              onClick={() => setSidebarOpen((prev) => !prev)}
+              onClick={toggleSidebar}
               aria-label="Toggle sidebar"
             >
               ☰
@@ -51,16 +54,44 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* HØYRE SIDE – språk + tema */}
           <div className="toolbar">
             <LangToggle />
             <ThemeToggle />
           </div>
         </div>
+
+        {/* MOBIL-HEADER */}
+        <div className="header-inner header-mobile container">
+          <div className="header-mobile-top">
+            <img
+              src={`${basePath}/images/mcl-logo.png`}
+              alt="Morning Coffee Labs"
+              className="brand-logo"
+            />
+          </div>
+
+          <div className="header-mobile-bottom">
+            <div className="header-mobile-left">
+              <button
+                className="button sidebar-toggle"
+                onClick={toggleSidebar}
+                aria-label="Toggle sidebar"
+              >
+                ☰
+              </button>
+              <span className="brand-title">{appName}</span>
+            </div>
+
+            <div className="toolbar">
+              <LangToggle />
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
       </header>
 
       <div className="app-shell container">
-        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar open={sidebarOpen} onClose={closeSidebar} />
 
         <main className="app-main">
           <section className="card main-hero">
