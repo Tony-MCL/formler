@@ -5,284 +5,124 @@ html, body { height: 100%; }
 html { background: var(--mcl-bg); color: var(--mcl-text); }
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  font-family: system-ui, sans-serif;
 }
 
-a { color: inherit; text-decoration: none; }
 .container { max-width: 1100px; margin: 0 auto; padding: 1rem; }
 
-/* Header / toolbar */
+/* HEADER */
 .header {
-  position: sticky; top: 0; z-index: 10;
+  position: sticky;
+  top: 0;
+  z-index: 10;
   background: var(--mcl-header);
-  box-shadow: var(--elev-1);
   border-bottom: 1px solid var(--mcl-outline);
+  box-shadow: var(--elev-1);
 }
+
 .header-inner {
-  display: flex; gap: 1rem; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: .6rem 1rem;
 }
-.brand {
+
+.header-left {
   display: flex;
   align-items: center;
   gap: .6rem;
-  font-weight: 700;
 }
-.brand img {
+
+.brand-logo {
   width: 28px;
   height: 28px;
   border-radius: 8px;
 }
+
 .brand-text {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
 }
+
 .brand-title {
   font-size: 1rem;
+  font-weight: 600;
 }
+
 .brand-subtitle {
   font-size: 0.8rem;
   color: var(--mcl-muted);
 }
 
-/* Nav (flate lenker/knapper i toolbar) */
-.nav { display: flex; gap: .2rem .4rem; flex-wrap: wrap; }
-.nav a {
-  background: none;
-  border: none;
-  box-shadow: none;
-  color: var(--mcl-text);
-  padding: .45rem .7rem;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: color .2s ease, background .2s ease;
-}
-.nav a:hover { background: rgba(0,0,0,.05); color: var(--mcl-brand); }
-
-/* Verktøylinje (språk/tema) – samme flate stil */
-.toolbar {
-  display: flex;
-  gap: .25rem;
-  align-items: center;
-}
+/* Buttons */
 .button {
   background: none;
-  color: var(--mcl-text);
   border: none;
-  box-shadow: none;
+  color: var(--mcl-text);
   padding: .45rem .7rem;
-  border-radius: 8px;
   cursor: pointer;
-  font-weight: 500;
-  transition: color .2s ease, background .2s ease, opacity .1s ease;
+  border-radius: 8px;
 }
-.button:hover { background: rgba(0,0,0,.05); color: var(--mcl-brand); }
-.button:active { opacity: .7; }
-.button.secondary { color: var(--mcl-accent); }
-.button.ghost { color: var(--mcl-muted); }
-
-/* Cards og layout */
-.card {
-  background: var(--mcl-surface);
-  border: 1px solid var(--mcl-outline);
-  box-shadow: var(--elev-1);
-  border-radius: var(--radius);
-  padding: 1rem;
-}
-.grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+.button:hover {
+  background: rgba(0,0,0,.05);
+  color: var(--mcl-brand);
 }
 
-.small { font-size: .9rem; color: var(--mcl-muted); }
-
-footer {
-  margin: 3rem 0 2rem;
-  color: var(--mcl-muted);
+/* Sidebar toggle */
+.sidebar-toggle {
+  display: inline-flex;
+  font-size: 1.2rem;
 }
 
-/* ========= Digital Formelsamling layout ========= */
-
-.page-root {
-  min-height: 100vh;
+/* Toolbar */
+.toolbar {
   display: flex;
-  flex-direction: column;
+  gap: .3rem;
+  align-items: center;
 }
 
-/* Shell: sidebar + main innhold */
-.app-shell {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  margin-top: 1rem;
-  margin-bottom: 2rem;
-}
-
-/* Venstresidepanel */
+/* SIDEBAR */
 .sidebar {
   width: 260px;
-  flex-shrink: 0;
   background: var(--mcl-surface);
   border: 1px solid var(--mcl-outline);
   border-radius: var(--radius);
   box-shadow: var(--elev-1);
-  padding: 0.75rem 0.75rem 1rem;
+  padding: .75rem;
   max-height: calc(100vh - 90px);
   overflow-y: auto;
-  position: relative;
-  z-index: 5;
 }
 
 .sidebar-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-.sidebar-title {
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-.sidebar-close {
-  display: none;
+  align-items: center;
 }
 
-/* Liste i sidebar */
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-.sidebar-section-title {
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--mcl-muted);
-  margin-bottom: 0.25rem;
-}
-.sidebar-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.sidebar-item + .sidebar-item {
-  margin-top: 0.15rem;
-}
-.sidebar-link {
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 0.35rem 0.4rem;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.sidebar-link:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--mcl-brand);
-}
-.sidebar-item-label {
-  font-size: 0.9rem;
-}
-.sidebar-item-hint {
-  font-size: 0.75rem;
-  color: var(--mcl-muted);
-}
-
-/* Hovedinnhold */
-.app-main {
-  flex: 1;
-  min-width: 0;
-}
-
-/* Hero-card for forsiden */
-.main-hero {
-  padding: 1.5rem 1.5rem 1.75rem;
-}
-.main-hero-title {
-  margin: 0 0 0.5rem;
-  font-size: 1.5rem;
-}
-.main-hero-sub {
-  margin: 0 0 0.9rem;
-  color: var(--mcl-muted);
-}
-.main-hero-list {
-  margin: 0 0 0.9rem 1.2rem;
-  padding: 0;
-}
-.main-hero-list li {
-  margin-bottom: 0.25rem;
-}
-.main-hero-footnote {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--mcl-muted);
-}
-
-/* Sidebar-knapp i header (mobil) */
-.sidebar-toggle {
-  display: none;
-}
-
-/* Mobiltilpasning og slide-in sidebar */
+/* MOBILE */
 @media (max-width: 768px) {
-  .app-shell {
-    position: relative;
-  }
-
   .sidebar {
     position: fixed;
-    top: 3.2rem; /* under header */
     left: 0;
+    top: 3.2rem;
     bottom: 0;
     width: 280px;
-    max-height: none;
-    border-radius: 0 16px 16px 0;
     transform: translateX(-100%);
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    transition: transform .2s;
+    border-radius: 0 16px 16px 0;
     z-index: 20;
   }
-
-  .sidebar.is-open {
-    transform: translateX(0);
-    box-shadow: var(--elev-2);
-  }
+  .sidebar.is-open { transform: translateX(0); }
 
   .sidebar-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.35);
-    border: none;
-    padding: 0;
-    margin: 0;
-    cursor: pointer;
+    background: rgba(0,0,0,.35);
     z-index: 15;
   }
 
   .sidebar-close {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-  }
-
-  .sidebar-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .app-shell {
-    /* sidebar ligger flytende over, main varer full bredde */
-    margin-top: 1rem;
   }
 }
