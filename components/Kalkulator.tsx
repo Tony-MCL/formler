@@ -12,6 +12,47 @@ type KalkulatorProps = {
 
 type InputMap = Record<string, string>;
 
+type ResultState = {
+  label: string;
+  pretty: string;
+  raw: string;
+};
+
+/** Formater pen verdi med "ingen meningsløse nuller" */
+function formatPrettyNumber(value: number): string {
+  const abs = Math.abs(value);
+  if ((abs >= 1000 || abs !== 0 && abs < 0.01)) {
+    return value.toExponential(3);
+  }
+  return value.toFixed(3).replace(/\.?0+$/, "");
+}
+
+/** Skaler verdier til kV, kA, mA, kW, kWh der det er naturlig */
+function scaleValue(value: number, unit?: string): { value: number; unit?: string } {
+  const abs = Math.abs(value);
+  if (!unit) return { value, unit };
+
+  switch (unit) {
+    case "V":
+      if (abs >= 1000) return { value: value / 1000, unit: "kV" };
+      if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mV" };
+      return { value, unit: "V" };
+    case "A":
+      if (abs >= 1000) return { value: value / 1000, unit: "kA" };
+      if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mA" };
+      return { value, unit: "A" };
+    case "W":
+      if (abs >= 1000) return { value: value / 1000, unit: "kW" };
+      if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mW" };
+      return { value, unit: "W" };
+    case "Wh":
+      if (abs >= 1000) return { value: value / 1000, unit: "kWh" };
+      return { value, unit: "Wh" };
+    default:
+      return { value, unit };
+  }
+}
+
 export default function Kalkulator({ formulaId }: KalkulatorProps) {
   const formula = getFormulaById(formulaId);
 
@@ -21,7 +62,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
   );
 
   const [inputs, setInputs] = useState<InputMap>({});
-  const [resultText, setResultText] = useState<string | null>(null);
+  const [result, setResult] = useState<ResultState | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
 
   if (!formula || variants.length === 0) {
@@ -36,9 +77,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
   }
 
   const solveOptions = Array.from(
-    new Map(
-      variants.map((v) => [v.solveFor, v.solveFor])
-    ).values()
+    new Map(variants.map((v) => [v.solveFor, v.solveFor])).values()
   );
 
   const currentVariant =
@@ -53,18 +92,25 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
   const handleSolve = () => {
     setErrorText(null);
-    setResultText(null);
+    setResult(null);
 
-    // Vi trenger alle variabler bortsett fra solveFor
     const requiredVars = formula.variables.filter((v) => v.id !== solveFor);
 
     const numericInput: Record<string, number> = {};
     for (const v of requiredVars) {
       const raw = inputs[v.id];
+
+      // cosphi får default 1 hvis ikke utfylt
+      if ((raw === undefined || raw === "") && v.id === "cosphi") {
+        numericInput[v.id] = 1;
+        continue;
+      }
+
       if (raw === undefined || raw === "") {
         setErrorText(`Fyll inn verdi for ${v.symbol} (${v.name}).`);
         return;
       }
+
       const num = Number(raw.toString().replace(",", "."));
       if (!isFinite(num)) {
         setErrorText(`Ugyldig tall for ${v.symbol} (${v.name}).`);
@@ -80,26 +126,41 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     }
 
     const outVar = formula.variables.find((v) => v.id === solveFor);
-    const unit = res.unit ?? outVar?.unit ?? "";
+    const baseUnit = res.unit ?? outVar?.unit;
+    const scaled = scaleValue(res.value, baseUnit);
 
-    const rounded =
-      Math.abs(res.value) >= 1000 || Math.abs(res.value) < 0.01
-        ? res.value.toExponential(3)
-        : res.value.toFixed(3).replace(/\.?0+$/, "");
+    const prettyNumber = formatPrettyNumber(scaled.value);
+    const prettyText = baseUnit
+      ? `${prettyNumber} ${scaled.unit}`
+      : `${prettyNumber}${scaled.unit ? " " + scaled.unit : ""}`;
+
+    const rawNumber = res.value.toPrecision(6);
+    const rawText = baseUnit ? `${rawNumber} ${baseUnit}` : rawNumber;
 
     const label = outVar
       ? `${outVar.symbol} (${outVar.name})`
       : solveFor.toString();
 
-    setResultText(`${label} = ${rounded}${unit ? " " + unit : ""}`);
+    setResult({
+      label,
+      pretty: prettyText,
+      raw: rawText
+    });
   };
 
   return (
     <section style={{ marginTop: "1.5rem" }}>
       <h3 style={{ margin: "0 0 0.4rem" }}>Kalkulator</h3>
-      <p style={{ margin: "0 0 0.8rem", fontSize: "0.9rem", color: "var(--mcl-muted)" }}>
+      <p
+        style={{
+          margin: "0 0 0.8rem",
+          fontSize: "0.9rem",
+          color: "var(--mcl-muted)"
+        }}
+      >
         Velg hvilken variabel du vil løse for, fyll inn de andre og trykk{" "}
-        <strong>Beregn</strong>.
+        <strong>Beregn</strong>. cosφ settes automatisk til 1 hvis du ikke
+        skriver noe.
       </p>
 
       {/* Velg "løs for" */}
@@ -119,7 +180,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             onChange={(e) => {
               const next = e.target.value as SolveForId;
               setSolveFor(next);
-              setResultText(null);
+              setResult(null);
               setErrorText(null);
             }}
             style={{
@@ -181,6 +242,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
                 inputMode="decimal"
                 value={inputs[v.id] ?? ""}
                 onChange={(e) => handleChangeInput(v.id, e.target.value)}
+                placeholder={v.id === "cosphi" ? "1.0" : ""}
                 style={{
                   padding: "0.35rem 0.5rem",
                   borderRadius: 6,
@@ -222,18 +284,29 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
         </div>
       )}
 
-      {resultText && (
+      {result && (
         <div
           style={{
             marginTop: "0.4rem",
             padding: "0.6rem 0.8rem",
             borderRadius: 8,
             background: "rgba(0, 0, 0, 0.03)",
-            fontSize: "0.95rem"
+            fontSize: "0.9rem"
           }}
         >
-          <strong>Resultat: </strong>
-          {resultText}
+          <div>
+            <strong>Resultat: </strong>
+            {result.label} = {result.pretty}
+          </div>
+          <div
+            style={{
+              marginTop: "0.15rem",
+              fontSize: "0.8rem",
+              color: "var(--mcl-muted)"
+            }}
+          >
+            Rå verdi: {result.raw}
+          </div>
         </div>
       )}
     </section>
