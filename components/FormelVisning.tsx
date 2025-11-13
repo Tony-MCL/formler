@@ -8,9 +8,10 @@ import Kalkulator from "./Kalkulator";
 
 type FormelVisningProps = {
   formulaId: FormulaId;
+  onGoHome?: () => void;
 };
 
-export default function FormelVisning({ formulaId }: FormelVisningProps) {
+export default function FormelVisning({ formulaId, onGoHome }: FormelVisningProps) {
   const formula = getFormulaById(formulaId);
 
   if (!formula) {
@@ -24,6 +25,24 @@ export default function FormelVisning({ formulaId }: FormelVisningProps) {
 
   return (
     <section className="card">
+      {/* Hjem-knapp øverst i kortet */}
+      {onGoHome && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
+          <button
+            type="button"
+            className="button"
+            onClick={onGoHome}
+            aria-label="Til forside"
+            style={{
+              fontSize: "0.85rem",
+              paddingInline: "0.7rem"
+            }}
+          >
+            ← Hjem
+          </button>
+        </div>
+      )}
+
       <h2 className="main-hero-title">{formula.name}</h2>
       {formula.description && (
         <p className="main-hero-sub">{formula.description}</p>
