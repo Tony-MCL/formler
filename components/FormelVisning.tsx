@@ -4,6 +4,7 @@ import React from "react";
 import { getFormulaById } from "../lib/formulas";
 import type { FormulaId } from "../lib/types";
 import MathText from "./MathText";
+import Kalkulator from "./Kalkulator";
 
 type FormelVisningProps = {
   formulaId: FormulaId;
@@ -35,13 +36,27 @@ export default function FormelVisning({ formulaId }: FormelVisningProps) {
 
       <div style={{ marginBottom: "1rem" }}>
         <h3 style={{ margin: "0 0 0.4rem" }}>Variabler</h3>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: "0.9rem"
+          }}
+        >
           <thead>
             <tr>
-              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>Symbol</th>
-              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>Navn</th>
-              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>Enhet</th>
-              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>Beskrivelse</th>
+              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                Symbol
+              </th>
+              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                Navn
+              </th>
+              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                Enhet
+              </th>
+              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                Beskrivelse
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -52,7 +67,12 @@ export default function FormelVisning({ formulaId }: FormelVisningProps) {
                 </td>
                 <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
                 <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
-                <td style={{ padding: "0.15rem 0", color: "var(--mcl-muted)" }}>
+                <td
+                  style={{
+                    padding: "0.15rem 0",
+                    color: "var(--mcl-muted)"
+                  }}
+                >
                   {v.description ?? "–"}
                 </td>
               </tr>
@@ -62,9 +82,15 @@ export default function FormelVisning({ formulaId }: FormelVisningProps) {
       </div>
 
       {formula.variants && formula.variants.length > 0 && (
-        <div>
+        <div style={{ marginBottom: "1rem" }}>
           <h3 style={{ margin: "0 0 0.4rem" }}>Varianter (løs for …)</h3>
-          <ul style={{ margin: 0, paddingLeft: "1.2rem", fontSize: "0.9rem" }}>
+          <ul
+            style={{
+              margin: 0,
+              paddingLeft: "1.2rem",
+              fontSize: "0.9rem"
+            }}
+          >
             {formula.variants.map((variant) => (
               <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
                 <strong>{variant.label}: </strong>
@@ -74,6 +100,9 @@ export default function FormelVisning({ formulaId }: FormelVisningProps) {
           </ul>
         </div>
       )}
+
+      {/* Kalkulator-seksjon */}
+      <Kalkulator formulaId={formulaId} />
     </section>
   );
 }
