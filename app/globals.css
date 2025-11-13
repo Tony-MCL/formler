@@ -416,6 +416,11 @@ a {
   display: none;
 }
 
+/* kalkulator: print-sammendrag skjules normalt */
+.calc-print-summary {
+  display: none;
+}
+
 @media print {
   html,
   body {
@@ -429,7 +434,9 @@ a {
   .sidebar-backdrop,
   .toolbar,
   .sidebar-toggle,
-  .button {
+  .button,
+  .calc-interactive,
+  .calc-result {
     display: none !important;
   }
 
@@ -469,5 +476,16 @@ a {
     max-width: 80%;
     height: auto;
     margin: 0 auto;
+  }
+
+  .calc-print-summary {
+    display: block;
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .calc-print-summary ul {
+    margin: 0.2rem 0 0 1.1rem;
+    padding: 0;
   }
 }
