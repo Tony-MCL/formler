@@ -25,12 +25,15 @@ a { color: inherit; text-decoration: none; }
 }
 
 .header-inner {
+  padding: 0.6rem 1rem;
+}
+
+/* Desktop-variant */
+.header-desktop {
   display: flex;
   gap: 1rem;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 1rem;
-  flex-wrap: nowrap;
 }
 
 .header-left {
@@ -39,7 +42,11 @@ a { color: inherit; text-decoration: none; }
   gap: 0.6rem;
 }
 
-/* Logo: fyll høyden, behold proporsjoner */
+/* Mobil-variant (skjult default) */
+.header-mobile {
+  display: none;
+}
+
 .brand-logo {
   height: 28px;
   width: auto;
@@ -62,14 +69,13 @@ a { color: inherit; text-decoration: none; }
   color: var(--mcl-muted);
 }
 
-/* Toolbar (språk/tema) */
 .toolbar {
   display: flex;
   gap: 0.25rem;
   align-items: center;
 }
 
-/* ========= GENERELLE KNAPPER ========= */
+/* ========= KNAPPER ========= */
 
 .button {
   background: none;
@@ -212,12 +218,12 @@ a { color: inherit; text-decoration: none; }
   color: var(--mcl-muted);
 }
 
-/* Backdrop – default skjult (brukes kun på mobil) */
+/* Backdrop – default skjult (kun mobil) */
 .sidebar-backdrop {
   display: none;
 }
 
-/* ========= HERO-SEKSJON ========= */
+/* ========= HERO ========= */
 
 .main-hero {
   padding: 1.5rem 1.5rem 1.75rem;
@@ -243,28 +249,44 @@ a { color: inherit; text-decoration: none; }
   color: var(--mcl-muted);
 }
 
-/* ========= RESPONSIVE ========= */
+/* ========= DESKTOP-TWEAK ========= */
 
 @media (min-width: 769px) {
   .brand-logo {
-    height: 32px; /* litt større på desktop */
+    height: 32px;
   }
 }
 
+/* ========= MOBIL ========= */
+
 @media (max-width: 768px) {
-  .header-inner {
-    flex-wrap: wrap;
-    align-items: flex-start;
-    row-gap: 0.35rem;
+  /* Bytt til mobil-header */
+  .header-desktop {
+    display: none;
   }
 
-  .header-left {
-    flex: 1 1 100%;
+  .header-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
   }
 
-  .toolbar {
-    width: 100%;
-    justify-content: flex-end;
+  .header-mobile-top {
+    display: flex;
+    justify-content: center;
+  }
+
+  .header-mobile-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .header-mobile-left {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
   }
 
   .brand-subtitle {
