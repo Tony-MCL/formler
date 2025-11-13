@@ -4,11 +4,15 @@ import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ThemeToggle from "../components/ThemeToggle";
 import LangToggle from "../components/LangToggle";
+import FormelVisning from "../components/FormelVisning";
 import { useI18n } from "../lib/i18n";
+import type { FormulaId } from "../lib/types";
 
 export default function HomePage() {
   const { t, basePath } = useI18n();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedFormulaId, setSelectedFormulaId] =
+    useState<FormulaId>("ohm");
 
   const appNameKey = "fm_app_name";
   const heroTitleKey = "fm_hero_title";
@@ -16,16 +20,17 @@ export default function HomePage() {
 
   const appName =
     t(appNameKey) === appNameKey ? "Digital Formelsamling" : t(appNameKey);
-
   const heroTitle =
     t(heroTitleKey) === heroTitleKey
       ? "Formler du faktisk bruker – samlet på ett sted"
       : t(heroTitleKey);
-
   const heroSub =
     t(heroSubKey) === heroSubKey
       ? "Beregninger for elkraft og maskiner, med pen visning og innebygde kalkulatorer."
       : t(heroSubKey);
+
+  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  const closeSidebar = () => setSidebarOpen(false);
 
   return (
     <div className="page-root">
@@ -35,7 +40,7 @@ export default function HomePage() {
           <div className="header-left">
             <button
               className="button sidebar-toggle"
-              onClick={() => setSidebarOpen((prev) => !prev)}
+              onClick={toggleSidebar}
               aria-label="Toggle sidebar"
             >
               ☰
@@ -48,7 +53,6 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Midtstilt tittel */}
           <div className="header-center">
             <div className="brand-title">{appName}</div>
           </div>
@@ -73,7 +77,7 @@ export default function HomePage() {
             <div className="header-mobile-left">
               <button
                 className="button sidebar-toggle"
-                onClick={() => setSidebarOpen((prev) => !prev)}
+                onClick={toggleSidebar}
                 aria-label="Toggle sidebar"
               >
                 ☰
@@ -91,23 +95,30 @@ export default function HomePage() {
       </header>
 
       <div className="app-shell container">
-        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar
+          open={sidebarOpen}
+          onClose={closeSidebar}
+          selectedFormulaId={selectedFormulaId}
+          onSelectFormula={setSelectedFormulaId}
+        />
 
         <main className="app-main">
-          <section className="card main-hero">
+          {/* Hero-intro på topp */}
+          <section className="card main-hero" style={{ marginBottom: "1rem" }}>
             <h1 className="main-hero-title">{heroTitle}</h1>
             <p className="main-hero-sub">{heroSub}</p>
-
             <ul className="main-hero-list">
               <li>Fokus på elkraft, motorer og generatorer i første versjon.</li>
-              <li>Pen mattevisning (brøker, potenser, symboler).</li>
+              <li>Formler med pen visning i hovedpanelet.</li>
               <li>Klar for kalkulator og PDF-eksport i senere faser.</li>
             </ul>
-
             <p className="main-hero-footnote">
-              Start ved å velge en kategori eller formel i menyen til venstre.
+              Velg en formel i menyen til venstre for å se detaljer og varianter.
             </p>
           </section>
+
+          {/* Formelvisning under hero */}
+          <FormelVisning formulaId={selectedFormulaId} />
         </main>
       </div>
     </div>
