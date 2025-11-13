@@ -412,11 +412,23 @@ a {
 /* PRINT / PDF */
 /* ========================================================================== */
 
-.print-watermark {
-  display: none;
+/* Kortet må være relativt for at vannmerket kan ligge inni */
+.card {
+  position: relative;
 }
 
-/* kalkulator: print-sammendrag skjules normalt */
+/* Vannmerke – vises svakt også på skjerm */
+.print-watermark {
+  position: absolute;
+  inset: 18% 10%;
+  max-width: 80%;
+  height: auto;
+  opacity: 0.05;               /* veldig svakt i appen */
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Kalkulator: print-sammendrag skjules normalt */
 .calc-print-summary {
   display: none;
 }
@@ -428,7 +440,7 @@ a {
     color: #000000 !important;
   }
 
-  /* Skjul navigasjon og knapper */
+  /* Skjul navigasjon og interaktive elementer ved utskrift */
   .header,
   .sidebar,
   .sidebar-backdrop,
@@ -455,7 +467,6 @@ a {
     border-radius: 0;
     border: none;
     padding: 2cm;
-    position: relative;
     page-break-inside: avoid;
   }
 
@@ -467,27 +478,10 @@ a {
     font-size: 0.95rem;
   }
 
-  /* ===== PRINT WATERMARK (garantert synlig) ===== */
-.print-watermark {
-  display: none;
-}
-
-@media print {
+  /* Vannmerke sterkere på PDF */
   .print-watermark {
-    display: block !important;
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    width: 75% !important;      /* større */
-    max-width: 1200px !important;
-    height: auto !important;
-    transform: translate(-50%, -50%) !important;
-    opacity: 0.50 !important;    /* sterkere */
-    z-index: 9999 !important;    /* foran alt */
-    mix-blend-mode: multiply !important;
-    pointer-events: none !important;
+    opacity: 0.18;
   }
-}
 
   .calc-print-summary {
     display: block;
