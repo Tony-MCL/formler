@@ -18,7 +18,7 @@ type ResultState = {
   raw: string;
 };
 
-/** Formater pen verdi med rett antall desimaler basert på enhet */
+/** Formater pen verdi med antall desimaler basert på enhet */
 function formatPrettyNumber(value: number, unit?: string): string {
   let decimals = 2;
 
@@ -29,7 +29,7 @@ function formatPrettyNumber(value: number, unit?: string): string {
     if (u.startsWith("k")) {
       decimals = 1;
     }
-    // milli-enheter: mV, mA, mW, mΩ → 2 desimaler (beholder 2)
+    // milli-enheter: mA, mW, mΩ osv. → 2 desimaler
     else if (u.startsWith("m")) {
       decimals = 2;
     } else {
@@ -38,11 +38,20 @@ function formatPrettyNumber(value: number, unit?: string): string {
   }
 
   const str = value.toFixed(decimals);
-  // fjern overflødige nuller og punktum
-  return str.replace(/(\.\d*?[1-9])0+$/u, "$1").replace(/\.0+$/u, "");
+  return str
+    .replace(/(\.\d*?[1-9])0+$/u, "$1")
+    .replace(/\.0+$/u, "");
 }
 
-/** Skaler verdier til kV, kA, mA, kW, kWh, kΩ, mΩ der det er naturlig */
+/**
+ * Skaler verdier til kV, kA, mA, kW, kWh, kΩ, mΩ der det er naturlig.
+ * Terskler:
+ *  - V → kV fra 1000 V
+ *  - A → kA fra 1000 A, mA under 1 A
+ *  - W → kW fra 1000 W, mW under 1 W
+ *  - Wh → kWh fra 1000 Wh
+ *  - Ω → kΩ fra 1000 Ω, mΩ under 0,01 Ω
+ */
 function scaleValue(
   value: number,
   unit?: string
@@ -53,25 +62,30 @@ function scaleValue(
   switch (unit) {
     case "V":
       if (abs >= 1000) return { value: value / 1000, unit: "kV" };
-      if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mV" };
+      // Ikke automatisk mV i elkraft – behold V for små verdier
       return { value, unit: "V" };
+
     case "A":
       if (abs >= 1000) return { value: value / 1000, unit: "kA" };
       if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mA" };
       return { value, unit: "A" };
+
     case "W":
       if (abs >= 1000) return { value: value / 1000, unit: "kW" };
       if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mW" };
       return { value, unit: "W" };
+
     case "Wh":
       if (abs >= 1000) return { value: value / 1000, unit: "kWh" };
       return { value, unit: "Wh" };
+
     case "Ω":
     case "ohm":
     case "Ohm":
       if (abs >= 1000) return { value: value / 1000, unit: "kΩ" };
-      if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mΩ" };
+      if (abs > 0 && abs < 0.01) return { value: value * 1000, unit: "mΩ" };
       return { value, unit: "Ω" };
+
     default:
       return { value, unit };
   }
