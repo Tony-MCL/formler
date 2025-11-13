@@ -1,17 +1,39 @@
 @import "../styles/theme.css";
 
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-html { background: var(--mcl-bg); color: var(--mcl-text); }
+/* ===== Reset / base ===== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+html {
+  background: var(--mcl-bg);
+  color: var(--mcl-text);
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
-    "Helvetica Neue", Arial, "Noto Sans";
+    "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol";
 }
 
-.container { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
-/* ========= HEADER ========= */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* ===== Header ===== */
 
 .header {
   position: sticky;
@@ -22,16 +44,17 @@ body {
   border-bottom: 1px solid var(--mcl-outline);
 }
 
-/* mindre høyde */
+/* litt lavere header */
 .header-inner {
   padding: 0.6rem 1rem;
 }
 
-/* Desktop header layout */
+/* Desktop-variant */
 .header-desktop {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
 }
 
 .header-left {
@@ -40,7 +63,7 @@ body {
   gap: 0.5rem;
 }
 
-/* Midtstilt tittel */
+/* Midtstilt tittel på desktop */
 .header-center {
   flex: 1;
   display: flex;
@@ -48,72 +71,65 @@ body {
   pointer-events: none;
 }
 
-/* Logo */
 .brand-logo {
-  height: 34px;     /* litt lavere */
+  height: 34px;
   width: auto;
   border-radius: 8px;
 }
 
-/* Tittel */
 .brand-title {
   font-size: 1rem;
   font-weight: 700;
 }
 
-/* Toolbar */
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
+.brand-subtitle {
+  font-size: 0.8rem;
+  color: var(--mcl-muted);
 }
 
-/* ========= BUTTONS ========= */
+/* Toolbar (språk/tema) */
+.toolbar {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+/* Mobil-variant (skjult som default) */
+.header-mobile {
+  display: none;
+}
+
+/* ===== Buttons ===== */
 
 .button {
   background: none;
+  color: var(--mcl-text);
   border: none;
+  box-shadow: none;
   padding: 0.4rem 0.6rem;
   border-radius: 8px;
   cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s ease, background 0.2s ease, opacity 0.1s ease;
 }
+
 .button:hover {
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--mcl-brand);
 }
 
-/* ========= MOBIL ========= */
-
-.header-mobile { display: none; }
-
-@media (max-width: 768px) {
-  .header-desktop { display: none; }
-
-  .header-mobile {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    padding-bottom: 0.5rem;
-  }
-
-  .header-mobile-top {
-    display: flex;
-    justify-content: center;
-  }
-
-  .header-mobile-bottom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .header-mobile-left {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  /* Mobil-logo litt mindre */
-  .brand-logo {
-    height: 24px;
-  }
+.button:active {
+  opacity: 0.7;
 }
+
+.sidebar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+/* ===== Cards / layout ===== */
+
+.card {
+  background: var(--mcl-surface);
