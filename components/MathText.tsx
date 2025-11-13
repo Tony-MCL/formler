@@ -8,14 +8,16 @@ type MathTextProps = {
 
 /**
  * Enkel, "pen nok" matte-visning for stil B:
- * - " * " → " · "
- * - "cosphi" → "cos φ"
- * - små justeringer for lesbarhet
+ * - Erstatter * med ·
+ * - cosphi → cos φ
+ * - Støtter brøkvisning med CSS-basert fraksjon:
+ *   "I = U / R" → I = U over R
  *
- * Senere kan vi bytte ut innmaten med ordentlig KaTeX/LaTeX uten
- * å endre resten av appen, så lenge prop-signaturen er lik.
+ * Dette er UI-laget. Vi kan senere bytte hele innmaten til KaTeX/LaTeX
+ * uten å endre hvordan komponenten brukes.
  */
-export default function MathText({ text }: MathTextProps) {
+
+function applyReplacements(text: string): string {
   let pretty = text;
 
   // Multiplikasjonstegn
@@ -24,8 +26,63 @@ export default function MathText({ text }: MathTextProps) {
   // cosphi → cos φ
   pretty = pretty.replace(/cosphi/g, "cos φ");
 
-  // Eventuell "phi" alene → φ (forsiktig, bare ordgrense)
+  // phi → φ (kun egne ord)
   pretty = pretty.replace(/\bphi\b/g, "φ");
 
-  return <span className="math-text">{pretty}</span>;
+  return pretty;
+}
+
+/** Finn første divisjonstegn på top-nivå (ikke inne i parenteser) */
+function findTopLevelDivision(expr: string): number {
+  let depth = 0;
+  for (let i = 0; i < expr.length; i++) {
+    const ch = expr[i];
+    if (ch === "(") depth++;
+    else if (ch === ")") depth = Math.max(0, depth - 1);
+    else if (ch === "/" && depth === 0) return i;
+  }
+  return -1;
+}
+
+/** Rekursiv renderer som lager brøker når den finner "/" på top-nivå */
+function renderExpr(expr: string): React.ReactNode {
+  const trimmed = expr.trim();
+  if (!trimmed) return null;
+
+  const index = findTopLevelDivision(trimmed);
+  if (index === -1) {
+    // Ingen brøk på top-nivå – bare vis pen tekst
+    return applyReplacements(trimmed);
+  }
+
+  const numerator = trimmed.slice(0, index).trim();
+  const denominator = trimmed.slice(index + 1).trim();
+
+  return (
+    <span className="math-frac">
+      <span className="math-frac-num">{renderExpr(numerator)}</span>
+      <span className="math-frac-den">{renderExpr(denominator)}</span>
+    </span>
+  );
+}
+
+export default function MathText({ text }: MathTextProps) {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+
+  const eqIndex = trimmed.indexOf("=");
+  if (eqIndex !== -1) {
+    const left = trimmed.slice(0, eqIndex).trim();
+    const right = trimmed.slice(eqIndex + 1).trim();
+
+    return (
+      <span className="math-text">
+        <span>{applyReplacements(left)}</span>
+        <span>{` = `}</span>
+        {renderExpr(right)}
+      </span>
+    );
+  }
+
+  return <span className="math-text">{renderExpr(trimmed)}</span>;
 }
