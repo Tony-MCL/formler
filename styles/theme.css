@@ -27,3 +27,13 @@ html[data-theme="dark"] {
   --elev-1: 0 4px 10px rgba(0,0,0,.6);
   --elev-2: 0 10px 24px rgba(0,0,0,.7);
 }
+/* ========== MCL TYPE SYSTEM ========== */
+
+/* Font for UI-tekst */
+:root {
+  --mcl-font-ui: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
+    Helvetica Neue, Arial, sans-serif;
+
+  /* Font for matematiske uttrykk */
+  --mcl-font-math: "STIX Two Math", "Latin Modern Math", "Cambria Math", serif;
+}
