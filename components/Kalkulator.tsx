@@ -16,6 +16,9 @@ type ResultState = {
   label: string;
   pretty: string;
   raw: string;
+  solveFor: SolveForId;
+  inputs: Record<string, string>;
+  variantExpression?: string;
 };
 
 /** Formater pen verdi med antall desimaler basert på enhet */
@@ -91,6 +94,12 @@ function scaleValue(
   }
 }
 
+function makeSolveLabel(formula: ReturnType<typeof getFormulaById> | null, id: SolveForId) {
+  const v = formula?.variables.find((x) => x.id === id);
+  if (!v) return id.toString();
+  return `${v.symbol} (${v.name})`;
+}
+
 export default function Kalkulator({ formulaId }: KalkulatorProps) {
   const formula = getFormulaById(formulaId);
 
@@ -135,26 +144,30 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     const requiredVars = formula.variables.filter((v) => v.id !== solveFor);
 
     const numericInput: Record<string, number> = {};
+    const snapshotInputs: Record<string, string> = {};
+
     for (const v of requiredVars) {
-      const raw = inputs[v.id];
+      const rawStateValue = inputs[v.id];
 
       // cosphi får default 1 hvis ikke utfylt
-      if ((raw === undefined || raw === "") && v.id === "cosphi") {
+      if ((rawStateValue === undefined || rawStateValue === "") && v.id === "cosphi") {
         numericInput[v.id] = 1;
+        snapshotInputs[v.id] = "1.0";
         continue;
       }
 
-      if (raw === undefined || raw === "") {
+      if (rawStateValue === undefined || rawStateValue === "") {
         setErrorText(`Fyll inn verdi for ${v.symbol} (${v.name}).`);
         return;
       }
 
-      const num = Number(raw.toString().replace(",", "."));
+      const num = Number(rawStateValue.toString().replace(",", "."));
       if (!isFinite(num)) {
         setErrorText(`Ugyldig tall for ${v.symbol} (${v.name}).`);
         return;
       }
       numericInput[v.id] = num;
+      snapshotInputs[v.id] = rawStateValue;
     }
 
     const res = solveFormula(formulaId, solveFor, numericInput);
@@ -182,148 +195,144 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     setResult({
       label,
       pretty: prettyText,
-      raw: rawText
+      raw: rawText,
+      solveFor,
+      inputs: snapshotInputs,
+      variantExpression: currentVariant?.expression
     });
   };
 
   return (
     <section style={{ marginTop: "1.5rem" }}>
       <h3 style={{ margin: "0 0 0.4rem" }}>Kalkulator</h3>
-      <p
-        style={{
-          margin: "0 0 0.8rem",
-          fontSize: "0.9rem",
-          color: "var(--mcl-muted)"
-        }}
-      >
-        Velg hvilken variabel du vil løse for, fyll inn de andre og trykk{" "}
-        <strong>Beregn</strong>. cosφ settes automatisk til 1 hvis du ikke
-        skriver noe.
-      </p>
 
-      {/* Velg "løs for" */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.75rem",
-          alignItems: "center",
-          marginBottom: "0.8rem"
-        }}
-      >
-        <label style={{ fontSize: "0.9rem" }}>
-          Løs for:
-          <select
-            value={solveFor}
-            onChange={(e) => {
-              const next = e.target.value as SolveForId;
-              setSolveFor(next);
-              setResult(null);
-              setErrorText(null);
-            }}
+      {/* Interaktiv del – skjules ved print */}
+      <div className="calc-interactive">
+        {/* Velg "løs for" */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+            alignItems: "center",
+            marginBottom: "0.8rem"
+          }}
+        >
+          <label style={{ fontSize: "0.9rem" }}>
+            Løs for:
+            <select
+              value={solveFor}
+              onChange={(e) => {
+                const next = e.target.value as SolveForId;
+                setSolveFor(next);
+                setResult(null);
+                setErrorText(null);
+              }}
+              style={{
+                marginLeft: "0.5rem",
+                padding: "0.25rem 0.5rem",
+                borderRadius: 6,
+                border: "1px solid var(--mcl-outline)",
+                background: "var(--mcl-surface)",
+                color: "var(--mcl-text)",
+                fontSize: "0.9rem"
+              }}
+            >
+              {solveOptions.map((id) => {
+                const label = makeSolveLabel(formula, id);
+                return (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+
+          {currentVariant && (
+            <div style={{ fontSize: "0.9rem" }}>
+              <span style={{ color: "var(--mcl-muted)" }}>Bruker: </span>
+              <MathText text={currentVariant.expression} />
+            </div>
+          )}
+        </div>
+
+        {/* Input-felt */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+            gap: "0.75rem",
+            marginBottom: "0.9rem"
+          }}
+        >
+          {formula.variables
+            .filter((v) => v.id !== solveFor)
+            .map((v) => (
+              <label
+                key={v.id}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  fontSize: "0.85rem",
+                  gap: "0.2rem"
+                }}
+              >
+                <span>
+                  {v.symbol} ({v.name}){v.unit ? ` [${v.unit}]` : ""}:
+                </span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={inputs[v.id] ?? ""}
+                  onChange={(e) => handleChangeInput(v.id, e.target.value)}
+                  placeholder={v.id === "cosphi" ? "1.0" : ""}
+                  style={{
+                    padding: "0.35rem 0.5rem",
+                    borderRadius: 6,
+                    border: "1px solid var(--mcl-outline)",
+                    background: "var(--mcl-bg)",
+                    color: "var(--mcl-text)",
+                    fontSize: "0.9rem"
+                  }}
+                />
+              </label>
+            ))}
+        </div>
+
+        <button
+          type="button"
+          className="button"
+          onClick={handleSolve}
+          style={{
+            background: "var(--mcl-brand)",
+            color: "#fff",
+            borderRadius: 999,
+            padding: "0.45rem 0.9rem",
+            marginBottom: "0.6rem"
+          }}
+        >
+          Beregn
+        </button>
+
+        {/* Feiltekst */}
+        {errorText && (
+          <div
             style={{
-              marginLeft: "0.5rem",
-              padding: "0.25rem 0.5rem",
-              borderRadius: 6,
-              border: "1px solid var(--mcl-outline)",
-              background: "var(--mcl-surface)",
-              color: "var(--mcl-text)",
-              fontSize: "0.9rem"
+              marginTop: "0.25rem",
+              fontSize: "0.85rem",
+              color: "var(--mcl-error, #b91c1c)"
             }}
           >
-            {solveOptions.map((id) => {
-              const v = formula.variables.find((x) => x.id === id);
-              const label = v ? `${v.symbol} (${v.name})` : id;
-              return (
-                <option key={id} value={id}>
-                  {label}
-                </option>
-              );
-            })}
-          </select>
-        </label>
-
-        {currentVariant && (
-          <div style={{ fontSize: "0.9rem" }}>
-            <span style={{ color: "var(--mcl-muted)" }}>Bruker: </span>
-            <MathText text={currentVariant.expression} />
+            {errorText}
           </div>
         )}
       </div>
 
-      {/* Input-felt */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-          gap: "0.75rem",
-          marginBottom: "0.9rem"
-        }}
-      >
-        {formula.variables
-          .filter((v) => v.id !== solveFor)
-          .map((v) => (
-            <label
-              key={v.id}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                fontSize: "0.85rem",
-                gap: "0.2rem"
-              }}
-            >
-              <span>
-                {v.symbol} ({v.name}){v.unit ? ` [${v.unit}]` : ""}:
-              </span>
-              <input
-                type="number"
-                inputMode="decimal"
-                value={inputs[v.id] ?? ""}
-                onChange={(e) => handleChangeInput(v.id, e.target.value)}
-                placeholder={v.id === "cosphi" ? "1.0" : ""}
-                style={{
-                  padding: "0.35rem 0.5rem",
-                  borderRadius: 6,
-                  border: "1px solid var(--mcl-outline)",
-                  background: "var(--mcl-bg)",
-                  color: "var(--mcl-text)",
-                  fontSize: "0.9rem"
-                }}
-              />
-            </label>
-          ))}
-      </div>
-
-      <button
-        type="button"
-        className="button"
-        onClick={handleSolve}
-        style={{
-          background: "var(--mcl-brand)",
-          color: "#fff",
-          borderRadius: 999,
-          padding: "0.45rem 0.9rem",
-          marginBottom: "0.6rem"
-        }}
-      >
-        Beregn
-      </button>
-
-      {/* Resultat / feil */}
-      {errorText && (
-        <div
-          style={{
-            marginTop: "0.25rem",
-            fontSize: "0.85rem",
-            color: "var(--mcl-error, #b91c1c)"
-          }}
-        >
-          {errorText}
-        </div>
-      )}
-
+      {/* Resultat (skjules ved print, får egen print-versjon under) */}
       {result && (
         <div
+          className="calc-result"
           style={{
             marginTop: "0.4rem",
             padding: "0.6rem 0.8rem",
@@ -345,6 +354,41 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
           >
             Rå verdi: {result.raw}
           </div>
+        </div>
+      )}
+
+      {/* Print-sammendrag – vises kun ved print/PDF */}
+      {result && (
+        <div className="calc-print-summary">
+          <p>
+            <strong>Løs for:</strong>{" "}
+            {makeSolveLabel(formula, result.solveFor)}
+          </p>
+          {result.variantExpression && (
+            <p>
+              <strong>Bruker:</strong>{" "}
+              <MathText text={result.variantExpression} />
+            </p>
+          )}
+          <p>
+            <strong>Verdier brukt:</strong>
+          </p>
+          <ul>
+            {formula.variables.map((v) => {
+              if (v.id === result.solveFor) return null;
+              const val = result.inputs[v.id];
+              if (!val) return null;
+              return (
+                <li key={v.id}>
+                  {v.symbol} ({v.name}) = {val}
+                  {v.unit ? ` ${v.unit}` : ""}
+                </li>
+              );
+            })}
+            <li>
+              {result.label} = {result.pretty}
+            </li>
+          </ul>
         </div>
       )}
     </section>
