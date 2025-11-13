@@ -17,9 +17,8 @@ html {
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
-    "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji",
-    "Segoe UI Symbol";
+  font-family: var(--mcl-font-ui, system-ui, -apple-system, Segoe UI, Roboto,
+      Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans");
 }
 
 a {
@@ -31,12 +30,6 @@ a {
   max-width: 1100px;
   margin: 0 auto;
   padding: 1rem;
-}
-/* Math-specific typography */
-.math-text {
-  font-family: var(--mcl-font-math);
-  font-size: 1.05rem;
-  letter-spacing: 0.01em;
 }
 
 /* ========================================================================== */
@@ -383,4 +376,34 @@ a {
     cursor: pointer;
     z-index: 15;
   }
+}
+
+/* ========================================================================== */
+/* MATH TYPOGRAPHY + BRØK */
+/* ========================================================================== */
+
+.math-text {
+  font-family: var(--mcl-font-math, "STIX Two Math", "Latin Modern Math",
+      "Cambria Math", serif);
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+
+/* CSS-basert brøkvisning */
+.math-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.math-frac-num {
+  border-bottom: 1px solid currentColor;
+  padding: 0 0.15em;
+  line-height: 1.1;
+}
+
+.math-frac-den {
+  padding-top: 0.05em;
+  line-height: 1.1;
 }
