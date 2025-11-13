@@ -29,14 +29,8 @@ export default function HomePage() {
     <div className="page-root">
       <header className="header">
         <div className="header-inner container">
-
-          {/* VENSTRE SIDE – logo + sidebar-toggle */}
+          {/* VENSTRE SIDE – sidebar-toggle helt ytterst, så logo, så tekst */}
           <div className="header-left">
-            <img
-              src={`${basePath}/images/mcl-logo.png`}
-              alt="Morning Coffee Labs"
-              className="brand-logo"
-            />
             <button
               className="button sidebar-toggle"
               onClick={() => setSidebarOpen((prev) => !prev)}
@@ -44,6 +38,13 @@ export default function HomePage() {
             >
               ☰
             </button>
+
+            <img
+              src={`${basePath}/images/mcl-logo.png`}
+              alt="Morning Coffee Labs"
+              className="brand-logo"
+            />
+
             <div className="brand-text">
               <div className="brand-title">{appName}</div>
               <div className="brand-subtitle">Morning Coffee Labs</div>
