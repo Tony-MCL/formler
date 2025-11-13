@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 type SidebarProps = {
   open: boolean;
@@ -42,12 +42,31 @@ const GROUPS: SidebarGroup[] = [
 ];
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Sjekk skjermbredde én gang og ved resize
+  useEffect(() => {
+    const check = () => {
+      if (typeof window !== "undefined") {
+        setIsMobile(window.innerWidth <= 768);
+      }
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // På desktop: skjul sidebar helt når den er lukket
+  if (!open && !isMobile) {
+    return null;
+  }
+
   const stopClick: React.MouseEventHandler = (e) => e.stopPropagation();
 
   return (
     <>
-      {/* Bakgrunn for mobil når menyen er åpen */}
-      {open && (
+      {/* Backdrop kun på mobil når menyen er åpen */}
+      {open && isMobile && (
         <button
           className="sidebar-backdrop"
           aria-label="Lukk meny"
@@ -62,13 +81,15 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       >
         <div className="sidebar-header">
           <div className="sidebar-title">Kategorier</div>
-          <button
-            className="button sidebar-close"
-            onClick={onClose}
-            aria-label="Lukk meny"
-          >
-            ✕
-          </button>
+          {isMobile && (
+            <button
+              className="button sidebar-close"
+              onClick={onClose}
+              aria-label="Lukk meny"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         <nav className="sidebar-nav">
@@ -81,9 +102,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                     <button
                       type="button"
                       className="sidebar-link"
-                      // Fase 1: kun visuell. Senere kobles dette mot valgt formel.
                       onClick={() => {
-                        // placeholder – kan senere trigge formelvisning
+                        // Fase 1: bare visuell feedback
                         console.log("Select formula:", item.id);
                       }}
                     >
