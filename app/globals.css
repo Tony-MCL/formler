@@ -407,3 +407,67 @@ a {
   padding-top: 0.05em;
   line-height: 1.1;
 }
+
+/* ========================================================================== */
+/* PRINT / PDF */
+/* ========================================================================== */
+
+.print-watermark {
+  display: none;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Skjul navigasjon og knapper */
+  .header,
+  .sidebar,
+  .sidebar-backdrop,
+  .toolbar,
+  .sidebar-toggle,
+  .button {
+    display: none !important;
+  }
+
+  .app-shell.container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .app-main {
+    margin: 0;
+  }
+
+  .card {
+    box-shadow: none;
+    border-radius: 0;
+    border: none;
+    padding: 2cm;
+    position: relative;
+    page-break-inside: avoid;
+  }
+
+  .main-hero-title {
+    font-size: 1.6rem;
+  }
+
+  .main-hero-sub {
+    font-size: 0.95rem;
+  }
+
+  .print-watermark {
+    display: block;
+    position: absolute;
+    inset: 20% 10%;
+    opacity: 0.08;
+    pointer-events: none;
+    max-width: 80%;
+    height: auto;
+    margin: 0 auto;
+  }
+}
