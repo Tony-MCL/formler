@@ -1,19 +1,8 @@
 @import "../styles/theme.css";
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  height: 100%;
-}
-
-html {
-  background: var(--mcl-bg);
-  color: var(--mcl-text);
-}
-
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+html { background: var(--mcl-bg); color: var(--mcl-text); }
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
@@ -21,16 +10,8 @@ body {
     "Segoe UI Symbol";
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 1rem;
-}
+a { color: inherit; text-decoration: none; }
+.container { max-width: 1100px; margin: 0 auto; padding: 1rem; }
 
 /* ========= HEADER ========= */
 
@@ -58,9 +39,10 @@ a {
   gap: 0.6rem;
 }
 
+/* Logo: fyll høyden, behold proporsjoner */
 .brand-logo {
-  width: 28px;
   height: 28px;
+  width: auto;
   border-radius: 8px;
 }
 
@@ -100,25 +82,12 @@ a {
   font-weight: 500;
   transition: color 0.2s ease, background 0.2s ease, opacity 0.1s ease;
 }
-
 .button:hover {
   background: rgba(0, 0, 0, 0.05);
   color: var(--mcl-brand);
 }
+.button:active { opacity: 0.7; }
 
-.button:active {
-  opacity: 0.7;
-}
-
-.button.secondary {
-  color: var(--mcl-accent);
-}
-
-.button.ghost {
-  color: var(--mcl-muted);
-}
-
-/* Sidebar-knapp i header */
 .sidebar-toggle {
   display: inline-flex;
   align-items: center;
@@ -126,7 +95,7 @@ a {
   font-size: 1.1rem;
 }
 
-/* ========= KORT / CARDS ========= */
+/* ========= CARDS ========= */
 
 .card {
   background: var(--mcl-surface);
@@ -136,16 +105,7 @@ a {
   padding: 1rem;
 }
 
-.grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-}
-
-.small {
-  font-size: 0.9rem;
-  color: var(--mcl-muted);
-}
+.small { font-size: .9rem; color: var(--mcl-muted); }
 
 /* ========= APP-LAYOUT ========= */
 
@@ -239,7 +199,6 @@ a {
   gap: 0.1rem;
   transition: background 0.15s ease, color 0.15s ease;
 }
-
 .sidebar-link:hover {
   background: rgba(0, 0, 0, 0.04);
   color: var(--mcl-brand);
@@ -248,10 +207,14 @@ a {
 .sidebar-item-label {
   font-size: 0.9rem;
 }
-
 .sidebar-item-hint {
   font-size: 0.75rem;
   color: var(--mcl-muted);
+}
+
+/* Backdrop – default skjult (brukes kun på mobil) */
+.sidebar-backdrop {
+  display: none;
 }
 
 /* ========= HERO-SEKSJON ========= */
@@ -259,36 +222,36 @@ a {
 .main-hero {
   padding: 1.5rem 1.5rem 1.75rem;
 }
-
 .main-hero-title {
   margin: 0 0 0.5rem;
   font-size: 1.5rem;
 }
-
 .main-hero-sub {
   margin: 0 0 0.9rem;
   color: var(--mcl-muted);
 }
-
 .main-hero-list {
   margin: 0 0 0.9rem 1.2rem;
   padding: 0;
 }
-
 .main-hero-list li {
   margin-bottom: 0.25rem;
 }
-
 .main-hero-footnote {
   margin: 0;
   font-size: 0.9rem;
   color: var(--mcl-muted);
 }
 
-/* ========= MOBIL-TILPASNING ========= */
+/* ========= RESPONSIVE ========= */
+
+@media (min-width: 769px) {
+  .brand-logo {
+    height: 32px; /* litt større på desktop */
+  }
+}
 
 @media (max-width: 768px) {
-  /* Header: la ting wrappe pent */
   .header-inner {
     flex-wrap: wrap;
     align-items: flex-start;
@@ -304,7 +267,6 @@ a {
     justify-content: flex-end;
   }
 
-  /* Skjul undertittel på små skjermer for å spare plass */
   .brand-subtitle {
     display: none;
   }
@@ -313,7 +275,6 @@ a {
     font-size: 0.95rem;
   }
 
-  /* Sidebar som slide-in */
   .app-shell {
     position: relative;
     margin-top: 1rem;
@@ -321,7 +282,7 @@ a {
 
   .sidebar {
     position: fixed;
-    top: 3.2rem; /* under header */
+    top: 3.2rem;
     left: 0;
     bottom: 0;
     width: 280px;
@@ -338,6 +299,7 @@ a {
   }
 
   .sidebar-backdrop {
+    display: block;
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.35);
