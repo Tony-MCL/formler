@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import type { FormulaId, SolveForId } from "../lib/types";
 import { getFormulaById } from "../lib/formulas";
-import { listVariants, solveFormula } from "../lib/engine";
+import { solveFormula, listVariants } from "../lib/engine";
 import MathText from "./MathText";
 
 type KalkulatorProps = {
@@ -28,9 +28,12 @@ function formatPrettyNumber(value: number, unit?: string): string {
   if (unit) {
     const u = unit.toLowerCase();
 
+    // kilo-enheter: kV, kA, kW, kWh, kΩ → 1 desimal
     if (u.startsWith("k")) {
       decimals = 1;
-    } else if (u.startsWith("m")) {
+    }
+    // milli-enheter: mA, mW, mΩ osv. → 2 desimaler
+    else if (u.startsWith("m")) {
       decimals = 2;
     } else {
       decimals = 2;
@@ -43,7 +46,15 @@ function formatPrettyNumber(value: number, unit?: string): string {
     .replace(/\.0+$/u, "");
 }
 
-/** Skaler verdier til kV, kA, mA, kW, kWh, kΩ, mΩ der det er naturlig. */
+/**
+ * Skaler verdier til kV, kA, mA, kW, kWh, kΩ, mΩ der det er naturlig.
+ * Terskler:
+ *  - V → kV fra 1000 V
+ *  - A → kA fra 1000 A, mA under 1 A
+ *  - W → kW fra 1000 W, mW under 1 W
+ *  - Wh → kWh fra 1000 Wh
+ *  - Ω → kΩ fra 1000 Ω, mΩ under 0,01 Ω
+ */
 function scaleValue(
   value: number,
   unit?: string
@@ -54,6 +65,7 @@ function scaleValue(
   switch (unit) {
     case "V":
       if (abs >= 1000) return { value: value / 1000, unit: "kV" };
+      // Ikke automatisk mV i elkraft – behold V for små verdier
       return { value, unit: "V" };
 
     case "A":
@@ -82,12 +94,9 @@ function scaleValue(
   }
 }
 
-function makeSolveLabel(
-  formula: ReturnType<typeof getFormulaById> | null,
-  id: SolveForId
-): string {
+function makeSolveLabel(formula: ReturnType<typeof getFormulaById> | null, id: SolveForId) {
   const v = formula?.variables.find((x) => x.id === id);
-  if (!v) return String(id);
+  if (!v) return id.toString();
   return `${v.symbol} (${v.name})`;
 }
 
@@ -95,11 +104,8 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
   const formula = getFormulaById(formulaId);
 
   const variants = useMemo(() => listVariants(formulaId), [formulaId]);
-
   const [solveFor, setSolveFor] = useState<SolveForId>(
-    (variants[0]?.solveFor ??
-      (formula?.variables[0]?.id as SolveForId | undefined) ??
-      ("" as SolveForId)) as SolveForId
+    variants[0]?.solveFor ?? (formula?.variables[0]?.id as SolveForId)
   );
 
   const [inputs, setInputs] = useState<InputMap>({});
@@ -143,7 +149,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     for (const v of requiredVars) {
       const rawStateValue = inputs[v.id];
 
-      // cosphi default = 1.0 hvis tom
+      // cosphi får default 1 hvis ikke utfylt
       if ((rawStateValue === undefined || rawStateValue === "") && v.id === "cosphi") {
         numericInput[v.id] = 1;
         snapshotInputs[v.id] = "1.0";
@@ -155,12 +161,11 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
         return;
       }
 
-      const num = Number(String(rawStateValue).replace(",", "."));
-      if (!Number.isFinite(num)) {
+      const num = Number(rawStateValue.toString().replace(",", "."));
+      if (!isFinite(num)) {
         setErrorText(`Ugyldig tall for ${v.symbol} (${v.name}).`);
         return;
       }
-
       numericInput[v.id] = num;
       snapshotInputs[v.id] = rawStateValue;
     }
@@ -185,7 +190,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
     const label = outVar
       ? `${outVar.symbol} (${outVar.name})`
-      : String(solveFor);
+      : solveFor.toString();
 
     setResult({
       label,
@@ -203,7 +208,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
       {/* Interaktiv del – skjules ved print */}
       <div className="calc-interactive">
-        {/* Løs for + formel-linje */}
+        {/* Velg "løs for" */}
         <div
           style={{
             display: "flex",
@@ -252,7 +257,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
           )}
         </div>
 
-        {/* Input-felt (grid) */}
+        {/* Input-felt */}
         <div
           style={{
             display: "grid",
@@ -295,7 +300,6 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             ))}
         </div>
 
-        {/* Beregn + resultat (skjerm) */}
         <button
           type="button"
           className="button"
@@ -311,6 +315,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
           Beregn
         </button>
 
+        {/* Feiltekst */}
         {errorText && (
           <div
             style={{
@@ -322,86 +327,70 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             {errorText}
           </div>
         )}
+      </div>
 
-        {result && (
+      {/* Resultat (skjules ved print, får egen print-versjon under) */}
+      {result && (
+        <div
+          className="calc-result"
+          style={{
+            marginTop: "0.4rem",
+            padding: "0.6rem 0.8rem",
+            borderRadius: 8,
+            background: "rgba(0, 0, 0, 0.03)",
+            fontSize: "0.9rem"
+          }}
+        >
+          <div>
+            <strong>Resultat: </strong>
+            {result.label} = {result.pretty}
+          </div>
           <div
-            className="calc-result"
             style={{
-              marginTop: "0.4rem",
-              padding: "0.6rem 0.8rem",
-              borderRadius: 8,
-              background: "rgba(0, 0, 0, 0.03)",
-              fontSize: "0.9rem"
+              marginTop: "0.15rem",
+              fontSize: "0.8rem",
+              color: "var(--mcl-muted)"
             }}
           >
-            <div>
-              <strong>Resultat: </strong>
+            Rå verdi: {result.raw}
+          </div>
+        </div>
+      )}
+
+      {/* Print-sammendrag – vises kun ved print/PDF */}
+      {result && (
+        <div className="calc-print-summary">
+          <p>
+            <strong>Løs for:</strong>{" "}
+            {makeSolveLabel(formula, result.solveFor)}
+          </p>
+          {result.variantExpression && (
+            <p>
+              <strong>Bruker:</strong>{" "}
+              <MathText text={result.variantExpression} />
+            </p>
+          )}
+          <p>
+            <strong>Verdier brukt:</strong>
+          </p>
+          <ul>
+            {formula.variables.map((v) => {
+              if (v.id === result.solveFor) return null;
+              const val = result.inputs[v.id];
+              if (!val) return null;
+              return (
+                <li key={v.id}>
+                  {v.symbol} ({v.name}) = {val}
+                  {v.unit ? ` ${v.unit}` : ""}
+                </li>
+              );
+            })}
+            <li>
               {result.label} = {result.pretty}
-            </div>
-            <div
-              style={{
-                marginTop: "0.15rem",
-                fontSize: "0.8rem",
-                color: "var(--mcl-muted)"
-              }}
-            >
-              Rå verdi: {result.raw}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* PRINT-SUMMARY – tabellaktig layout uten bokser/dropdown */}
-    {result && (
-  <div className="calc-print-summary">
-
-    {/* Header-row: Løs for + Bruker står på samme linje */}
-    <div className="calc-print-header-grid">
-      <div className="calc-print-header-cell">
-        <strong>Løs for:</strong> {makeSolveLabel(formula, result.solveFor)}
-      </div>
-      <div className="calc-print-header-cell">
-        {result.variantExpression && (
-          <>
-            <strong>Bruker:</strong> <MathText text={result.variantExpression} />
-          </>
-        )}
-      </div>
-    </div>
-
-    {/* Verdier brukt som to kolonner — perf linjet opp */}
-    <div className="calc-print-values-grid">
-      {formula.variables.map((v, idx) => {
-        if (v.id === result.solveFor) return null;
-        const val = result.inputs[v.id];
-        if (!val) return null;
-
-        return (
-          <div key={v.id} className="calc-print-value-field">
-            <div className="calc-print-label">
-              {v.symbol} ({v.name})
-              {v.unit ? ` [${v.unit}]` : ""}:
-            </div>
-            <div className="calc-print-value">
-              {val}
-              {v.unit ? ` ${v.unit}` : ""}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-
-    <div className="calc-print-result-box">
-      <div>
-        <strong>Resultat: </strong>
-        {result.label} = {result.pretty}
-      </div>
-      <div className="calc-print-raw">Rå verdi: {result.raw}</div>
-    </div>
-
-  </div>
-)}
-
+            </li>
+          </ul>
+        </div>
+      )}
     </section>
   );
 }
