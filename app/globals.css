@@ -1,267 +1,434 @@
 @import "../styles/theme.css";
 
-/* ====== Basis ====== */
-
-*,
-*::before,
-*::after {
+/* ===== Base styles ===== */
+* {
   box-sizing: border-box;
 }
 
 html,
 body {
-  margin: 0;
-  padding: 0;
+  height: 100%;
 }
 
 html {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  background-color: var(--mcl-bg);
-  color: var(--mcl-fg);
+  background: var(--mcl-bg);
+  color: var(--mcl-text);
 }
 
 body {
-  min-height: 100vh;
+  margin: 0;
+  font-family: var(--mcl-font-ui, system-ui, -apple-system, Segoe UI, Roboto,
+      Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans");
 }
 
-.app-root {
-  min-height: 100vh;
-  background-color: var(--mcl-bg);
-  color: var(--mcl-fg);
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-/* ====== Header ====== */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* ========================================================================== */
+/* HEADER */
+/* ========================================================================== */
 
 .header {
   position: sticky;
   top: 0;
-  z-index: 20;
-  background-color: var(--mcl-header);
-  color: var(--mcl-header-fg);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+  z-index: 10;
+  background: var(--mcl-header);
+  border-bottom: 1px solid var(--mcl-outline);
+  box-shadow: var(--elev-1);
 }
 
+/* Desktop header */
 .header-inner {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 0.35rem 1.25rem;
+  padding: 0.6rem 1rem; /* behagelig høyde */
+}
+
+/* Desktop layout */
+.header-desktop {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-/* Brand */
-
-.brand {
-  display: inline-flex;
-  align-items: center;
   gap: 0.6rem;
 }
 
+/* Midtstilt tittel på desktop */
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Logo høyde justert */
 .brand-logo {
-  display: block;
-  height: 26px;
+  height: 34px; /* fyller headeren penere */
   width: auto;
+  border-radius: 8px;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
 }
 
 .brand-title {
-  font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
-/* ====== Layout / main ====== */
-
-.app-main {
-  max-width: 1120px;
-  margin: 1.5rem auto 2.5rem;
-  padding: 0 1.25rem 2rem;
+.brand-subtitle {
+  font-size: 0.8rem;
+  color: var(--mcl-muted);
 }
 
-/* Kort / paneler */
-
-.card {
-  background-color: var(--mcl-card-bg);
-  color: var(--mcl-fg);
-  border-radius: 1.25rem;
-  padding: 1.5rem 1.75rem;
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+/* Toolbar (språk/tema) */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-/* Enkel typografi */
-
-h1,
-h2,
-h3,
-h4 {
-  font-weight: 600;
-  margin: 0 0 0.75rem;
+/* Mobilheader (skjult på desktop) */
+.header-mobile {
+  display: none;
 }
 
-p {
-  margin: 0 0 0.75rem;
-  line-height: 1.5;
+/* ========================================================================== */
+/* BUTTONS */
+/* ========================================================================== */
+
+.button {
+  background: none;
+  border: none;
+  color: var(--mcl-text);
+  padding: 0.45rem 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s ease, background 0.2s ease, opacity 0.1s ease;
 }
 
-ul {
-  margin: 0.25rem 0 0.75rem 1.25rem;
-  padding: 0;
+.button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--mcl-brand);
 }
 
-/* ====== Knapper (flate, MCL-stil) ====== */
-
-.button,
-button {
-  font-family: inherit;
+.button:active {
+  opacity: 0.7;
 }
 
-.mcl-btn {
+.sidebar-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  border-radius: 999px;
+  font-size: 1.2rem;
+}
+
+/* ========================================================================== */
+/* CARDS */
+/* ========================================================================== */
+
+.card {
+  background: var(--mcl-surface);
+  border: 1px solid var(--mcl-outline);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-1);
+  padding: 1rem 1.2rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+/* ========================================================================== */
+/* APP LAYOUT */
+/* ========================================================================== */
+
+.page-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ========================================================================== */
+/* SIDEBAR */
+/* ========================================================================== */
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--mcl-surface);
+  border: 1px solid var(--mcl-outline);
+  border-radius: var(--radius);
+  padding: 0.9rem;
+  box-shadow: var(--elev-1);
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  position: relative;
+  z-index: 5;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.sidebar-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.sidebar-close {
+  display: none; /* kun på mobil */
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.sidebar-section-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--mcl-muted);
+  margin-bottom: 0.3rem;
+}
+
+.sidebar-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.sidebar-item + .sidebar-item {
+  margin-top: 0.25rem;
+}
+
+.sidebar-link {
+  width: 100%;
+  text-align: left;
+  background: none;
   border: none;
-  padding: 0.5rem 1.1rem;
-  font-size: 0.9rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
   cursor: pointer;
-  background-color: var(--mcl-accent);
-  color: var(--mcl-button-fg);
-  transition: transform 0.08s ease, box-shadow 0.08s ease,
-    background-color 0.12s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.mcl-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+.sidebar-link:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--mcl-brand);
 }
 
-.mcl-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.15);
+.sidebar-item-label {
+  font-size: 0.9rem;
 }
 
-/* ====== Skjerm/print-visning for Kalkulator ====== */
-
-.screen-only {
-  display: block;
+.sidebar-item-hint {
+  font-size: 0.75rem;
+  color: var(--mcl-muted);
 }
 
-.print-only {
+/* Mobil backdrop */
+.sidebar-backdrop {
   display: none;
 }
 
-/* Layout for “Verdier brukt”-tabellen i utskrift */
-.calc-print {
-  margin-top: 0.75rem;
+/* ========================================================================== */
+/* HERO SECTION */
+/* ========================================================================== */
+
+.main-hero {
+  padding: 1.5rem 1.7rem 1.9rem;
+}
+
+.main-hero-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.main-hero-sub {
+  margin: 0 0 1rem;
+  color: var(--mcl-muted);
+}
+
+.main-hero-list {
+  margin: 0 0 1rem 1.3rem;
+  padding: 0;
+}
+
+.main-hero-footnote {
+  margin-top: 0.4rem;
   font-size: 0.9rem;
+  color: var(--mcl-muted);
 }
 
-.calc-print-row {
-  display: flex;
-  gap: 2rem;
-}
+/* ========================================================================== */
+/* RESPONSIVE – MOBILE */
+/* ========================================================================== */
 
-.calc-print-col {
-  min-width: 8rem;
-}
-
-/* ====== Utskrift ====== */
-
-@media print {
-  /* Fjern bakgrunner og padding som ikke gir mening i utskrift */
-  body {
-    background-color: #ffffff !important;
-  }
-
-  .header {
+@media (max-width: 768px) {
+  /* Desktop-header av */
+  .header-desktop {
     display: none;
   }
 
-  .app-main {
-    margin: 0;
-    padding: 0 1.5cm 1.5cm;
-    max-width: none;
+  /* Mobil-header på */
+  .header-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-bottom: 0.5rem;
   }
 
-  .card {
-    box-shadow: none;
-    padding: 0;
-    border-radius: 0;
+  .header-mobile-top {
+    display: flex;
+    justify-content: center;
   }
 
-  /* Skjul interaktiv del av kalkulator; vis pen utskriftsblokk */
-  .screen-only {
-    display: none !important;
+  .header-mobile-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  .print-only {
-    display: block !important;
+  .header-mobile-left {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
   }
 
-  /* Topptekst (dato + tittel) – ligger i :before på body */
-  body::before {
-    content: attr(data-print-header);
+  .brand-subtitle {
+    display: none;
+  }
+
+  /* Mindre logo på mobil */
+  .brand-logo {
+    height: 28px;
+  }
+
+  /* Mobile sidebar (slide-in) */
+  .sidebar {
     position: fixed;
-    top: 0.8cm;
-    left: 1.5cm;
-    font-size: 0.7rem;
-    color: #555;
+    top: 3.2rem;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-height: none;
+    border-radius: 0 16px 16px 0;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease-out;
+    z-index: 20;
   }
 
-  /* Logo oppe til høyre – faktisk bilde, ikke bakgrunn */
-  .print-logo {
+  .sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-close {
+    display: inline-flex;
+  }
+
+  .sidebar-backdrop {
     display: block;
     position: fixed;
-    top: 0.8cm;
-    right: 1.5cm;
-    width: 110px;
-    height: auto;
-    opacity: 0.18;
-    z-index: 1000;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    border: none;
+    cursor: pointer;
+    z-index: 15;
   }
 }
 
-/* Logo skal ikke synes på skjerm */
-@media screen {
-  .print-logo {
-    display: none;
-  }
-}
-/* ========================================================= */
-/* PRINT-LOGO + KALKULATOR-OPPSETT (stabil override nederst) */
-/* ========================================================= */
+/* ========================================================================== */
+/* MATH TYPOGRAPHY + BRØK */
+/* ========================================================================== */
 
-/* Logo skal ikke vises på skjerm */
-.print-logo {
+.math-text {
+  font-family: var(--mcl-font-math, "STIX Two Math", "Latin Modern Math",
+      "Cambria Math", serif);
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+
+/* CSS-basert brøkvisning */
+.math-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.math-frac-num {
+  border-bottom: 1px solid currentColor;
+  padding: 0 0.15em;
+  line-height: 1.1;
+}
+
+.math-frac-den {
+  padding-top: 0.05em;
+  line-height: 1.1;
+}
+
+/* ========================================================================== */
+/* PRINT / PDF */
+/* ========================================================================== */
+
+.print-watermark {
   display: none;
 }
 
-/* Skjerm: vis bare interaktiv kalkulator, skjul print-sammendrag */
-@media screen {
-  .calc-print-summary {
-    display: none;
-  }
+/* kalkulator: print-sammendrag skjules normalt */
+.calc-print-summary {
+  display: none;
 }
 
-/* UTSKRIFT */
 @media print {
-  /* Skjul header, sidebar, knapper og interaktiv kalkulator ved utskrift */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Skjul navigasjon og knapper */
   .header,
   .sidebar,
   .sidebar-backdrop,
@@ -273,41 +440,52 @@ button {
     display: none !important;
   }
 
-  /* Gi innholdet luft på arket */
+  .app-shell.container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
   .app-main {
     margin: 0;
-    padding: 2cm 2cm 2cm;
-    max-width: none;
   }
 
   .card {
     box-shadow: none;
     border-radius: 0;
-    padding: 0;
+    border: none;
+    padding: 2cm;
+    position: relative;
+    page-break-inside: avoid;
   }
 
-  /* Vis pen print-versjon av kalkulatoren */
+  .main-hero-title {
+    font-size: 1.6rem;
+  }
+
+  .main-hero-sub {
+    font-size: 0.95rem;
+  }
+
+  .print-watermark {
+    display: block;
+    position: absolute;
+    inset: 20% 10%;
+    opacity: 0.08;
+    pointer-events: none;
+    max-width: 80%;
+    height: auto;
+    margin: 0 auto;
+  }
+
   .calc-print-summary {
-    display: block !important;
-    margin-top: 0.4rem;
+    display: block;
+    margin-top: 0.6rem;
     font-size: 0.9rem;
   }
 
-  /* Logo oppe til høyre på utskrift */
-  .print-logo {
-    display: block;
-    position: fixed;
-    top: 1cm;
-    right: 1.5cm;
-    width: 3cm;      /* juster størrelse ved behov */
-    height: auto;
-    opacity: 0.18;   /* vannmerke-følelse */
-    z-index: 1000;
-  }
-}
-/* Skjul utskriftslogo på skjerm, vis den kun ved print */
-@media screen {
-  .print-logo {
-    display: none !important;
+  .calc-print-summary ul {
+    margin: 0.2rem 0 0 1.1rem;
+    padding: 0;
   }
 }
