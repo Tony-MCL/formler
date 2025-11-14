@@ -357,40 +357,56 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
         </div>
       )}
 
-      {/* Print-sammendrag – vises kun ved print/PDF */}
       {result && (
-        <div className="calc-print-summary">
-          <p>
-            <strong>Løs for:</strong>{" "}
-            {makeSolveLabel(formula, result.solveFor)}
-          </p>
-          {result.variantExpression && (
-            <p>
-              <strong>Bruker:</strong>{" "}
-              <MathText text={result.variantExpression} />
-            </p>
-          )}
-          <p>
-            <strong>Verdier brukt:</strong>
-          </p>
-          <ul>
-            {formula.variables.map((v) => {
-              if (v.id === result.solveFor) return null;
-              const val = result.inputs[v.id];
-              if (!val) return null;
-              return (
-                <li key={v.id}>
-                  {v.symbol} ({v.name}) = {val}
-                  {v.unit ? ` ${v.unit}` : ""}
-                </li>
-              );
-            })}
-            <li>
-              {result.label} = {result.pretty}
-            </li>
-          </ul>
-        </div>
-      )}
+  <div className="calc-print-summary">
+
+    {/* Header-row: Løs for + Bruker står på samme linje */}
+    <div className="calc-print-header-grid">
+      <div className="calc-print-header-cell">
+        <strong>Løs for:</strong> {makeSolveLabel(formula, result.solveFor)}
+      </div>
+      <div className="calc-print-header-cell">
+        {result.variantExpression && (
+          <>
+            <strong>Bruker:</strong> <MathText text={result.variantExpression} />
+          </>
+        )}
+      </div>
+    </div>
+
+    {/* Verdier brukt som to kolonner — perf linjet opp */}
+    <div className="calc-print-values-grid">
+      {formula.variables.map((v, idx) => {
+        if (v.id === result.solveFor) return null;
+        const val = result.inputs[v.id];
+        if (!val) return null;
+
+        return (
+          <div key={v.id} className="calc-print-value-field">
+            <div className="calc-print-label">
+              {v.symbol} ({v.name})
+              {v.unit ? ` [${v.unit}]` : ""}:
+            </div>
+            <div className="calc-print-value">
+              {val}
+              {v.unit ? ` ${v.unit}` : ""}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    <div className="calc-print-result-box">
+      <div>
+        <strong>Resultat: </strong>
+        {result.label} = {result.pretty}
+      </div>
+      <div className="calc-print-raw">Rå verdi: {result.raw}</div>
+    </div>
+
+  </div>
+)}
+
     </section>
   );
 }
