@@ -5,7 +5,6 @@ import { getFormulaById } from "../lib/formulas";
 import type { FormulaId } from "../lib/types";
 import MathText from "./MathText";
 import Kalkulator from "./Kalkulator";
-import PDFExport from "./PDFExport";
 import { useI18n } from "../lib/i18n";
 
 type FormelVisningProps = {
@@ -31,12 +30,6 @@ export default function FormelVisning({
 
   return (
     <section className="card">
-      {/* Vannmerke – kun for print */}
-      <img
-        src={`${basePath}/images/mcl-watermark.png`}
-        alt=""
-        className="print-watermark"
-      />
 
       {/* Topp-rad: Hjem + PDF-knapp */}
       <div
