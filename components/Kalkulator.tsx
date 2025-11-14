@@ -200,6 +200,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
       {/* Interaktiv del – skjules ved print */}
       <div className="calc-interactive">
+        {/* Løs for + formel-linje (samme rekkefølge som før) */}
         <div
           style={{
             display: "flex",
@@ -248,6 +249,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
           )}
         </div>
 
+        {/* Input-felt (samme grid som før) */}
         <div
           style={{
             display: "grid",
@@ -290,6 +292,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             ))}
         </div>
 
+        {/* Beregn-knapp + resultatboks (på skjerm) */}
         <button
           type="button"
           className="button"
@@ -316,66 +319,74 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             {errorText}
           </div>
         )}
-      </div>
 
-      {/* Resultat på skjerm */}
-      {result && (
-        <div
-          className="calc-result"
-          style={{
-            marginTop: "0.4rem",
-            padding: "0.6rem 0.8rem",
-            borderRadius: 8,
-            background: "rgba(0, 0, 0, 0.03)",
-            fontSize: "0.9rem"
-          }}
-        >
-          <div>
-            <strong>Resultat: </strong>
-            {result.label} = {result.pretty}
-          </div>
+        {result && (
           <div
+            className="calc-result"
             style={{
-              marginTop: "0.15rem",
-              fontSize: "0.8rem",
-              color: "var(--mcl-muted)"
+              marginTop: "0.4rem",
+              padding: "0.6rem 0.8rem",
+              borderRadius: 8,
+              background: "rgba(0, 0, 0, 0.03)",
+              fontSize: "0.9rem"
             }}
           >
-            Rå verdi: {result.raw}
+            <div>
+              <strong>Resultat: </strong>
+              {result.label} = {result.pretty}
+            </div>
+            <div
+              style={{
+                marginTop: "0.15rem",
+                fontSize: "0.8rem",
+                color: "var(--mcl-muted)"
+              }}
+            >
+              Rå verdi: {result.raw}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Print-sammendrag – vises kun ved print */}
+      {/* PRINT-SUMMARY – samme rekkefølge som i UI, men uten bokser/dropdown */}
       {result && (
         <div className="calc-print-summary">
+          <p className="calc-print-line">
+            <strong>Løs for:</strong> {makeSolveLabel(formula, result.solveFor)}
+          </p>
+
+          {result.variantExpression && (
+            <p className="calc-print-line">
+              <strong>Bruker:</strong>{" "}
+              <MathText text={result.variantExpression} />
+            </p>
+          )}
+
+          <p className="calc-print-line">
+            <strong>Verdier brukt:</strong>
+          </p>
+
+          <div className="calc-print-values-list">
+            {formula.variables.map((v) => {
+              if (v.id === result.solveFor) return null;
+              const val = result.inputs[v.id];
+              if (!val) return null;
+              return (
+                <div key={v.id} className="calc-print-value-row">
+                  {v.symbol} ({v.name})
+                  {v.unit ? ` [${v.unit}]` : ""}: {val}
+                  {v.unit ? ` ${v.unit}` : ""}
+                </div>
+              );
+            })}
+          </div>
+
           <div className="calc-print-result-box">
             <div>
               <strong>Resultat: </strong>
               {result.label} = {result.pretty}
             </div>
-            <div className="calc-print-raw">
-              Rå verdi: {result.raw}
-            </div>
-          </div>
-
-          <div className="calc-print-values">
-            <p>
-              <strong>Verdier brukt:</strong>
-            </p>
-            <ul>
-              {formula.variables.map((v) => {
-                if (v.id === result.solveFor) return null;
-                const val = result.inputs[v.id];
-                if (!val) return null;
-                return (
-                  <li key={v.id}>
-                    {v.symbol} ({v.name}) = {val}
-                    {v.unit ? ` ${v.unit}` : ""}
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="calc-print-raw">Rå verdi: {result.raw}</div>
           </div>
         </div>
       )}
