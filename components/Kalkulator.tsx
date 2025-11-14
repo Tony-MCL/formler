@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import type { FormulaId, SolveForId } from "../lib/types";
 import { getFormulaById } from "../lib/formulas";
-import { solveFormula, listVariants } from "../lib/engine";
+import { listVariants, solveFormula } from "../lib/engine";
 import MathText from "./MathText";
 
 type KalkulatorProps = {
@@ -43,9 +43,7 @@ function formatPrettyNumber(value: number, unit?: string): string {
     .replace(/\.0+$/u, "");
 }
 
-/**
- * Skaler verdier til kV, kA, mA, kW, kWh, kΩ, mΩ der det er naturlig.
- */
+/** Skaler verdier til kV, kA, mA, kW, kWh, kΩ, mΩ der det er naturlig. */
 function scaleValue(
   value: number,
   unit?: string
@@ -87,9 +85,9 @@ function scaleValue(
 function makeSolveLabel(
   formula: ReturnType<typeof getFormulaById> | null,
   id: SolveForId
-) {
+): string {
   const v = formula?.variables.find((x) => x.id === id);
-  if (!v) return id.toString();
+  if (!v) return String(id);
   return `${v.symbol} (${v.name})`;
 }
 
@@ -97,8 +95,11 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
   const formula = getFormulaById(formulaId);
 
   const variants = useMemo(() => listVariants(formulaId), [formulaId]);
+
   const [solveFor, setSolveFor] = useState<SolveForId>(
-    variants[0]?.solveFor ?? (formula?.variables[0]?.id as SolveForId)
+    (variants[0]?.solveFor ??
+      (formula?.variables[0]?.id as SolveForId | undefined) ??
+      ("" as SolveForId)) as SolveForId
   );
 
   const [inputs, setInputs] = useState<InputMap>({});
@@ -142,6 +143,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     for (const v of requiredVars) {
       const rawStateValue = inputs[v.id];
 
+      // cosphi default = 1.0 hvis tom
       if ((rawStateValue === undefined || rawStateValue === "") && v.id === "cosphi") {
         numericInput[v.id] = 1;
         snapshotInputs[v.id] = "1.0";
@@ -153,11 +155,12 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
         return;
       }
 
-      const num = Number(rawStateValue.toString().replace(",", "."));
-      if (!isFinite(num)) {
+      const num = Number(String(rawStateValue).replace(",", "."));
+      if (!Number.isFinite(num)) {
         setErrorText(`Ugyldig tall for ${v.symbol} (${v.name}).`);
         return;
       }
+
       numericInput[v.id] = num;
       snapshotInputs[v.id] = rawStateValue;
     }
@@ -182,7 +185,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
     const label = outVar
       ? `${outVar.symbol} (${outVar.name})`
-      : solveFor.toString();
+      : String(solveFor);
 
     setResult({
       label,
@@ -200,7 +203,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
       {/* Interaktiv del – skjules ved print */}
       <div className="calc-interactive">
-        {/* Løs for + formel-linje (samme rekkefølge som før) */}
+        {/* Løs for + formel-linje */}
         <div
           style={{
             display: "flex",
@@ -249,7 +252,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
           )}
         </div>
 
-        {/* Input-felt (samme grid som før) */}
+        {/* Input-felt (grid) */}
         <div
           style={{
             display: "grid",
@@ -292,7 +295,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             ))}
         </div>
 
-        {/* Beregn-knapp + resultatboks (på skjerm) */}
+        {/* Beregn + resultat (skjerm) */}
         <button
           type="button"
           className="button"
@@ -348,7 +351,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
         )}
       </div>
 
-          {/* PRINT-SUMMARY – samme rekkefølge som i UI, men uten bokser/dropdown */}
+      {/* PRINT-SUMMARY – tabellaktig layout uten bokser/dropdown */}
       {result && (
         <div className="calc-print-summary">
           <p className="calc-print-line">
@@ -366,7 +369,6 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             <strong>Verdier brukt:</strong>
           </p>
 
-          {/* Grid / "tabell" med felter, lik layouten med inputbokser */}
           <div className="calc-print-values-grid">
             {formula.variables.map((v) => {
               if (v.id === result.solveFor) return null;
@@ -396,3 +398,6 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
           </div>
         </div>
       )}
+    </section>
+  );
+}
