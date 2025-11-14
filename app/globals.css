@@ -422,14 +422,33 @@ a {
   font-size: 0.9rem;
 }
 
-.calc-print-values-list {
+.calc-print-line {
+  margin: 0.1rem 0;
+  font-size: 0.9rem;
+}
+
+/* Ny grid-layout for "Verdier brukt" i print */
+.calc-print-values-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.6rem 1.2rem;
   margin-top: 0.1rem;
   margin-bottom: 0.4rem;
 }
 
-.calc-print-value-row {
+.calc-print-value-field {
   font-size: 0.9rem;
 }
+
+.calc-print-label {
+  font-weight: 600;
+  margin-bottom: 0.05rem;
+}
+
+.calc-print-value {
+  font-size: 0.9rem;
+}
+
 
 /* resultat-boks i print (lik skjermstilen) */
 .calc-print-result-box {
