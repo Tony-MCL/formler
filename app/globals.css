@@ -243,3 +243,65 @@ button {
     display: none;
   }
 }
+/* ========================================================= */
+/* PRINT-LOGO + KALKULATOR-OPPSETT (stabil override nederst) */
+/* ========================================================= */
+
+/* Logo skal ikke vises på skjerm */
+.print-logo {
+  display: none;
+}
+
+/* Skjerm: vis bare interaktiv kalkulator, skjul print-sammendrag */
+@media screen {
+  .calc-print-summary {
+    display: none;
+  }
+}
+
+/* UTSKRIFT */
+@media print {
+  /* Skjul header, sidebar, knapper og interaktiv kalkulator ved utskrift */
+  .header,
+  .sidebar,
+  .sidebar-backdrop,
+  .toolbar,
+  .sidebar-toggle,
+  .button,
+  .calc-interactive,
+  .calc-result {
+    display: none !important;
+  }
+
+  /* Gi innholdet luft på arket */
+  .app-main {
+    margin: 0;
+    padding: 2cm 2cm 2cm;
+    max-width: none;
+  }
+
+  .card {
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  /* Vis pen print-versjon av kalkulatoren */
+  .calc-print-summary {
+    display: block !important;
+    margin-top: 0.4rem;
+    font-size: 0.9rem;
+  }
+
+  /* Logo oppe til høyre på utskrift */
+  .print-logo {
+    display: block;
+    position: fixed;
+    top: 1cm;
+    right: 1.5cm;
+    width: 3cm;      /* juster størrelse ved behov */
+    height: auto;
+    opacity: 0.18;   /* vannmerke-følelse */
+    z-index: 1000;
+  }
+}
