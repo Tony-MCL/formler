@@ -94,7 +94,10 @@ function scaleValue(
   }
 }
 
-function makeSolveLabel(formula: ReturnType<typeof getFormulaById> | null, id: SolveForId) {
+function makeSolveLabel(
+  formula: ReturnType<typeof getFormulaById> | null,
+  id: SolveForId
+) {
   const v = formula?.variables.find((x) => x.id === id);
   if (!v) return id.toString();
   return `${v.symbol} (${v.name})`;
@@ -150,7 +153,10 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
       const rawStateValue = inputs[v.id];
 
       // cosphi får default 1 hvis ikke utfylt
-      if ((rawStateValue === undefined || rawStateValue === "") && v.id === "cosphi") {
+      if (
+        (rawStateValue === undefined || rawStateValue === "") &&
+        v.id === "cosphi"
+      ) {
         numericInput[v.id] = 1;
         snapshotInputs[v.id] = "1.0";
         continue;
@@ -206,7 +212,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     <section style={{ marginTop: "1.5rem" }}>
       <h3 style={{ margin: "0 0 0.4rem" }}>Kalkulator</h3>
 
-      {/* Interaktiv del – skjules ved print */}
+      {/* Interaktiv del */}
       <div className="calc-interactive">
         {/* Velg "løs for" */}
         <div
@@ -329,7 +335,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
         )}
       </div>
 
-      {/* Resultat (skjules ved print, får egen print-versjon under) */}
+      {/* Resultat (kun skjerm) */}
       {result && (
         <div
           className="calc-result"
@@ -356,57 +362,6 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
           </div>
         </div>
       )}
-
-      {result && (
-  <div className="calc-print-summary">
-
-    {/* Header-row: Løs for + Bruker står på samme linje */}
-    <div className="calc-print-header-grid">
-      <div className="calc-print-header-cell">
-        <strong>Løs for:</strong> {makeSolveLabel(formula, result.solveFor)}
-      </div>
-      <div className="calc-print-header-cell">
-        {result.variantExpression && (
-          <>
-            <strong>Bruker:</strong> <MathText text={result.variantExpression} />
-          </>
-        )}
-      </div>
-    </div>
-
-    {/* Verdier brukt som to kolonner — perf linjet opp */}
-    <div className="calc-print-values-grid">
-      {formula.variables.map((v, idx) => {
-        if (v.id === result.solveFor) return null;
-        const val = result.inputs[v.id];
-        if (!val) return null;
-
-        return (
-          <div key={v.id} className="calc-print-value-field">
-            <div className="calc-print-label">
-              {v.symbol} ({v.name})
-              {v.unit ? ` [${v.unit}]` : ""}:
-            </div>
-            <div className="calc-print-value">
-              {val}
-              {v.unit ? ` ${v.unit}` : ""}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-
-    <div className="calc-print-result-box">
-      <div>
-        <strong>Resultat: </strong>
-        {result.label} = {result.pretty}
-      </div>
-      <div className="calc-print-raw">Rå verdi: {result.raw}</div>
-    </div>
-
-  </div>
-)}
-
     </section>
   );
 }
