@@ -422,18 +422,25 @@ a {
   font-size: 0.9rem;
 }
 
-.calc-print-line {
-  margin: 0.1rem 0;
-  font-size: 0.9rem;
+/* Grid for Løs for / Bruker */
+.calc-print-header-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  margin-bottom: 0.6rem;
+  margin-top: 0.3rem;
 }
 
-/* Ny grid-layout for "Verdier brukt" i print */
+.calc-print-header-cell {
+  font-size: 0.95rem;
+}
+
+/* Verdier brukt-griden */
 .calc-print-values-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 0.6rem 1.2rem;
-  margin-top: 0.1rem;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.8rem;
 }
 
 .calc-print-value-field {
@@ -442,13 +449,12 @@ a {
 
 .calc-print-label {
   font-weight: 600;
-  margin-bottom: 0.05rem;
+  margin-bottom: 0.1rem;
 }
 
 .calc-print-value {
   font-size: 0.9rem;
 }
-
 
 /* resultat-boks i print (lik skjermstilen) */
 .calc-print-result-box {
@@ -520,7 +526,18 @@ a {
     margin-top: 0.4rem;
   }
 
-  /* (vannmerke hvis/ når bildet er på plass) */
+  /* Logo i øvre høyre hjørne på utskrift
+     – bytt URL her for "Pro"-versjoner med kundespesifikk logo */
+  body::after {
+    content: url("/images/mcl-logo.png");
+    position: fixed;
+    top: 0.8cm;
+    right: 1.5cm;
+    transform: scale(0.85);
+    transform-origin: top right;
+  }
+
+  /* (om vi senere vil bruke vannmerke-bilde kan denne tas i bruk) */
   .print-watermark {
     display: block;
     position: absolute;
@@ -532,37 +549,3 @@ a {
     z-index: 0;
   }
 }
-/* Grid for Løs for / Bruker */
-.calc-print-header-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.2rem;
-  margin-bottom: 0.6rem;
-  margin-top: 0.3rem;
-}
-
-.calc-print-header-cell {
-  font-size: 0.95rem;
-}
-
-/* Verdier brukt-griden */
-.calc-print-values-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem 1.2rem;
-  margin-bottom: 0.8rem;
-}
-
-.calc-print-value-field {
-  font-size: 0.9rem;
-}
-
-.calc-print-label {
-  font-weight: 600;
-  margin-bottom: 0.1rem;
-}
-
-.calc-print-value {
-  font-size: 0.9rem;
-}
-
