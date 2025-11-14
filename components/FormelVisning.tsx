@@ -5,7 +5,6 @@ import { getFormulaById } from "../lib/formulas";
 import type { FormulaId } from "../lib/types";
 import MathText from "./MathText";
 import Kalkulator from "./Kalkulator";
-import { useI18n } from "../lib/i18n";
 
 type FormelVisningProps = {
   formulaId: FormulaId;
@@ -17,7 +16,6 @@ export default function FormelVisning({
   onGoHome
 }: FormelVisningProps) {
   const formula = getFormulaById(formulaId);
-  const { basePath } = useI18n();
 
   if (!formula) {
     return (
@@ -30,34 +28,30 @@ export default function FormelVisning({
 
   return (
     <section className="card">
-
-      {/* Topp-rad: Hjem + PDF-knapp */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: "0.5rem",
-          marginBottom: "0.5rem"
-        }}
-      >
-        <div>
-          {onGoHome && (
-            <button
-              type="button"
-              className="button"
-              onClick={onGoHome}
-              aria-label="Til forside"
-              style={{
-                fontSize: "0.85rem",
-                paddingInline: "0.7rem"
-              }}
-            >
-              ← Hjem
-            </button>
-          )}
+      {/* Topp-rad: Hjem-knapp (uten PDF) */}
+      {onGoHome && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-start",
+            gap: "0.5rem",
+            marginBottom: "0.5rem"
+          }}
+        >
+          <button
+            type="button"
+            className="button"
+            onClick={onGoHome}
+            aria-label="Til forside"
+            style={{
+              fontSize: "0.85rem",
+              paddingInline: "0.7rem"
+            }}
+          >
+            ← Hjem
+          </button>
         </div>
-        <PDFExport />
-      </div>
+      )}
 
       <h2 className="main-hero-title">{formula.name}</h2>
       {formula.description && (
