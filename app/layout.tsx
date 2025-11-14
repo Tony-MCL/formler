@@ -15,6 +15,14 @@ export default function RootLayout({
   return (
     <html lang="no" suppressHydrationWarning>
       <body>
+        <body className={inter.className}>
+    {/* Kun for utskrift – logo i høyre hjørne */}
+    <img
+      src="/images/mcl-logo.png"
+      alt="Morning Coffee Labs"
+      className="print-logo"
+      aria-hidden="true"
+    />
         <I18nProvider>
           {children}
         </I18nProvider>
