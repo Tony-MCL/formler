@@ -305,3 +305,9 @@ button {
     z-index: 1000;
   }
 }
+/* Skjul utskriftslogo på skjerm, vis den kun ved print */
+@media screen {
+  .print-logo {
+    display: none !important;
+  }
+}
