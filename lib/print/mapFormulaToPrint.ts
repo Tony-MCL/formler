@@ -1,93 +1,73 @@
 // /lib/print/mapFormulaToPrint.ts
 
-import type { PrintData } from "./types";
-import type { FormulaId } from "../types";
-import { getFormulaById } from "../formulas";
+import type { PrintData, PrintSection, PrintContentBlock } from "./types";
 
-// Merk: Dette er en "ren" adapter fra Formelsamling-domenet til PrintEngine.
-// Foreløpig bruker vi kun selve formeldataene (ikke kalkulator-state).
+/**
+ * Minimal "bridge"-typer slik at adapteren kan brukes uavhengig av
+ * den faktiske Formelsamling-implementasjonen.
+ * Når du vil koble den ordentlig mot appen, kan du bytte disse
+ * til dine egne typer (eller importere Formula direkte).
+ */
+export type FormulaLike = {
+  id: string;
+  name: string;
+  description?: string;
+  categoryName?: string;
+  baseExpression: string;
+};
 
-export function mapFormulaToPrint(formulaId: FormulaId): PrintData {
-  const formula = getFormulaById(formulaId);
+export type CalcValue = {
+  label: string;
+  displayValue: string;
+};
 
-  if (!formula) {
-    return {
-      title: "Formel ikke funnet",
-      subtitle: `ID: ${formulaId}`,
-      sections: [
-        {
-          id: "not-found",
-          title: "Feil",
-          content: [
-            {
-              type: "paragraph",
-              text: "Formelen ble ikke funnet. Kontroller at ID-en er korrekt."
-            }
-          ]
-        }
-      ]
-    };
-  }
+export type CalcState = {
+  values: CalcValue[];
+};
 
-  const sections = [];
-
-  // 1) Grunnuttrykk
-  sections.push({
+export function mapFormulaToPrint(
+  formula: FormulaLike,
+  calcState: CalcState
+): PrintData {
+  const expressionSection: PrintSection = {
     id: "expression",
     title: "Grunnuttrykk",
     content: [
       {
         type: "paragraph",
-        // Her antar vi at baseExpression er LaTeX / "pen tekst".
-        // PrintLayout rendrer dette som ren tekst – senere kan vi evt. koble på KaTeX.
         text: formula.baseExpression
-      }
+      } as PrintContentBlock
     ]
-  });
+  };
 
-  // 2) Variabler (som nøkkel/verdi-liste)
-  if (Array.isArray(formula.variables) && formula.variables.length > 0) {
-    sections.push({
-      id: "variables",
-      title: "Symboler og størrelser",
-      content: [
-        {
-          type: "keyValueList",
-          items: formula.variables.map((v: any) => {
-            const unit = v.unit ? ` [${v.unit}]` : "";
-            const desc = v.description ? ` – ${v.description}` : "";
-            return {
-              key: v.symbol ?? v.id,
-              value: `${v.name ?? ""}${unit}${desc}`.trim()
-            };
-          }),
-          columns: 1
-        }
-      ]
-    });
-  }
+  const valuesSection: PrintSection = {
+    id: "values",
+    title: "Verdier",
+    content: [
+      {
+        type: "keyValueList",
+        items: calcState.values.map((v) => ({
+          key: v.label,
+          value: v.displayValue
+        })),
+        columns: 1
+      } as PrintContentBlock
+    ]
+  };
 
-  // 3) Varianter (løs for …)
-  if (Array.isArray(formula.variants) && formula.variants.length > 0) {
-    sections.push({
-      id: "variants",
-      title: "Varianter (løs for …)",
-      content: [
-        {
-          type: "keyValueList",
-          items: formula.variants.map((variant: any) => ({
-            key: variant.label ?? variant.id,
-            value: variant.expression ?? ""
-          })),
-          columns: 1
-        }
-      ]
-    });
-  }
+  const sections: PrintSection[] = [expressionSection, valuesSection];
+
+  const meta = [
+    ...(formula.categoryName
+      ? [{ label: "Kategori", value: formula.categoryName }]
+      : []),
+    { label: "Formel ID", value: formula.id }
+  ];
 
   return {
     title: formula.name,
-    subtitle: formula.description || undefined,
+    subtitle: formula.description,
+    meta,
     sections
   };
 }
