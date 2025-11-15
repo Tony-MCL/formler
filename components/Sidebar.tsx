@@ -1,8 +1,10 @@
+// /components/Sidebar.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { getFormulasGroupedByCategory } from "../lib/formulas";
 import type { FormulaId } from "../lib/types";
+import { useI18n } from "../lib/i18n";
 
 type SidebarProps = {
   open: boolean;
@@ -30,6 +32,7 @@ export default function Sidebar({
   onSelectFormula
 }: SidebarProps) {
   const [isMobile, setIsMobile] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     const update = () => {
@@ -56,7 +59,10 @@ export default function Sidebar({
       items: formulas.map((formula) => ({
         id: formula.id,
         label: formula.name,
-        hint: formula.tags && formula.tags.length > 0 ? formula.tags[0] : undefined
+        hint:
+          formula.tags && formula.tags.length > 0
+            ? formula.tags[0]
+            : undefined
       }))
     })
   );
@@ -78,7 +84,7 @@ export default function Sidebar({
         aria-label="Formelkategorier"
       >
         <div className="sidebar-header">
-          <div className="sidebar-title">Kategorier</div>
+          <div className="sidebar-title">{t("fm_sidebar_title")}</div>
           {isMobile && (
             <button
               className="button sidebar-close"
@@ -114,7 +120,9 @@ export default function Sidebar({
                           {item.label}
                         </span>
                         {item.hint && (
-                          <span className="sidebar-item-hint">{item.hint}</span>
+                          <span className="sidebar-item-hint">
+                            {item.hint}
+                          </span>
                         )}
                       </button>
                     </li>
