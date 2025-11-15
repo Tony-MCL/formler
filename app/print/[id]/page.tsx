@@ -1,19 +1,19 @@
 // /app/print/[id]/page.tsx
 
-import PrintLayout from "../../components/print/PrintLayout";
-import PrintButton from "../../components/print/PrintButton";
+import PrintLayout from "../../../components/print/PrintLayout";
+import PrintButton from "../../../components/print/PrintButton";
 import {
   mapFormulaToPrint,
   type FormulaLike,
   type CalcState
-} from "../../lib/print/mapFormulaToPrint";
-import { resolvePrintBranding } from "../../lib/print/branding";
+} from "../../../lib/print/mapFormulaToPrint";
+import { resolvePrintBranding } from "../../../lib/print/branding";
 
 type Props = {
   params: { id: string };
 };
 
-// Midlertidige "datakilder" – disse kan senere byttes ut med ekte data
+// Midlertidige "datakilder" – kan senere byttes ut med ekte data
 function getFormulaSomehow(id: string): FormulaLike {
   return {
     id,
