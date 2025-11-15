@@ -5,6 +5,8 @@ import { getFormulaById } from "../lib/formulas";
 import type { FormulaId } from "../lib/types";
 import MathText from "./MathText";
 import Kalkulator from "./Kalkulator";
+import { useI18n } from "../lib/i18n";
+import Link from "next/link";
 
 type FormelVisningProps = {
   formulaId: FormulaId;
