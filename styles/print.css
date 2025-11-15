@@ -1,309 +1,232 @@
-/* =========================================================
-   MCL PrintEngine – screen + print styles
-   ========================================================= */
+/* ========================================================================== */
+/* MCL PrintEngine – skjermlayout                                             */
+/* ========================================================================== */
 
-/* ------------------ Screen layout ------------------ */
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--mcl-font-family, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-  color: var(--mcl-text, #2b211a);
-  background: var(--mcl-bg, #f8efe5);
-}
-
-/* Wrapper som sentrer printkortet på skjerm */
 .pe-root {
-  min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding: 32px 16px;
-  box-sizing: border-box;
+  padding: 1.5rem 1rem;
+  background: var(--mcl-bg);
 }
 
-/* Kortet som rapporten ligger i (skjerm) */
 .pe-page {
-  max-width: 800px;
-  width: 100%;
-  background: var(--mcl-surface, #ffffff);
-  border-radius: var(--mcl-radius-lg, 16px);
-  box-shadow: var(--mcl-shadow-soft, 0 10px 30px rgba(0, 0, 0, 0.1));
-  padding: 24px 32px 32px;
-  box-sizing: border-box;
   position: relative;
-  overflow: hidden;
-}
-
-/* Header (tittel + logo + meta) */
-
-.pe-header {
-  margin-bottom: 20px;
-}
-
-.pe-header-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.pe-header-text {
-  flex: 1;
-}
-
-.pe-title {
-  font-size: 24px;
-  margin: 0 0 4px 0;
-}
-
-.pe-subtitle {
-  margin: 0;
-  font-size: 14px;
-  color: var(--mcl-text-muted, #6f5b4e);
-}
-
-.pe-logo img {
-  max-height: 32px;
-  width: auto;
-}
-
-/* Meta-liste */
-
-.pe-meta {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 4px 24px;
-  margin: 16px 0 0 0;
-  padding: 0;
-}
-
-.pe-meta-row {
-  display: flex;
-  gap: 4px;
-}
-
-.pe-meta-row dt {
-  font-weight: 600;
-}
-
-.pe-meta-row dd {
-  margin: 0;
-  color: var(--mcl-text-muted, #6f5b4e);
-}
-
-/* Seksjoner i rapporten – skjerm */
-
-.pe-section {
-  margin-top: 16px;
-}
-
-.pe-section:first-of-type {
-  margin-top: 0;
-}
-
-.pe-section-title {
-  font-weight: 700;
-  margin: 0 0 8px 0;
-}
-
-/* Avsnitt */
-
-.pe-paragraph {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-/* Nøkkel/verdi-lister */
-
-.pe-kv-list {
-  margin: 0;
-  padding: 0;
-}
-
-.pe-kv-row {
-  display: flex;
-  gap: 8px;
-  font-size: 13px;
-}
-
-.pe-kv-row + .pe-kv-row {
-  margin-top: 4px;
-}
-
-.pe-kv-key {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.pe-kv-value {
-  flex: 1;
-}
-
-/* Enkle kolonner ved behov */
-.pe-kv-cols-2 {
-  column-count: 2;
-  column-gap: 24px;
-}
-
-/* Tabell-oppsett */
-
-.pe-table-wrapper {
-  margin-top: 8px;
-}
-
-.pe-table {
+  background: var(--mcl-surface, #ffffff);
+  border-radius: 24px;
+  box-shadow: var(--elev-2, 0 14px 28px rgba(0, 0, 0, 0.08));
+  padding: 2.4rem 2.6rem;
+  max-width: 900px;
   width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
+  box-sizing: border-box;
 }
 
-.pe-table th,
-.pe-table td {
-  border: 1px solid #e0d4c7;
-  padding: 4px 8px;
-  text-align: left;
-}
-
-.pe-table th {
-  background: #f2e1cf;
-  font-weight: 600;
-}
-
-/* Vannmerke inne i kortet – skjerm */
-
-.pe-watermark {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  pointer-events: none;
-  opacity: 0.08;
-  z-index: 0;
-}
-
-.pe-watermark img {
-  max-width: 80%;
-  height: auto;
-}
-
-/* Innhold over vannmerke */
+/* Innhold over watermark */
 .pe-content {
   position: relative;
   z-index: 1;
 }
 
-/* Print-knapp / andre elementer som ikke skal være med på utskrift */
+/* Header med tittel og logo */
+.pe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.pe-header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.pe-header-right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+/* Liten logo oppe til høyre */
+.pe-logo {
+  max-width: 130px;
+  height: auto;
+}
+
+/* Tittel / undertekst */
+.pe-title {
+  margin: 0 0 0.2rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.pe-subtitle {
+  margin: 0 0 0.8rem;
+  font-size: 0.95rem;
+  color: var(--mcl-muted);
+}
+
+/* Meta-liste (kategori, formel-id osv.) */
+.pe-meta {
+  margin: 0 0 1.2rem;
+}
+
+.pe-meta-row {
+  display: inline-flex;
+  gap: 0.4rem;
+  margin-right: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.pe-meta-label {
+  font-weight: 600;
+}
+
+.pe-meta-value {
+  color: var(--mcl-text);
+}
+
+/* Hovedinnhold */
+.pe-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+/* Seksjoner */
+.pe-section {
+  page-break-inside: avoid;
+}
+
+.pe-section-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/* Avsnitt */
+.pe-paragraph {
+  margin: 0.1rem 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+/* Key/value-lister */
+.pe-keyvalue-list table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.pe-keyvalue-list th {
+  text-align: left;
+  padding: 0.2rem 0.5rem 0.2rem 0;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.pe-keyvalue-list td {
+  padding: 0.2rem 0;
+}
+
+/* Tabeller */
+.pe-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.pe-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.pe-table th,
+.pe-table td {
+  border: 1px solid var(--mcl-outline);
+  padding: 0.25rem 0.45rem;
+}
+
+.pe-table th {
+  background: rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+
+/* Watermark – stort, svakt bilde bak innholdet */
+.pe-watermark {
+  position: absolute;
+  inset: 10% 10%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pe-watermark img {
+  max-width: 70%;
+  height: auto;
+}
+
+/* Toolbar nederst på siden (kun skjerm) */
+.pe-print-toolbar {
+  max-width: 900px;
+  margin: 1rem auto 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Ensartet knappestil i toolbaren */
+.pe-print-toolbar .button {
+  border-radius: 999px;
+  padding-inline: 1rem;
+}
+
+/* Skjul elementer kun for print */
 .pe-no-print {
-  margin-top: 24px;
+  /* overstyres i @media print */
 }
 
-/* ------------------ Skjul overlay på skjerm (PrintOverlay) ------------------ */
-
-#print-overlay {
-  display: none;
-}
-
-/* =========================================================
-   Print-spesifikke regler
-   ========================================================= */
+/* ========================================================================== */
+/* PRINT                                                                      */
+/* ========================================================================== */
 
 @media print {
   html,
   body {
-    margin: 0;
-    padding: 0;
-    background: #ffffff;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 
-  /* Skjul alt som har .pe-no-print */
+  body {
+    margin: 0;
+  }
+
+  /* Skjul toolbar, knapper osv. som ikke skal på papir */
   .pe-no-print {
     display: none !important;
   }
 
-  /* Root og kort */
+  /* Siden skal fylle arket, uten skygge og avrunding */
   .pe-root {
-    min-height: auto;
     padding: 0;
   }
 
   .pe-page {
     max-width: none;
-    width: 100%;
+    width: auto;
+    min-height: auto;
+    margin: 0;
     border-radius: 0;
     box-shadow: none;
-    padding: 15mm 15mm 15mm 20mm;
+    padding: 2cm 2.2cm;
   }
 
-  /* Sørg for at innhold kan flyte over flere sider naturlig */
-  .pe-section {
-    break-inside: avoid-page;
-  }
-
-  .pe-section:first-of-type {
-    margin-top: 0;
-  }
-
-  .pe-table {
-    page-break-inside: auto;
-  }
-
-  /* Vannmerket skal fortsatt ligge bak innholdet */
-  .pe-watermark {
-    position: fixed;
-    inset: 0;
-    opacity: 0.1;
-    z-index: 0;
+  .pe-logo {
+    max-width: 110px;
   }
 
   .pe-watermark img {
-    max-width: 70%;
-  }
-
-  .pe-content {
-    position: relative;
-    z-index: 1;
-  }
-
-  /* PrintOverlay – hvis du ønsker å bruke det senere for spesialtilfeller */
-  #print-overlay,
-  #print-overlay * {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  #print-overlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .print-overlay-watermark {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0.05;
-  }
-
-  .print-overlay-watermark img {
-    max-width: 70%;
-    height: auto;
-  }
-
-  /* Vi bruker IKKE lenger fixed-logo i overlay,
-     for å unngå at den legger seg oppå innhold på side 2+.
-     Logo håndteres i headeren fra PrintLayout. */
-  .print-overlay-logo {
-    display: none;
-  }
-
-  .pe-header-top {
-    justify-content: space-between;
+    max-width: 80%;
   }
 }
