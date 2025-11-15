@@ -2,8 +2,7 @@
 
 "use client";
 
-import React, { MouseEventHandler } from "react";
-import { useI18n } from "../../lib/i18n";
+import React from "react";
 
 type PrintButtonProps = {
   onClick?: () => void;
@@ -11,11 +10,7 @@ type PrintButtonProps = {
 };
 
 export default function PrintButton({ onClick, className }: PrintButtonProps) {
-  const { t } = useI18n();
-
-  const handleClick: MouseEventHandler<HTMLButtonElement> = (event) => {
-    event.preventDefault();
-
+  const handleClick = () => {
     if (onClick) {
       onClick();
     }
@@ -25,15 +20,14 @@ export default function PrintButton({ onClick, className }: PrintButtonProps) {
     }
   };
 
-  const label = t("print_button_label") ?? "Skriv ut";
-
   return (
     <button
       type="button"
       className={className ?? "button"}
       onClick={handleClick}
+      aria-label="PDF / utskrift"
     >
-      {label}
+      🖨️ PDF / utskrift
     </button>
   );
 }
