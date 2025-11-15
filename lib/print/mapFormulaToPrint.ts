@@ -1,72 +1,78 @@
 // /lib/print/mapFormulaToPrint.ts
 
-import type { PrintData, PrintSection, PrintContentBlock } from "./types";
+import type { PrintData, PrintSection } from "./types";
+import { getFormulaById, getFormulasGroupedByCategory } from "../formulas";
+import type { FormulaId } from "../types";
 
 /**
- * Minimal "bridge"-typer slik at adapteren kan brukes uavhengig av
- * den faktiske Formelsamling-implementasjonen.
- * Når du vil koble den ordentlig mot appen, kan du bytte disse
- * til dine egne typer (eller importere Formula direkte).
+ * Foreløpig enkel adapter:
+ *  - Tittel, beskrivelse
+ *  - Kategori (hvis tilgjengelig via gruppe)
+ *  - Variabel-tabell
  */
-export type FormulaLike = {
-  id: string;
-  name: string;
-  description?: string;
-  categoryName?: string;
-  baseExpression: string;
-};
+export function mapFormulaToPrint(formulaId: FormulaId): PrintData {
+  const formula = getFormulaById(formulaId);
 
-export type CalcValue = {
-  label: string;
-  displayValue: string;
-};
+  if (!formula) {
+    return {
+      title: "Ukjent formel",
+      sections: []
+    };
+  }
 
-export type CalcState = {
-  values: CalcValue[];
-};
+  const f: any = formula; // NOTE: løses senere med strengere typer
 
-export function mapFormulaToPrint(
-  formula: FormulaLike,
-  calcState: CalcState
-): PrintData {
-  const expressionSection: PrintSection = {
-    id: "expression",
-    title: "Grunnuttrykk",
-    content: [
-      {
-        type: "paragraph",
-        text: formula.baseExpression
-      } as PrintContentBlock
-    ]
-  };
+  // Finn kategori-navn via eksisterende grupper
+  let categoryName: string | undefined;
+  const groups = getFormulasGroupedByCategory();
+  for (const g of groups) {
+    if (g.formulas.some((x) => x.id === f.id)) {
+      categoryName = g.category.title;
+      break;
+    }
+  }
 
-  const valuesSection: PrintSection = {
-    id: "values",
-    title: "Verdier",
-    content: [
-      {
-        type: "keyValueList",
-        items: calcState.values.map((v) => ({
-          key: v.label,
-          value: v.displayValue
-        })),
-        columns: 1
-      } as PrintContentBlock
-    ]
-  };
+  const sections: PrintSection[] = [];
 
-  const sections: PrintSection[] = [expressionSection, valuesSection];
+  if (f.baseExpression) {
+    sections.push({
+      id: "expression",
+      title: "Grunnuttrykk",
+      content: [
+        {
+          type: "paragraph",
+          text: String(f.baseExpression)
+        }
+      ]
+    });
+  }
+
+  if (Array.isArray(f.variables) && f.variables.length > 0) {
+    sections.push({
+      id: "variables",
+      title: "Variabler",
+      content: [
+        {
+          type: "table",
+          headers: ["Symbol", "Navn", "Enhet"],
+          rows: f.variables.map((v: any) => [
+            v.symbol ?? "",
+            v.name ?? "",
+            v.unit ?? ""
+          ])
+        }
+      ]
+    });
+  }
 
   const meta = [
-    ...(formula.categoryName
-      ? [{ label: "Kategori", value: formula.categoryName }]
-      : []),
-    { label: "Formel ID", value: formula.id }
+    ...(categoryName ? [{ label: "Kategori", value: categoryName }] : []),
+    { label: "Formel-ID", value: String(f.id) }
   ];
 
   return {
-    title: formula.name,
-    subtitle: formula.description,
+    title: f.name ?? String(f.id),
+    subtitle: f.description ?? undefined,
     meta,
     sections
   };
