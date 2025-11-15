@@ -30,30 +30,45 @@ export default function FormelVisning({
 
   return (
     <section className="card">
-      {/* Topp-rad: Hjem-knapp (uten PDF) */}
-      {onGoHome && (
-        <div
+            {/* Topp-rad: Hjem + utskrift */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "0.5rem",
+          marginBottom: "0.5rem"
+        }}
+      >
+        <div>
+          {onGoHome && (
+            <button
+              className="button"
+              onClick={onGoHome}
+              aria-label="Til forsiden"
+              style={{
+                fontSize: "0.85rem",
+                paddingInline: "0.7rem"
+              }}
+            >
+              ← Hjem
+            </button>
+          )}
+        </div>
+
+        {/* Gå til print-visning for denne formelen */}
+        <Link
+          href={`/print/${formulaId}`}
+          className="button"
+          aria-label="Åpne utskriftsvisning"
           style={{
-            display: "flex",
-            justifyContent: "flex-start",
-            gap: "0.5rem",
-            marginBottom: "0.5rem"
+            fontSize: "0.85rem",
+            paddingInline: "0.7rem"
           }}
         >
-          <button
-            type="button"
-            className="button"
-            onClick={onGoHome}
-            aria-label="Til forside"
-            style={{
-              fontSize: "0.85rem",
-              paddingInline: "0.7rem"
-            }}
-          >
-            ← Hjem
-          </button>
-        </div>
-      )}
+          ⬇︎ PDF / utskrift
+        </Link>
+      </div>
+
 
       <h2 className="main-hero-title">{formula.name}</h2>
       {formula.description && (
