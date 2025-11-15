@@ -55,21 +55,6 @@ export default function FormelVisning({
           )}
         </div>
 
-        {/* Gå til print-visning for denne formelen */}
-        <Link
-          href={`/print/${formulaId}`}
-          className="button"
-          aria-label="Åpne utskriftsvisning"
-          style={{
-            fontSize: "0.85rem",
-            paddingInline: "0.7rem"
-          }}
-        >
-          ⬇︎ PDF / utskrift
-        </Link>
-      </div>
-
-
       <h2 className="main-hero-title">{formula.name}</h2>
       {formula.description && (
         <p className="main-hero-sub">{formula.description}</p>
