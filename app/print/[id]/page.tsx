@@ -1,55 +1,57 @@
 // /app/print/[id]/page.tsx
 
-import PrintLayout from "../../../components/print/PrintLayout";
-import PrintButton from "../../../components/print/PrintButton";
-import { mapFormulaToPrint } from "../../../lib/print/mapFormulaToPrint";
-import { resolvePrintBranding } from "../../../lib/print/branding";
-import type { FormulaId } from "../../../lib/types";
+import PrintLayout from "../../components/print/PrintLayout";
+import PrintButton from "../../components/print/PrintButton";
+import {
+  mapFormulaToPrint,
+  type FormulaLike,
+  type CalcState
+} from "../../lib/print/mapFormulaToPrint";
+import { resolvePrintBranding } from "../../lib/print/branding";
 
 type Props = {
   params: { id: string };
 };
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+// Midlertidige "datakilder" – disse kan senere byttes ut med ekte data
+function getFormulaSomehow(id: string): FormulaLike {
+  return {
+    id,
+    name: `Formel ${id}`,
+    description: undefined,
+    categoryName: undefined,
+    baseExpression: ""
+  };
+}
+
+function getCalcStateSomehow(_id: string): CalcState {
+  return {
+    values: []
+  };
+}
 
 export default function FormulaPrintPage({ params }: Props) {
-  const formulaId = params.id as FormulaId;
+  const formulaId = params.id;
 
-  // 1. Bygg PrintData fra formel
-  const printData = mapFormulaToPrint(formulaId);
+  // 1. Hent data (foreløpig dummy-funksjoner)
+  const formula = getFormulaSomehow(formulaId);
+  const calcState = getCalcStateSomehow(formulaId);
 
-  // 2. Branding – LITE/demo med full MCL-branding
-  const branding = resolvePrintBranding({
-    mode: "mcl",
-    basePath
-  });
+  // 2. Map til PrintData
+  const printData = mapFormulaToPrint(formula, calcState);
+
+  // 3. Bestem branding (kan senere styres av lisens)
+  const branding = resolvePrintBranding({ mode: "mcl" });
 
   return (
     <main>
       {/* Selve rapporten som skal skrives ut */}
       <PrintLayout {...printData} {...branding} />
 
-      {/* UI som ikke skal printes */}
+      {/* UI som ikke skal skrives ut (pe-no-print skjules i @media print) */}
       <div className="pe-root pe-no-print">
         <div className="pe-page">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "0.5rem",
-              marginTop: "0.75rem"
-            }}
-          >
-            <a
-              href={basePath + "/"}
-              className="button"
-              aria-label="Tilbake til appen"
-            >
-              ← Tilbake
-            </a>
-            <PrintButton />
-          </div>
+          <PrintButton />
         </div>
       </div>
     </main>
