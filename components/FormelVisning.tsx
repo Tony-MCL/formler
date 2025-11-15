@@ -1,3 +1,4 @@
+// /components/FormelVisning.tsx
 "use client";
 
 import React from "react";
@@ -5,6 +6,7 @@ import { getFormulaById } from "../lib/formulas";
 import type { FormulaId } from "../lib/types";
 import MathText from "./MathText";
 import Kalkulator from "./Kalkulator";
+import PDFExport from "./PDFExport";
 import { useI18n } from "../lib/i18n";
 
 type FormelVisningProps = {
@@ -16,138 +18,133 @@ export default function FormelVisning({
   formulaId,
   onGoHome
 }: FormelVisningProps) {
-  const { t } = useI18n();
   const formula = getFormulaById(formulaId);
+  const { basePath, t } = useI18n();
 
   if (!formula) {
     return (
       <section className="card">
-        <p>{t("no_formula_selected") ?? "Ingen formel valgt."}</p>
+        <h2>{t("fm_no_formula_selected_title")}</h2>
+        <p>{t("fm_no_formula_selected_body")}</p>
       </section>
     );
   }
 
   return (
     <section className="card">
-      {/* Topp-rad: tilbake-knapp + tittel */}
+      {/* Vannmerke – kun for print */}
+      <img
+        src={`${basePath}/images/mcl-watermark.png`}
+        alt=""
+        className="print-watermark"
+      />
+
+      {/* Topp-rad: Hjem + PDF-knapp */}
       <div
         style={{
           display: "flex",
-          alignItems: "center",
           justifyContent: "space-between",
-          gap: "0.75rem",
-          marginBottom: "0.75rem"
+          gap: "0.5rem",
+          marginBottom: "0.5rem"
         }}
       >
-        {onGoHome && (
-          <button
-            type="button"
-            onClick={onGoHome}
-            className="button"
-            style={{ fontSize: "0.85rem", paddingInline: "0.7rem" }}
-          >
-            ← {t("back_to_list") ?? "Tilbake"}
-          </button>
-        )}
-
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h2
-            style={{
-              margin: 0,
-              fontSize: "1.15rem",
-              fontWeight: 600
-            }}
-          >
-            {formula.name}
-          </h2>
-          {formula.description && (
-            <p
+        <div>
+          {onGoHome && (
+            <button
+              type="button"
+              className="button"
+              onClick={onGoHome}
+              aria-label={t("fm_btn_home_aria")}
               style={{
-                margin: "0.15rem 0 0",
-                fontSize: "0.9rem",
-                color: "var(--mcl-muted)"
+                fontSize: "0.85rem",
+                paddingInline: "0.7rem"
               }}
             >
-              {formula.description}
-            </p>
+              {t("fm_btn_home")}
+            </button>
           )}
         </div>
+        <PDFExport />
       </div>
 
-      {/* Grunnuttrykk */}
+      <h2 className="main-hero-title">{formula.name}</h2>
+      {formula.description && (
+        <p className="main-hero-sub">{formula.description}</p>
+      )}
+
+      <div style={{ marginTop: "0.75rem", marginBottom: "1rem" }}>
+        <strong>{t("fm_base_expression_label")}: </strong>
+        <MathText text={formula.baseExpression} />
+      </div>
+
       <div style={{ marginBottom: "1rem" }}>
-        <h3 style={{ margin: "0 0 0.4rem" }}>
-          {t("base_expression") ?? "Grunnuttrykk"}
-        </h3>
-        <div
+        <h3 style={{ margin: "0 0 0.4rem" }}>{t("fm_variables_heading")}</h3>
+        <table
           style={{
-            padding: "0.4rem 0.6rem",
-            borderRadius: "0.5rem",
-            background: "var(--mcl-surface-elevated)"
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: "0.9rem"
           }}
         >
-          <MathText text={(formula as any).baseExpression ?? ""} />
-        </div>
-      </div>
-
-      {/* Variabler */}
-      {Array.isArray((formula as any).variables) &&
-        (formula as any).variables.length > 0 && (
-          <div style={{ marginBottom: "1rem" }}>
-            <h3 style={{ margin: "0 0 0.4rem" }}>
-              {t("variables") ?? "Variabler"}
-            </h3>
-            <ul
-              style={{
-                listStyle: "none",
-                margin: 0,
-                padding: 0,
-                fontSize: "0.9rem"
-              }}
-            >
-              {(formula as any).variables.map((v: any) => (
-                <li
-                  key={v.id ?? v.symbol}
+          <thead>
+            <tr>
+              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                {t("fm_variables_col_symbol")}
+              </th>
+              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                {t("fm_variables_col_name")}
+              </th>
+              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                {t("fm_variables_col_unit")}
+              </th>
+              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                {t("fm_variables_col_description")}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {formula.variables.map((v) => (
+              <tr key={v.id}>
+                <td style={{ padding: "0.15rem 0" }}>
+                  <code>{v.symbol}</code>
+                </td>
+                <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
+                <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
+                <td
                   style={{
-                    display: "flex",
-                    gap: "0.5rem",
-                    marginBottom: "0.25rem"
+                    padding: "0.15rem 0",
+                    color: "var(--mcl-muted)"
                   }}
                 >
-                  <span style={{ minWidth: "3.5rem", fontWeight: 600 }}>
-                    {v.symbol}
-                    {v.unit ? ` [${v.unit}]` : ""}
-                  </span>
-                  <span>{v.name}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+                  {v.description ?? "–"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      {/* Varianter (løs for …) */}
-      {Array.isArray((formula as any).variants) &&
-        (formula as any).variants.length > 0 && (
-          <div style={{ marginBottom: "1rem" }}>
-            <h3 style={{ margin: "0 0 0.4rem" }}>
-              {t("variants") ?? "Varianter (løs for …)"}
-            </h3>
-            <ul
-              style={{
-                margin: 0,
-                paddingLeft: "1.2rem",
-                fontSize: "0.9rem"
-              }}
-            >
-              {(formula as any).variants.map((variant: any) => (
-                <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
-                  <strong>{variant.label}: </strong>
-                  <MathText text={variant.expression} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+      {formula.variants && formula.variants.length > 0 && (
+        <div style={{ marginBottom: "1rem" }}>
+          <h3 style={{ margin: "0 0 0.4rem" }}>
+            {t("fm_variants_heading")}
+          </h3>
+          <ul
+            style={{
+              margin: 0,
+              paddingLeft: "1.2rem",
+              fontSize: "0.9rem"
+            }}
+          >
+            {formula.variants.map((variant) => (
+              <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
+                <strong>{variant.label}: </strong>
+                <MathText text={variant.expression} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Kalkulator-seksjon */}
       <Kalkulator formulaId={formulaId} />
