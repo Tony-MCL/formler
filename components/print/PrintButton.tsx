@@ -1,20 +1,25 @@
 "use client";
 
-import type { MouseEventHandler } from "react";
+import React, { MouseEventHandler } from "react";
 import { useI18n } from "../../lib/i18n";
 
 type PrintButtonProps = {
-  label?: string;
+  /**
+   * Optional i18n key for the button label.
+   * If not provided, we fall back to a sensible default.
+   */
+  labelKey?: string;
   onClick?: MouseEventHandler<HTMLButtonElement>;
   className?: string;
 };
 
 export default function PrintButton({
-  label,
+  labelKey,
   onClick,
   className
 }: PrintButtonProps) {
-  const { t } = useI18n("no");
+  // useI18n tar ingen argumenter i dette prosjektet
+  const { t } = useI18n();
 
   const handleClick: MouseEventHandler<HTMLButtonElement> = (event) => {
     if (onClick) {
@@ -22,21 +27,22 @@ export default function PrintButton({
       return;
     }
 
-    if (typeof window !== "undefined" && typeof window.print === "function") {
-      // Forutsatt at vi står på en dedikert /print-visning
-      window.print();
-    }
+    if (typeof window === "undefined") return;
+    window.print();
   };
 
-  const btnLabel = label ?? t("print.button");
+  // Prøver i18n først, ellers en enkel norsk fallback
+  const label =
+    (labelKey ? t(labelKey) : t("print.buttonLabel")) ?? "Skriv ut";
 
   return (
     <button
       type="button"
-      className={`mcl-button mcl-button-small ${className ?? ""}`.trim()}
+      className={`button ${className ?? ""}`.trim()}
       onClick={handleClick}
+      aria-label={label}
     >
-      {btnLabel}
+      🖨️ {label}
     </button>
   );
 }
