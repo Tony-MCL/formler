@@ -6,7 +6,6 @@ import { getFormulaById } from "../lib/formulas";
 import type { FormulaId } from "../lib/types";
 import MathText from "./MathText";
 import Kalkulator from "./Kalkulator";
-import PDFExport from "./PDFExport";
 import { useI18n } from "../lib/i18n";
 
 type FormelVisningProps = {
@@ -19,7 +18,7 @@ export default function FormelVisning({
   onGoHome
 }: FormelVisningProps) {
   const formula = getFormulaById(formulaId);
-  const { basePath, t } = useI18n();
+  const { t } = useI18n();
 
   if (!formula) {
     return (
@@ -32,14 +31,7 @@ export default function FormelVisning({
 
   return (
     <section className="card">
-      {/* Vannmerke – kun for print */}
-      <img
-        src={`${basePath}/images/mcl-watermark.png`}
-        alt=""
-        className="print-watermark"
-      />
-
-      {/* Topp-rad: Hjem + PDF-knapp */}
+      {/* Topp-rad: Hjem-knapp (ingen PDF-knapp lenger) */}
       <div
         style={{
           display: "flex",
@@ -64,7 +56,8 @@ export default function FormelVisning({
             </button>
           )}
         </div>
-        <PDFExport />
+        {/* Høyre side kan stå tom enn så lenge, eller senere brukes til andre knapper */}
+        <div />
       </div>
 
       <h2 className="main-hero-title">{formula.name}</h2>
