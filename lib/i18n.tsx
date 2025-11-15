@@ -1,66 +1,163 @@
-// /lib/i18n.tsx
+// /app/page.tsx
 "use client";
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-type Lang = "no" | "en";
-type Dict = Record<string, string>;
+import React, { useState } from "react";
+import Sidebar from "../components/Sidebar";
+import ThemeToggle from "../components/ThemeToggle";
+import LangToggle from "../components/LangToggle";
+import FormelVisning from "../components/FormelVisning";
+import { useI18n } from "../lib/i18n";
+import type { FormulaId } from "../lib/types";
 
-const dictNO: Dict = {
-  appName: "Befarings-app",
-  nav_home: "Forside",
-  nav_projects: "Prosjekter",
-  nav_help: "Om/Hjelp",
-  nav_contact: "Kontakt",
-  nav_portal: "Portal",
-  hero_title: "Befaringer gjort enkelt",
-  hero_sub: "Opprett prosjekter, del tilgang og samle bilder og notater – på tvers av PC og mobil.",
-  get_started: "Kom i gang",
-  projects_title: "Dine prosjekter",
-  empty_state: "Ingen prosjekter enda.",
-  add_demo: "Legg til demo-prosjekter",
-  upload_images: "Last opp bilder",
-  notes: "Notater",
-  docs: "Dokumentasjon",
-  album: "Album"
-};
+type ViewMode = "home" | "formula";
 
-const dictEN: Dict = {
-  appName: "Site Inspection App",
-  nav_home: "Home",
-  nav_projects: "Projects",
-  nav_help: "About/Help",
-  nav_contact: "Contact",
-  nav_portal: "Portal",
-  hero_title: "Inspections made simple",
-  hero_sub: "Create projects, share access, and collect photos & notes — across desktop and mobile.",
-  get_started: "Get started",
-  projects_title: "Your projects",
-  empty_state: "No projects yet.",
-  add_demo: "Add demo projects",
-  upload_images: "Upload photos",
-  notes: "Notes",
-  docs: "Documentation",
-  album: "Album"
-};
+export default function HomePage() {
+  const { t, basePath } = useI18n();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedFormulaId, setSelectedFormulaId] =
+    useState<FormulaId>("ohm");
+  const [viewMode, setViewMode] = useState<ViewMode>("home");
 
-type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string; basePath: string; };
-const I18nCtx = createContext<Ctx | null>(null);
+  const appNameKey = "fm_app_name";
+  const heroTitleKey = "fm_hero_title";
+  const heroSubKey = "fm_hero_sub";
+  const heroPoint1Key = "fm_hero_point1";
+  const heroPoint2Key = "fm_hero_point2";
+  const heroPoint3Key = "fm_hero_point3";
+  const heroFootnoteKey = "fm_hero_footnote";
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
-  const [lang, setLangState] = useState<Lang>("no");
-  useEffect(() => {
-    const saved = (localStorage.getItem("lang") as Lang) || "no";
-    setLangState(saved);
-  }, []);
-  const setLang = (l: Lang) => { localStorage.setItem("lang", l); setLangState(l); };
-  const dict = lang === "no" ? dictNO : dictEN;
-  const t = (k: string) => dict[k] ?? k;
-  const value = useMemo(() => ({ lang, setLang, t, basePath }), [lang, basePath]);
-  return <I18nCtx.Provider value={value}>{children}</I18nCtx.Provider>;
+  const appName =
+    t(appNameKey) === appNameKey ? "Digital Formelsamling" : t(appNameKey);
+  const heroTitle =
+    t(heroTitleKey) === heroTitleKey
+      ? "Formler du faktisk bruker – samlet på ett sted"
+      : t(heroTitleKey);
+  const heroSub =
+    t(heroSubKey) === heroSubKey
+      ? "Beregninger for elkraft og maskiner, med pen visning og innebygde kalkulatorer."
+      : t(heroSubKey);
+
+  const heroPoint1 =
+    t(heroPoint1Key) === heroPoint1Key
+      ? "Fokus på elkraft, motorer og generatorer i første versjon."
+      : t(heroPoint1Key);
+  const heroPoint2 =
+    t(heroPoint2Key) === heroPoint2Key
+      ? "Formler med pen visning og innebygd kalkulator."
+      : t(heroPoint2Key);
+  const heroPoint3 =
+    t(heroPoint3Key) === heroPoint3Key
+      ? "Klar for PDF-eksport og flere fagområder i senere versjoner."
+      : t(heroPoint3Key);
+  const heroFootnote =
+    t(heroFootnoteKey) === heroFootnoteKey
+      ? "Velg en formel i menyen til venstre for å starte."
+      : t(heroFootnoteKey);
+
+  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  const closeSidebar = () => setSidebarOpen(false);
+
+  const handleSelectFormula = (id: FormulaId) => {
+    setSelectedFormulaId(id);
+    setViewMode("formula");
+  };
+
+  const handleGoHome = () => {
+    setViewMode("home");
+  };
+
+  return (
+    <div className="page-root">
+      <header className="header">
+        {/* DESKTOP */}
+        <div className="header-inner header-desktop container">
+          <div className="header-left">
+            <button
+              className="button sidebar-toggle"
+              onClick={toggleSidebar}
+              aria-label="Toggle sidebar"
+            >
+              ☰
+            </button>
+
+            <img
+              src={`${basePath}/images/mcl-logo.png`}
+              alt="Morning Coffee Labs"
+              className="brand-logo"
+            />
+          </div>
+
+          <div className="header-center">
+            <div className="brand-title">{appName}</div>
+          </div>
+
+          <div className="toolbar">
+            <LangToggle />
+            <ThemeToggle />
+          </div>
+        </div>
+
+        {/* MOBIL */}
+        <div className="header-inner header-mobile container">
+          <div className="header-mobile-top">
+            <img
+              src={`${basePath}/images/mcl-logo.png`}
+              alt="Morning Coffee Labs"
+              className="brand-logo"
+            />
+          </div>
+
+          <div className="header-mobile-bottom">
+            <div className="header-mobile-left">
+              <button
+                className="button sidebar-toggle"
+                onClick={toggleSidebar}
+                aria-label="Toggle sidebar"
+              >
+                ☰
+              </button>
+
+              <span className="brand-title">{appName}</span>
+            </div>
+
+            <div className="toolbar">
+              <LangToggle />
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="app-shell container">
+        <Sidebar
+          open={sidebarOpen}
+          onClose={closeSidebar}
+          selectedFormulaId={selectedFormulaId}
+          onSelectFormula={handleSelectFormula}
+        />
+
+        <main className="app-main">
+          {viewMode === "home" && (
+            <section className="card main-hero" style={{ marginBottom: "1rem" }}>
+              <h1 className="main-hero-title">{heroTitle}</h1>
+              <p className="main-hero-sub">{heroSub}</p>
+              <ul className="main-hero-list">
+                <li>{heroPoint1}</li>
+                <li>{heroPoint2}</li>
+                <li>{heroPoint3}</li>
+              </ul>
+              <p className="main-hero-footnote">{heroFootnote}</p>
+            </section>
+          )}
+
+          {viewMode === "formula" && (
+            <FormelVisning
+              formulaId={selectedFormulaId}
+              onGoHome={handleGoHome}
+            />
+          )}
+        </main>
+      </div>
+    </div>
+  );
 }
-export const useI18n = () => {
-  const ctx = useContext(I18nCtx);
-  if (!ctx) throw new Error("I18nProvider missing");
-  return ctx;
-};
