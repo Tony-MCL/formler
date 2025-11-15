@@ -27,18 +27,17 @@ export default function FormulaPrintPage({ params }: Props) {
   // 1. Bygg PrintData fra formel
   const printData = mapFormulaToPrint(formulaId);
 
-  // 2. Branding – LITE/demo med full MCL-branding
+  // 2. Branding – MCL-logo + watermark
   const branding = resolvePrintBranding({ mode: "mcl" });
 
   return (
     <main>
+      {/* Selve rapporten */}
       <PrintLayout {...printData} {...branding} />
 
-      {/* UI som ikke skal med på papirutskrift */}
-      <div className="pe-root pe-no-print">
-        <div className="pe-page">
-          <PrintButton />
-        </div>
+      {/* Liten verktøylinje nederst – vises kun på skjerm */}
+      <div className="pe-print-toolbar pe-no-print">
+        <PrintButton />
       </div>
     </main>
   );
