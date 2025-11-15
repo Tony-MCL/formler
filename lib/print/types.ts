@@ -1,50 +1,39 @@
+// /lib/print/types.ts
+
 export type PrintMetaItem = {
   label: string;
   value: string;
 };
 
-export type PrintKeyValue = {
+export type PrintKeyValueItem = {
   key: string;
   value: string;
 };
 
-export type PrintTableCell = {
-  value: string;
-  align?: "left" | "center" | "right";
-};
+export type PrintTableRow = (string | number | null)[];
 
-export type PrintTableRow = {
-  cells: PrintTableCell[];
-};
-
-export type PrintTableBlock = {
-  type: "table";
-  headers?: string[];
-  rows: PrintTableRow[];
-};
-
-export type PrintParagraphBlock = {
-  type: "paragraph";
-  text: string;
-};
-
-export type PrintKeyValueListBlock = {
-  type: "keyValueList";
-  items: PrintKeyValue[];
-  columns?: 1 | 2;
-};
-
+// Innholdsblokker som kan brukes i en seksjon
 export type PrintContentBlock =
-  | PrintParagraphBlock
-  | PrintTableBlock
-  | PrintKeyValueListBlock;
+  | { type: "paragraph"; text: string }
+  | {
+      type: "keyValueList";
+      items: PrintKeyValueItem[];
+      columns?: 1 | 2;
+    }
+  | {
+      type: "table";
+      headers: string[];
+      rows: PrintTableRow[];
+    };
 
+// En seksjon i rapporten
 export type PrintSection = {
   id: string;
   title?: string;
   content: PrintContentBlock[];
 };
 
+// Hele rapporten
 export type PrintData = {
   title: string;
   subtitle?: string;
