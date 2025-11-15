@@ -1,81 +1,77 @@
-import type {
-  PrintSection as PrintSectionType,
-  PrintContentBlock
-} from "../../lib/print/types";
+// /components/print/PrintSection.tsx
 
-type Props = {
-  section: PrintSectionType;
+import React from "react";
+import type { PrintSection, PrintContentBlock } from "../../lib/print/types";
+
+type PrintSectionProps = {
+  section: PrintSection;
 };
 
-export default function PrintSection({ section }: Props) {
-  return (
-    <section className="pe-section">
-      {section.title && <h3 className="pe-section-title">{section.title}</h3>}
+function renderBlock(block: PrintContentBlock, index: number) {
+  switch (block.type) {
+    case "paragraph":
+      return (
+        <p key={index} className="pe-paragraph">
+          {block.text}
+        </p>
+      );
 
-      {section.content.map((block: PrintContentBlock, index) => {
-        if (block.type === "paragraph") {
-          return (
-            <p className="pe-paragraph" key={index}>
-              {block.text}
-            </p>
-          );
-        }
-
-        if (block.type === "keyValueList") {
-          const cols = block.columns ?? 1;
-          return (
-            <div
-              key={index}
-              className={`pe-kv-list pe-kv-cols-${cols > 1 ? 2 : 1}`}
-            >
-              {block.items.map((item) => (
-                <div className="pe-kv-row" key={item.key}>
-                  <span className="pe-kv-key">{item.key}:</span>
-                  <span className="pe-kv-value">{item.value}</span>
-                </div>
+    case "keyValueList":
+      return (
+        <div key={index} className="pe-keyvalue-list">
+          <table>
+            <tbody>
+              {block.items.map((item, idx) => (
+                <tr key={idx}>
+                  <th>{item.key}</th>
+                  <td>{item.value}</td>
+                </tr>
               ))}
-            </div>
-          );
-        }
+            </tbody>
+          </table>
+        </div>
+      );
 
-        if (block.type === "table") {
-          return (
-            <div className="pe-table-wrapper" key={index}>
-              <table className="pe-table">
-                {block.headers && block.headers.length > 0 && (
-                  <thead>
-                    <tr>
-                      {block.headers.map((header, i) => (
-                        <th key={i}>{header}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                )}
-                <tbody>
-                  {block.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {row.cells.map((cell, cellIndex) => (
-                        <td
-                          key={cellIndex}
-                          style={
-                            cell.align
-                              ? { textAlign: cell.align }
-                              : undefined
-                          }
-                        >
-                          {cell.value}
-                        </td>
-                      ))}
-                    </tr>
+    case "table":
+      return (
+        <div key={index} className="pe-table-wrapper">
+          <table className="pe-table">
+            {block.headers && block.headers.length > 0 && (
+              <thead>
+                <tr>
+                  {block.headers.map((h, i) => (
+                    <th key={i}>{h}</th>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          );
-        }
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {block.rows.map((row, rIdx) => (
+                <tr key={rIdx}>
+                  {row.map((cell, cIdx) => (
+                    <td key={cIdx}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
 
-        return null;
-      })}
+    default:
+      return null;
+  }
+}
+
+export default function PrintSectionView({ section }: PrintSectionProps) {
+  if (!section.content || section.content.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="pe-section" aria-label={section.title}>
+      {section.title && <h2 className="pe-section-title">{section.title}</h2>}
+      {section.content.map((block, index) => renderBlock(block, index))}
     </section>
   );
 }
