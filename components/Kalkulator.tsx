@@ -1,3 +1,4 @@
+// /components/Kalkulator.tsx
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -5,6 +6,7 @@ import type { FormulaId, SolveForId } from "../lib/types";
 import { getFormulaById } from "../lib/formulas";
 import { solveFormula, listVariants } from "../lib/engine";
 import MathText from "./MathText";
+import { useI18n } from "../lib/i18n";
 
 type KalkulatorProps = {
   formulaId: FormulaId;
@@ -48,12 +50,6 @@ function formatPrettyNumber(value: number, unit?: string): string {
 
 /**
  * Skaler verdier til kV, kA, mA, kW, kWh, kΩ, mΩ der det er naturlig.
- * Terskler:
- *  - V → kV fra 1000 V
- *  - A → kA fra 1000 A, mA under 1 A
- *  - W → kW fra 1000 W, mW under 1 W
- *  - Wh → kWh fra 1000 Wh
- *  - Ω → kΩ fra 1000 Ω, mΩ under 0,01 Ω
  */
 function scaleValue(
   value: number,
@@ -65,7 +61,6 @@ function scaleValue(
   switch (unit) {
     case "V":
       if (abs >= 1000) return { value: value / 1000, unit: "kV" };
-      // Ikke automatisk mV i elkraft – behold V for små verdier
       return { value, unit: "V" };
 
     case "A":
@@ -105,6 +100,7 @@ function makeSolveLabel(
 
 export default function Kalkulator({ formulaId }: KalkulatorProps) {
   const formula = getFormulaById(formulaId);
+  const { t } = useI18n();
 
   const variants = useMemo(() => listVariants(formulaId), [formulaId]);
   const [solveFor, setSolveFor] = useState<SolveForId>(
@@ -118,9 +114,9 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
   if (!formula || variants.length === 0) {
     return (
       <section style={{ marginTop: "1.5rem" }}>
-        <h3 style={{ margin: "0 0 0.4rem" }}>Kalkulator</h3>
+        <h3 style={{ margin: "0 0 0.4rem" }}>{t("fm_calc_title")}</h3>
         <p style={{ fontSize: "0.9rem", color: "var(--mcl-muted)" }}>
-          Kalkulator er ikke tilgjengelig for denne formelen.
+          {t("fm_calc_not_available")}
         </p>
       </section>
     );
@@ -163,13 +159,17 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
       }
 
       if (rawStateValue === undefined || rawStateValue === "") {
-        setErrorText(`Fyll inn verdi for ${v.symbol} (${v.name}).`);
+        setErrorText(
+          `${t("fm_calc_error_missing_prefix")} ${v.symbol} (${v.name}).`
+        );
         return;
       }
 
       const num = Number(rawStateValue.toString().replace(",", "."));
       if (!isFinite(num)) {
-        setErrorText(`Ugyldig tall for ${v.symbol} (${v.name}).`);
+        setErrorText(
+          `${t("fm_calc_error_invalid_prefix")} ${v.symbol} (${v.name}).`
+        );
         return;
       }
       numericInput[v.id] = num;
@@ -210,9 +210,9 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
   return (
     <section style={{ marginTop: "1.5rem" }}>
-      <h3 style={{ margin: "0 0 0.4rem" }}>Kalkulator</h3>
+      <h3 style={{ margin: "0 0 0.4rem" }}>{t("fm_calc_title")}</h3>
 
-      {/* Interaktiv del */}
+      {/* Interaktiv del – skjules ved print */}
       <div className="calc-interactive">
         {/* Velg "løs for" */}
         <div
@@ -225,7 +225,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
           }}
         >
           <label style={{ fontSize: "0.9rem" }}>
-            Løs for:
+            {t("fm_calc_solve_for_label")}{" "}
             <select
               value={solveFor}
               onChange={(e) => {
@@ -257,7 +257,9 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
           {currentVariant && (
             <div style={{ fontSize: "0.9rem" }}>
-              <span style={{ color: "var(--mcl-muted)" }}>Bruker: </span>
+              <span style={{ color: "var(--mcl-muted)" }}>
+                {t("fm_calc_uses_label")}{" "}
+              </span>
               <MathText text={currentVariant.expression} />
             </div>
           )}
@@ -285,7 +287,8 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
                 }}
               >
                 <span>
-                  {v.symbol} ({v.name}){v.unit ? ` [${v.unit}]` : ""}:
+                  {v.symbol} ({v.name})
+                  {v.unit ? ` [${v.unit}]` : ""}:
                 </span>
                 <input
                   type="number"
@@ -318,7 +321,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             marginBottom: "0.6rem"
           }}
         >
-          Beregn
+          {t("fm_calc_btn_calculate")}
         </button>
 
         {/* Feiltekst */}
@@ -335,7 +338,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
         )}
       </div>
 
-      {/* Resultat (kun skjerm) */}
+      {/* Resultat (skjules ved print, får egen print-versjon under) */}
       {result && (
         <div
           className="calc-result"
@@ -348,7 +351,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
           }}
         >
           <div>
-            <strong>Resultat: </strong>
+            <strong>{t("fm_result_label")}: </strong>
             {result.label} = {result.pretty}
           </div>
           <div
@@ -358,7 +361,59 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
               color: "var(--mcl-muted)"
             }}
           >
-            Rå verdi: {result.raw}
+            {t("fm_raw_label")}: {result.raw}
+          </div>
+        </div>
+      )}
+
+      {result && (
+        <div className="calc-print-summary">
+          {/* Header-row: Løs for + Bruker står på samme linje */}
+          <div className="calc-print-header-grid">
+            <div className="calc-print-header-cell">
+              <strong>{t("fm_print_solve_for")}</strong>{" "}
+              {makeSolveLabel(formula, result.solveFor)}
+            </div>
+            <div className="calc-print-header-cell">
+              {result.variantExpression && (
+                <>
+                  <strong>{t("fm_print_uses")}</strong>{" "}
+                  <MathText text={result.variantExpression} />
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Verdier brukt som to kolonner */}
+          <div className="calc-print-values-grid">
+            {formula.variables.map((v) => {
+              if (v.id === result.solveFor) return null;
+              const val = result.inputs[v.id];
+              if (!val) return null;
+
+              return (
+                <div key={v.id} className="calc-print-value-field">
+                  <div className="calc-print-label">
+                    {v.symbol} ({v.name})
+                    {v.unit ? ` [${v.unit}]` : ""}:
+                  </div>
+                  <div className="calc-print-value">
+                    {val}
+                    {v.unit ? ` ${v.unit}` : ""}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="calc-print-result-box">
+            <div>
+              <strong>{t("fm_result_label")}: </strong>
+              {result.label} = {result.pretty}
+            </div>
+            <div className="calc-print-raw">
+              {t("fm_raw_label")}: {result.raw}
+            </div>
           </div>
         </div>
       )}
