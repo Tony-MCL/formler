@@ -126,9 +126,19 @@ export default function FormelVisning({
       </div>
 
       {/* PRINT-ONLY: Variabler + Varianter inne i flisa */}
-      <div className="print-only" style={{ marginBottom: "1.2rem" }}>
+      <div
+        className="print-only"
+        style={{
+          marginTop: "1rem",
+          marginBottom: "1.6rem",
+          display: "flex",
+          flexDirection: "column",
+          gap: "1.4rem"
+        }}
+      >
+
         {/* Variabler */}
-        <section style={{ marginBottom: "1rem" }}>
+        <section style={{ marginBottom: "1.4rem" }}>
           <h3 style={{ margin: "0 0 0.4rem" }}>Variabler</h3>
           <table
             style={{
