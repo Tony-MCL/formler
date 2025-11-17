@@ -10,14 +10,13 @@ type MathTextProps = {
 };
 
 /**
- * Enkel, "pen nok" matte-visning for stil B:
+ * Enkel, "pen nok" matte-visning:
  * - Erstatter * med ·
  * - cosphi → cos φ
  * - Støtter brøkvisning med CSS-basert fraksjon:
- *   "I = U / R" → I = U over R
- *
- * Dette er UI-laget. Vi kan senere bytte hele innmaten til KaTeX/LaTeX
- * uten å endre hvordan komponenten brukes.
+ *     "I = U / R" → I = U over R
+ * - Støtter nedsenket / oppløftet skrift:
+ *     "U_1", "I_k", "U_{L1}", "U^2", "I^{2}"
  */
 
 function applyReplacements(text: string): string {
@@ -33,6 +32,77 @@ function applyReplacements(text: string): string {
   pretty = pretty.replace(/\bphi\b/g, "φ");
 
   return pretty;
+}
+
+/**
+ * Render inline-del av uttrykk, med støtte for _ og ^:
+ *   U_1  → U<sub>1</sub>
+ *   U_{L1} → U<sub>L1</sub>
+ *   I^2  → I<sup>2</sup>
+ */
+function renderInline(text: string): React.ReactNode {
+  const src = applyReplacements(text);
+  const nodes: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < src.length) {
+    const ch = src[i];
+
+    if ((ch === "_" || ch === "^") && i > 0) {
+      const isSub = ch === "_";
+      i += 1;
+
+      if (i >= src.length) break;
+
+      let content = "";
+      // Variant 1: _{...}
+      if (src[i] === "{") {
+        i += 1; // hopp over "{"
+        const start = i;
+        while (i < src.length && src[i] !== "}") {
+          i += 1;
+        }
+        content = src.slice(start, i);
+        if (i < src.length && src[i] === "}") {
+          i += 1; // hopp over "}"
+        }
+      } else {
+        // Variant 2: _X / _12 – les til første ikke-alfanumeriske tegn
+        const start = i;
+        while (
+          i < src.length &&
+          /[0-9A-Za-zÆØÅæøå]/.test(src[i])
+        ) {
+          i += 1;
+        }
+        content = src.slice(start, i);
+      }
+
+      if (content) {
+        nodes.push(
+          isSub ? (
+            <sub key={nodes.length}>{content}</sub>
+          ) : (
+            <sup key={nodes.length}>{content}</sup>
+          )
+        );
+      }
+    } else {
+      // Samle vanlig tekst frem til neste _ eller ^
+      const start = i;
+      while (i < src.length && src[i] !== "_" && src[i] !== "^") {
+        i += 1;
+      }
+      const segment = src.slice(start, i);
+      if (segment) {
+        nodes.push(segment);
+      }
+    }
+  }
+
+  if (nodes.length === 0) return null;
+  if (nodes.length === 1) return nodes[0];
+  return <>{nodes}</>;
 }
 
 /** Finn første divisjonstegn på top-nivå (ikke inne i parenteser) */
@@ -54,8 +124,8 @@ function renderExpr(expr: string): React.ReactNode {
 
   const index = findTopLevelDivision(trimmed);
   if (index === -1) {
-    // Ingen brøk på top-nivå – bare vis pen tekst
-    return applyReplacements(trimmed);
+    // Ingen brøk på top-nivå – vis inline med sub/sup
+    return renderInline(trimmed);
   }
 
   const numerator = trimmed.slice(0, index).trim();
@@ -83,7 +153,7 @@ export default function MathText({ text, variant = "normal" }: MathTextProps) {
 
     return (
       <span className={className}>
-        <span>{applyReplacements(left)}</span>
+        <span>{renderInline(left)}</span>
         <span>{` = `}</span>
         {renderExpr(right)}
       </span>
