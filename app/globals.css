@@ -503,6 +503,7 @@ a {
     margin: 0;
   }
 
+  /* Kortet: midtstilt og uten rammer/skyggar i print */
   .card {
     box-shadow: none;
     border-radius: 0;
@@ -510,16 +511,10 @@ a {
     padding: 2cm;
     position: relative;
     page-break-inside: avoid;
-  }
-
-  /* Midtstill hele kortet ved utskrift */
-@media print {
-  .card {
     max-width: 70%;
     margin-left: auto;
     margin-right: auto;
   }
-}
 
   .main-hero-title {
     font-size: 1.6rem;
@@ -527,6 +522,25 @@ a {
 
   .main-hero-sub {
     font-size: 0.95rem;
+  }
+
+  /* Større og tydeligere matteuttrykk ved print */
+  .math-text {
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+
+  /* Litt større tabellskrift i print (Variabler) */
+  .card table {
+    font-size: 0.95rem;
+  }
+
+  /* Tynn strek og ekstra luft foran seksjoner (Variabler, Varianter, Kalkulator) */
+  .card h3 {
+    margin-top: 1.4rem;
+    margin-bottom: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
   }
 
   .print-watermark {
@@ -542,8 +556,8 @@ a {
 
   .calc-print-summary {
     display: block;
-    margin-top: 0.6rem;
-    font-size: 0.9rem;
+    margin-top: 0.8rem;
+    font-size: 0.95rem;
   }
 
   .calc-print-summary ul {
@@ -556,7 +570,7 @@ a {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.2rem;
-    margin-bottom: 0.6rem;
+    margin-bottom: 1rem;
     margin-top: 0.3rem;
   }
 
@@ -569,7 +583,7 @@ a {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.6rem 1.2rem;
-    margin-bottom: 0.8rem;
+    margin-bottom: 1.4rem;
   }
 
   .calc-print-value-field {
