@@ -33,6 +33,18 @@ a {
 }
 
 /* ========================================================================== */
+/* HELPER-KLASSER: PRINT / SKJERM */
+/* ========================================================================== */
+
+.no-print {
+  /* standard – bare en krok for å skjule i @media print */
+}
+
+.print-only {
+  display: none;
+}
+
+/* ========================================================================== */
 /* HEADER */
 /* ========================================================================== */
 
@@ -379,7 +391,7 @@ a {
 }
 
 /* ========================================================================== */
-/* MATH TYPOGRAPHY + BRØK */
+/* MATH TYPOGRAFI + BRØK */
 /* ========================================================================== */
 
 .math-text {
@@ -461,7 +473,7 @@ a {
     color: #000000 !important;
   }
 
-  /* Skjul navigasjon og knapper */
+  /* Skjul navigasjon og knapper / rene skjerm-elementer */
   .header,
   .sidebar,
   .sidebar-backdrop,
@@ -471,8 +483,14 @@ a {
   .calc-interactive,
   .calc-result,
   .formula-info-backdrop,
-  .formula-info-panel {
+  .formula-info-panel,
+  .no-print {
     display: none !important;
+  }
+
+  /* Print-only blokker skal vises */
+  .print-only {
+    display: block !important;
   }
 
   .app-shell.container {
@@ -523,6 +541,7 @@ a {
     margin: 0.2rem 0 0 1.1rem;
     padding: 0;
   }
+
   /* Grid for Løs for / Bruker */
   .calc-print-header-grid {
     display: grid;
@@ -531,11 +550,11 @@ a {
     margin-bottom: 0.6rem;
     margin-top: 0.3rem;
   }
-  
+
   .calc-print-header-cell {
     font-size: 0.95rem;
   }
-  
+
   /* Verdier brukt-griden */
   .calc-print-values-grid {
     display: grid;
@@ -543,16 +562,16 @@ a {
     gap: 0.6rem 1.2rem;
     margin-bottom: 0.8rem;
   }
-  
+
   .calc-print-value-field {
     font-size: 0.9rem;
   }
-  
+
   .calc-print-label {
     font-weight: 600;
     margin-bottom: 0.1rem;
   }
-  
+
   .calc-print-value {
     font-size: 0.9rem;
   }
