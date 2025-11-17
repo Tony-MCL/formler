@@ -85,28 +85,32 @@ export default function FormelVisning({
         <p className="main-hero-sub">{formula.description}</p>
       )}
 
-      {/* Grunnuttrykk – stor, bold, med Info-knapp */}
+      {/* Grunnuttrykk – nå med samme font-size som overskrift + midtstilt */}
       <div
         style={{
           marginTop: "0.75rem",
           marginBottom: "1rem",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: "center",
           gap: "0.75rem",
-          flexWrap: "wrap"
+          flexWrap: "wrap",
+          textAlign: "center"
         }}
       >
         <div
           style={{
-            fontSize: "1.8rem",
-            fontWeight: 700
+            fontSize: "1.6rem",       // ← SAMME SOM OVERSKRIFT
+            fontWeight: 700,
+            width: "100%",
+            display: "flex",
+            justifyContent: "center"
           }}
         >
           <MathText text={formula.baseExpression} />
         </div>
 
-        <div className="no-print">
+        <div className="no-print" style={{ marginTop: "0.25rem" }}>
           <button
             type="button"
             className="button"
@@ -126,7 +130,7 @@ export default function FormelVisning({
       {/* Kalkulator-seksjon */}
       <Kalkulator formulaId={formulaId} />
 
-      {/* Sidepanel med Variabler + Varianter */}
+      {/* Sidepanel: mobil med backdrop, desktop uten */}
       {showInfo && isMobile && (
         <button
           type="button"
@@ -185,36 +189,16 @@ export default function FormelVisning({
               >
                 <thead>
                   <tr>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        paddingBottom: "0.2rem"
-                      }}
-                    >
+                    <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
                       Symbol
                     </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        paddingBottom: "0.2rem"
-                      }}
-                    >
+                    <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
                       Navn
                     </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        paddingBottom: "0.2rem"
-                      }}
-                    >
+                    <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
                       Enhet
                     </th>
-                    <th
-                      style={{
-                        textAlign: "left",
-                        paddingBottom: "0.2rem"
-                      }}
-                    >
+                    <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
                       Beskrivelse
                     </th>
                   </tr>
