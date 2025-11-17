@@ -389,6 +389,10 @@ a {
   letter-spacing: 0.01em;
 }
 
+.math-text--large {
+  font-size: 1.6rem;
+}
+
 /* CSS-basert brøkvisning */
 .math-frac {
   display: inline-flex;
