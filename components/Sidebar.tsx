@@ -14,12 +14,12 @@ type SidebarProps = {
 type SidebarItemView = {
   id: FormulaId;
   label: string;
-  hint?: string;
 };
 
 type SidebarGroupView = {
   id: string;
   title: string;
+  description?: string;
   items: SidebarItemView[];
 };
 
@@ -53,10 +53,10 @@ export default function Sidebar({
     ({ category, formulas }) => ({
       id: category.id,
       title: category.title,
+      description: category.description,
       items: formulas.map((formula) => ({
         id: formula.id,
-        label: formula.name,
-        hint: formula.tags && formula.tags.length > 0 ? formula.tags[0] : undefined
+        label: formula.name
       }))
     })
   );
@@ -78,7 +78,7 @@ export default function Sidebar({
         aria-label="Formelkategorier"
       >
         <div className="sidebar-header">
-          <div className="sidebar-title">Kategorier</div>
+          <div className="sidebar-title">Formler</div>
           {isMobile && (
             <button
               className="button sidebar-close"
@@ -94,6 +94,19 @@ export default function Sidebar({
           {groups.map((group) => (
             <div key={group.id} className="sidebar-section">
               <div className="sidebar-section-title">{group.title}</div>
+
+              {group.description && (
+                <p
+                  style={{
+                    margin: "0.1rem 0 0.3rem",
+                    fontSize: "0.75rem",
+                    color: "var(--mcl-muted)"
+                  }}
+                >
+                  {group.description}
+                </p>
+              )}
+
               <ul className="sidebar-list">
                 {group.items.map((item) => {
                   const isActive = item.id === selectedFormulaId;
@@ -113,9 +126,6 @@ export default function Sidebar({
                           {isActive ? "• " : ""}
                           {item.label}
                         </span>
-                        {item.hint && (
-                          <span className="sidebar-item-hint">{item.hint}</span>
-                        )}
                       </button>
                     </li>
                   );
