@@ -88,7 +88,7 @@ export default function FormelVisning({
       {/* Grunnuttrykk – ekstra luft, midtstilt; Info-knapp helt til høyre */}
       <div
         style={{
-          marginTop: "1.25rem",          // litt ekstra linjeskift-følelse
+          marginTop: "1.25rem",
           marginBottom: "1rem",
           display: "flex",
           alignItems: "center",
@@ -125,7 +125,79 @@ export default function FormelVisning({
         </div>
       </div>
 
-      {/* Kalkulator-seksjon */}
+      {/* PRINT-ONLY: Variabler + Varianter inne i flisa */}
+      <div className="print-only" style={{ marginBottom: "1.2rem" }}>
+        {/* Variabler */}
+        <section style={{ marginBottom: "1rem" }}>
+          <h3 style={{ margin: "0 0 0.4rem" }}>Variabler</h3>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "0.9rem"
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                  Symbol
+                </th>
+                <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                  Navn
+                </th>
+                <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                  Enhet
+                </th>
+                <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                  Beskrivelse
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {formula.variables.map((v) => (
+                <tr key={v.id}>
+                  <td style={{ padding: "0.15rem 0" }}>
+                    <code>{v.symbol}</code>
+                  </td>
+                  <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
+                  <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
+                  <td
+                    style={{
+                      padding: "0.15rem 0",
+                      color: "var(--mcl-muted)"
+                    }}
+                  >
+                    {v.description ?? "–"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        {/* Varianter */}
+        {formula.variants && formula.variants.length > 0 && (
+          <section>
+            <h3 style={{ margin: "0 0 0.4rem" }}>Varianter (løs for …)</h3>
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: "1.2rem",
+                fontSize: "0.9rem"
+              }}
+            >
+              {formula.variants.map((variant) => (
+                <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
+                  <strong>{variant.label}: </strong>
+                  <MathText text={variant.expression} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+
+      {/* Kalkulator-seksjon (interaktiv på skjerm, med egen print-oppsummering) */}
       <Kalkulator formulaId={formulaId} />
 
       {/* Sidepanel: mobil med backdrop, desktop uten */}
