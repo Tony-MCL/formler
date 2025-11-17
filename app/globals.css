@@ -391,7 +391,7 @@ a {
 }
 
 /* ========================================================================== */
-/* MATH TYPOGRAFI + BRØK */
+/* MATH TYPOGRAFI + BRØK + SUB/SUP */
 /* ========================================================================== */
 
 .math-text {
@@ -424,6 +424,21 @@ a {
   line-height: 1.1;
 }
 
+/* Sub-/superscript inni matte-teksten */
+.math-text sub,
+.math-text sup {
+  font-size: 0.75em;
+  line-height: 0;
+}
+
+.math-text sub {
+  vertical-align: -0.25em;
+}
+
+.math-text sup {
+  vertical-align: 0.45em;
+}
+
 /* ========================================================================== */
 /* FORMEL-INFO SIDEPANEL */
 /* ========================================================================== */
@@ -451,6 +466,91 @@ a {
   padding: 1rem 1.2rem;
   z-index: 40;
   overflow-y: auto;
+}
+
+/* ========================================================================== */
+/* KALKULATOR – LØS-FOR MENY (SKJERM) */
+/* ========================================================================== */
+
+.calc-solvefor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.calc-solvefor-label {
+  font-size: 0.85rem;
+  color: var(--mcl-muted);
+}
+
+.calc-solvefor-trigger {
+  width: 100%;
+  text-align: left;
+  border-radius: 10px;
+  border: 1px solid var(--mcl-outline);
+  background: var(--mcl-surface);
+  padding: 0.35rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.calc-solvefor-trigger-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.calc-solvefor-current {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.calc-solvefor-arrow {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.calc-solvefor-expression {
+  font-size: 0.8rem;
+  color: var(--mcl-muted);
+}
+
+.calc-solvefor-menu {
+  margin-top: 0.25rem;
+  border-radius: 10px;
+  border: 1px solid var(--mcl-outline);
+  background: var(--mcl-surface);
+  box-shadow: var(--elev-2);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.calc-solvefor-item {
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+  border: none;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  cursor: pointer;
+}
+
+.calc-solvefor-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.calc-solvefor-item-main {
+  font-size: 0.9rem;
+}
+
+.calc-solvefor-item-sub {
+  font-size: 0.8rem;
+  color: var(--mcl-muted);
 }
 
 /* ========================================================================== */
@@ -597,5 +697,18 @@ a {
 
   .calc-print-value {
     font-size: 0.9rem;
+  }
+
+  .calc-print-result-box {
+    margin-top: 0.8rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.18);
+    font-size: 0.95rem;
+  }
+
+  .calc-print-raw {
+    margin-top: 0.15rem;
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.65);
   }
 }
