@@ -85,20 +85,26 @@ export default function FormelVisning({
         <p className="main-hero-sub">{formula.description}</p>
       )}
 
-      {/* Grunnuttrykk – stor + midtstilt, Info på samme linje der det er plass */}
+      {/* Grunnuttrykk – ekstra luft, midtstilt; Info-knapp helt til høyre */}
       <div
         style={{
-          marginTop: "0.75rem",
+          marginTop: "1.25rem",          // litt ekstra linjeskift-følelse
           marginBottom: "1rem",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          gap: "0.75rem",
-          flexWrap: "wrap",
-          textAlign: "center"
+          gap: "0.75rem"
         }}
       >
-        <MathText text={formula.baseExpression} variant="large" />
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            justifyContent: "center",
+            textAlign: "center"
+          }}
+        >
+          <MathText text={formula.baseExpression} variant="large" />
+        </div>
 
         <div className="no-print">
           <button
@@ -107,12 +113,14 @@ export default function FormelVisning({
             onClick={() => setShowInfo(true)}
             aria-label="Vis variabler og varianter"
             style={{
-              fontSize: "0.85rem",
-              paddingInline: "0.7rem",
-              whiteSpace: "nowrap"
+              fontSize: "1.2rem",
+              fontWeight: 700,
+              paddingInline: "0.6rem",
+              paddingBlock: "0.2rem",
+              lineHeight: 1
             }}
           >
-            ℹ Info
+            i
           </button>
         </div>
       </div>
