@@ -409,6 +409,35 @@ a {
 }
 
 /* ========================================================================== */
+/* FORMEL-INFO SIDEPANEL */
+/* ========================================================================== */
+
+.formula-info-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  z-index: 30;
+}
+
+.formula-info-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(360px, 100%);
+  background: var(--mcl-surface);
+  border-left: 1px solid var(--mcl-outline);
+  box-shadow: var(--elev-2);
+  padding: 1rem 1.2rem;
+  z-index: 40;
+  overflow-y: auto;
+}
+
+/* ========================================================================== */
 /* PRINT / PDF */
 /* ========================================================================== */
 
@@ -436,7 +465,9 @@ a {
   .sidebar-toggle,
   .button,
   .calc-interactive,
-  .calc-result {
+  .calc-result,
+  .formula-info-backdrop,
+  .formula-info-panel {
     display: none !important;
   }
 
