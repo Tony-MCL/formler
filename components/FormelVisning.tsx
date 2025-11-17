@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { getFormulaById } from "../lib/formulas";
 import type { FormulaId } from "../lib/types";
 import MathText from "./MathText";
@@ -19,6 +19,7 @@ export default function FormelVisning({
 }: FormelVisningProps) {
   const formula = getFormulaById(formulaId);
   const { basePath } = useI18n();
+  const [showInfo, setShowInfo] = useState(false);
 
   if (!formula) {
     return (
@@ -71,80 +72,192 @@ export default function FormelVisning({
         <p className="main-hero-sub">{formula.description}</p>
       )}
 
-      <div style={{ marginTop: "0.75rem", marginBottom: "1rem" }}>
-        <strong>Grunnuttrykk: </strong>
-        <MathText text={formula.baseExpression} />
-      </div>
-
-      <div style={{ marginBottom: "1rem" }}>
-        <h3 style={{ margin: "0 0 0.4rem" }}>Variabler</h3>
-        <table
+      {/* Grunnuttrykk – stor, bold, med Info-knapp */}
+      <div
+        style={{
+          marginTop: "0.75rem",
+          marginBottom: "1rem",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "0.75rem",
+          flexWrap: "wrap"
+        }}
+      >
+        <div
           style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            fontSize: "0.9rem"
+            fontSize: "1.8rem",
+            fontWeight: 700
           }}
         >
-          <thead>
-            <tr>
-              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
-                Symbol
-              </th>
-              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
-                Navn
-              </th>
-              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
-                Enhet
-              </th>
-              <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
-                Beskrivelse
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {formula.variables.map((v) => (
-              <tr key={v.id}>
-                <td style={{ padding: "0.15rem 0" }}>
-                  <code>{v.symbol}</code>
-                </td>
-                <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
-                <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
-                <td
-                  style={{
-                    padding: "0.15rem 0",
-                    color: "var(--mcl-muted)"
-                  }}
-                >
-                  {v.description ?? "–"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          <MathText text={formula.baseExpression} />
+        </div>
 
-      {formula.variants && formula.variants.length > 0 && (
-        <div style={{ marginBottom: "1rem" }}>
-          <h3 style={{ margin: "0 0 0.4rem" }}>Varianter (løs for …)</h3>
-          <ul
+        <div className="no-print">
+          <button
+            type="button"
+            className="button"
+            onClick={() => setShowInfo(true)}
+            aria-label="Vis variabler og varianter"
             style={{
-              margin: 0,
-              paddingLeft: "1.2rem",
-              fontSize: "0.9rem"
+              fontSize: "0.85rem",
+              paddingInline: "0.7rem",
+              whiteSpace: "nowrap"
             }}
           >
-            {formula.variants.map((variant) => (
-              <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
-                <strong>{variant.label}: </strong>
-                <MathText text={variant.expression} />
-              </li>
-            ))}
-          </ul>
+            ℹ Info
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Kalkulator-seksjon */}
       <Kalkulator formulaId={formulaId} />
+
+      {/* Sidepanel med Variabler + Varianter */}
+      {showInfo && (
+        <>
+          <button
+            type="button"
+            className="formula-info-backdrop"
+            aria-label="Lukk detaljpanel"
+            onClick={() => setShowInfo(false)}
+          />
+
+          <aside
+            className="formula-info-panel"
+            aria-label={`Detaljer for formel ${formula.name}`}
+          >
+            <header
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "0.75rem"
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "1rem"
+                }}
+              >
+                Detaljer – {formula.name}
+              </h3>
+              <button
+                type="button"
+                className="button"
+                onClick={() => setShowInfo(false)}
+                aria-label="Lukk"
+                style={{ paddingInline: "0.6rem" }}
+              >
+                ✕
+              </button>
+            </header>
+
+            <div
+              style={{
+                fontSize: "0.9rem"
+              }}
+            >
+              {/* Variabler */}
+              <section style={{ marginBottom: "1rem" }}>
+                <h4 style={{ margin: "0 0 0.4rem" }}>Variabler</h4>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: "0.85rem"
+                  }}
+                >
+                  <thead>
+                    <tr>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          paddingBottom: "0.2rem"
+                        }}
+                      >
+                        Symbol
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          paddingBottom: "0.2rem"
+                        }}
+                      >
+                        Navn
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          paddingBottom: "0.2rem"
+                        }}
+                      >
+                        Enhet
+                      </th>
+                      <th
+                        style={{
+                          textAlign: "left",
+                          paddingBottom: "0.2rem"
+                        }}
+                      >
+                        Beskrivelse
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formula.variables.map((v) => (
+                      <tr key={v.id}>
+                        <td style={{ padding: "0.15rem 0" }}>
+                          <code>{v.symbol}</code>
+                        </td>
+                        <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
+                        <td style={{ padding: "0.15rem 0" }}>
+                          {v.unit ?? "–"}
+                        </td>
+                        <td
+                          style={{
+                            padding: "0.15rem 0",
+                            color: "var(--mcl-muted)"
+                          }}
+                        >
+                          {v.description ?? "–"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+
+              {/* Varianter */}
+              {formula.variants && formula.variants.length > 0 && (
+                <section>
+                  <h4 style={{ margin: "0 0 0.4rem" }}>
+                    Varianter (løs for …)
+                  </h4>
+                  <ul
+                    style={{
+                      margin: 0,
+                      paddingLeft: "1.2rem",
+                      fontSize: "0.85rem"
+                    }}
+                  >
+                    {formula.variants.map((variant) => (
+                      <li
+                        key={variant.id}
+                        style={{ marginBottom: "0.2rem" }}
+                      >
+                        <strong>{variant.label}: </strong>
+                        <MathText text={variant.expression} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </div>
+          </aside>
+        </>
+      )}
     </section>
   );
 }
