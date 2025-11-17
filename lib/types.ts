@@ -1,4 +1,12 @@
-export type FormulaId = "ohm" | "power" | "energy";
+export type FormulaId =
+  | "ohm"
+  | "power"
+  | "energy"
+  | "power_dc"
+  | "voltage_drop"
+  | "series_resistors"
+  | "sync_speed"
+  | "torque_from_power";
 
 export type FormulaCategoryId = "core" | "systems" | "machines";
 
