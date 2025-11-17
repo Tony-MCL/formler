@@ -2,8 +2,11 @@
 
 import React from "react";
 
+type MathTextVariant = "normal" | "large";
+
 type MathTextProps = {
   text: string;
+  variant?: MathTextVariant;
 };
 
 /**
@@ -66,9 +69,12 @@ function renderExpr(expr: string): React.ReactNode {
   );
 }
 
-export default function MathText({ text }: MathTextProps) {
+export default function MathText({ text, variant = "normal" }: MathTextProps) {
   const trimmed = text.trim();
   if (!trimmed) return null;
+
+  const className =
+    variant === "large" ? "math-text math-text--large" : "math-text";
 
   const eqIndex = trimmed.indexOf("=");
   if (eqIndex !== -1) {
@@ -76,7 +82,7 @@ export default function MathText({ text }: MathTextProps) {
     const right = trimmed.slice(eqIndex + 1).trim();
 
     return (
-      <span className="math-text">
+      <span className={className}>
         <span>{applyReplacements(left)}</span>
         <span>{` = `}</span>
         {renderExpr(right)}
@@ -84,5 +90,5 @@ export default function MathText({ text }: MathTextProps) {
     );
   }
 
-  return <span className="math-text">{renderExpr(trimmed)}</span>;
+  return <span className={className}>{renderExpr(trimmed)}</span>;
 }
