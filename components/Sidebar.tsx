@@ -31,6 +31,15 @@ export default function Sidebar({
 }: SidebarProps) {
   const [isMobile, setIsMobile] = useState(false);
 
+  // Hvilke grupper er åpne (kollapsbare seksjoner)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    getFormulasGroupedByCategory().forEach(({ category }) => {
+      initial[category.id] = true; // alle åpne som start
+    });
+    return initial;
+  });
+
   useEffect(() => {
     const update = () => {
       if (typeof window !== "undefined") {
@@ -60,6 +69,13 @@ export default function Sidebar({
       }))
     })
   );
+
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
 
   return (
     <>
@@ -91,48 +107,81 @@ export default function Sidebar({
         </div>
 
         <nav className="sidebar-nav">
-          {groups.map((group) => (
-            <div key={group.id} className="sidebar-section">
-              <div className="sidebar-section-title">{group.title}</div>
+          {groups.map((group) => {
+            const isOpen = openGroups[group.id] ?? true;
 
-              {group.description && (
-                <p
+            return (
+              <div key={group.id} className="sidebar-section">
+                {/* Klikkbar seksjonstittel med pil */}
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.id)}
+                  aria-expanded={isOpen}
                   style={{
-                    margin: "0.1rem 0 0.3rem",
-                    fontSize: "0.75rem",
-                    color: "var(--mcl-muted)"
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    padding: 0,
+                    margin: 0,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer"
                   }}
                 >
-                  {group.description}
-                </p>
-              )}
+                  <div className="sidebar-section-title">{group.title}</div>
+                  <span
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "var(--mcl-muted)"
+                    }}
+                  >
+                    {isOpen ? "▾" : "▸"}
+                  </span>
+                </button>
 
-              <ul className="sidebar-list">
-                {group.items.map((item) => {
-                  const isActive = item.id === selectedFormulaId;
-                  return (
-                    <li key={item.id} className="sidebar-item">
-                      <button
-                        type="button"
-                        className="sidebar-link"
-                        onClick={() => {
-                          onSelectFormula(item.id);
-                          if (isMobile) {
-                            onClose();
-                          }
-                        }}
-                      >
-                        <span className="sidebar-item-label">
-                          {isActive ? "• " : ""}
-                          {item.label}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+                {/* Beskrivelse + liste kun når gruppen er åpen */}
+                {isOpen && group.description && (
+                  <p
+                    style={{
+                      margin: "0.1rem 0 0.3rem",
+                      fontSize: "0.75rem",
+                      color: "var(--mcl-muted)"
+                    }}
+                  >
+                    {group.description}
+                  </p>
+                )}
+
+                {isOpen && (
+                  <ul className="sidebar-list">
+                    {group.items.map((item) => {
+                      const isActive = item.id === selectedFormulaId;
+                      return (
+                        <li key={item.id} className="sidebar-item">
+                          <button
+                            type="button"
+                            className="sidebar-link"
+                            onClick={() => {
+                              onSelectFormula(item.id);
+                              if (isMobile) {
+                                onClose();
+                              }
+                            }}
+                          >
+                            <span className="sidebar-item-label">
+                              {isActive ? "• " : ""}
+                              {item.label}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
         </nav>
       </aside>
     </>
