@@ -1,3 +1,4 @@
+// app/components/FormelVisning.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -110,7 +111,7 @@ export default function FormelVisning({
           <button
             type="button"
             className="button"
-            onClick={() => setShowInfo(prev => !prev)}
+            onClick={() => setShowInfo((prev) => !prev)}
             aria-label="Vis variabler og varianter"
             style={{
               fontSize: "1.4rem",
@@ -188,7 +189,7 @@ export default function FormelVisning({
             >
               {formula.variants.map((variant) => (
                 <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
-                  <strong>{variant.label}: </strong>
+                  <strong>Løs for: </strong>
                   <MathText text={variant.expression} />
                 </li>
               ))}
@@ -310,7 +311,7 @@ export default function FormelVisning({
                 >
                   {formula.variants.map((variant) => (
                     <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
-                      <strong>{variant.label}: </strong>
+                      <strong>Løs for: </strong>
                       <MathText text={variant.expression} />
                     </li>
                   ))}
