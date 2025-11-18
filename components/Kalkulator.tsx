@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { FormulaId, SolveForId } from "../lib/types";
 import { getFormulaById } from "../lib/formulas";
 import { solveFormula, listVariants } from "../lib/engine";
@@ -107,13 +107,19 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
   const formula = getFormulaById(formulaId);
 
   const variants = useMemo(() => listVariants(formulaId), [formulaId]);
-  const [solveFor, setSolveFor] = useState<SolveForId>(
-    variants[0]?.solveFor ?? (formula?.variables[0]?.id as SolveForId)
-  );
-
+  // Tom streng = ingen variant valgt ennå
+  const [solveFor, setSolveFor] = useState<SolveForId | "">("");
   const [inputs, setInputs] = useState<InputMap>({});
   const [result, setResult] = useState<ResultState | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
+
+  // Reset kalkulator når formel byttes
+  useEffect(() => {
+    setSolveFor("");
+    setInputs({});
+    setResult(null);
+    setErrorText(null);
+  }, [formulaId]);
 
   if (!formula || variants.length === 0) {
     return (
@@ -131,7 +137,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
   );
 
   const currentVariant =
-    variants.find((v) => v.solveFor === solveFor) ?? variants[0];
+    solveFor && variants.find((v) => v.solveFor === solveFor) || null;
 
   const handleChangeInput = (id: string, value: string) => {
     setInputs((prev) => ({
@@ -144,6 +150,11 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     setErrorText(null);
     setResult(null);
 
+    if (!solveFor) {
+      setErrorText("Velg først hva du vil løse for.");
+      return;
+    }
+
     const requiredVars = formula.variables.filter((v) => v.id !== solveFor);
 
     const numericInput: Record<string, number> = {};
@@ -153,10 +164,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
       const rawStateValue = inputs[v.id];
 
       // cosphi får default 1 hvis ikke utfylt
-      if (
-        (rawStateValue === undefined || rawStateValue === "") &&
-        v.id === "cosphi"
-      ) {
+      if ((rawStateValue === undefined || rawStateValue === "") && v.id === "cosphi") {
         numericInput[v.id] = 1;
         snapshotInputs[v.id] = "1.0";
         continue;
@@ -176,7 +184,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
       snapshotInputs[v.id] = rawStateValue;
     }
 
-    const res = solveFormula(formulaId, solveFor, numericInput);
+    const res = solveFormula(formulaId, solveFor as SolveForId, numericInput);
     if (!res.ok || res.value === undefined) {
       setErrorText(res.error ?? "Kunne ikke beregne resultat.");
       return;
@@ -196,13 +204,13 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
     const label = outVar
       ? `${outVar.symbol} (${outVar.name})`
-      : solveFor.toString();
+      : (solveFor as string);
 
     setResult({
       label,
       pretty: prettyText,
       raw: rawText,
-      solveFor,
+      solveFor: solveFor as SolveForId,
       inputs: snapshotInputs,
       variantExpression: currentVariant?.expression
     });
@@ -229,7 +237,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             <select
               value={solveFor}
               onChange={(e) => {
-                const next = e.target.value as SolveForId;
+                const next = e.target.value as SolveForId | "";
                 setSolveFor(next);
                 setResult(null);
                 setErrorText(null);
@@ -244,6 +252,10 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
                 fontSize: "0.9rem"
               }}
             >
+              {/* Første linje i rullegardin: “Løs for …” */}
+              <option value="">
+                Velg hva du vil løse for
+              </option>
               {solveOptions.map((id) => {
                 const label = makeSolveLabel(formula, id);
                 return (
@@ -254,61 +266,73 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
               })}
             </select>
           </label>
+
+          {currentVariant && (
+            <div style={{ fontSize: "0.9rem" }}>
+              <span style={{ color: "var(--mcl-muted)" }}>Bruker: </span>
+              <MathText text={currentVariant.expression} />
+            </div>
+          )}
         </div>
 
-        {/* Input-felt */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-            gap: "0.75rem",
-            marginBottom: "0.9rem"
-          }}
-        >
-          {formula.variables
-            .filter((v) => v.id !== solveFor)
-            .map((v) => (
-              <label
-                key={v.id}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  fontSize: "0.85rem",
-                  gap: "0.2rem"
-                }}
-              >
-                <span>
-                  {v.symbol} ({v.name}){v.unit ? ` [${v.unit}]` : ""}:
-                </span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={inputs[v.id] ?? ""}
-                  onChange={(e) => handleChangeInput(v.id, e.target.value)}
-                  placeholder={v.id === "cosphi" ? "1.0" : ""}
+        {/* Input-felt – vises først når bruker har valgt variant */}
+        {solveFor && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+              gap: "0.75rem",
+              marginBottom: "0.9rem"
+            }}
+          >
+            {formula.variables
+              .filter((v) => v.id !== solveFor)
+              .map((v) => (
+                <label
+                  key={v.id}
                   style={{
-                    padding: "0.35rem 0.5rem",
-                    borderRadius: 6,
-                    border: "1px solid var(--mcl-outline)",
-                    background: "var(--mcl-bg)",
-                    color: "var(--mcl-text)",
-                    fontSize: "0.9rem"
+                    display: "flex",
+                    flexDirection: "column",
+                    fontSize: "0.85rem",
+                    gap: "0.2rem"
                   }}
-                />
-              </label>
-            ))}
-        </div>
+                >
+                  <span>
+                    {v.symbol} ({v.name}){v.unit ? ` [${v.unit}]` : ""}:
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={inputs[v.id] ?? ""}
+                    onChange={(e) => handleChangeInput(v.id, e.target.value)}
+                    placeholder={v.id === "cosphi" ? "1.0" : ""}
+                    style={{
+                      padding: "0.35rem 0.5rem",
+                      borderRadius: 6,
+                      border: "1px solid var(--mcl-outline)",
+                      background: "var(--mcl-bg)",
+                      color: "var(--mcl-text)",
+                      fontSize: "0.9rem"
+                    }}
+                  />
+                </label>
+              ))}
+          </div>
+        )}
 
         <button
           type="button"
           className="button"
           onClick={handleSolve}
+          disabled={!solveFor}
           style={{
             background: "var(--mcl-brand)",
             color: "#fff",
             borderRadius: 999,
             padding: "0.45rem 0.9rem",
-            marginBottom: "0.6rem"
+            marginBottom: "0.6rem",
+            opacity: solveFor ? 1 : 0.6,
+            cursor: solveFor ? "pointer" : "default"
           }}
         >
           Beregn
