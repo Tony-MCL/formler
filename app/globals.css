@@ -590,7 +590,11 @@ a {
 
   /* Print-only blokker skal vises */
   .print-only {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column;
+    gap: 1.4rem;
+    margin-top: 1rem;
+    margin-bottom: 1.6rem;
   }
 
   .app-shell.container {
