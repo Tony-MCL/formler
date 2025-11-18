@@ -137,7 +137,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
   );
 
   const currentVariant =
-    solveFor && variants.find((v) => v.solveFor === solveFor) || null;
+    (solveFor && variants.find((v) => v.solveFor === solveFor)) || null;
 
   const handleChangeInput = (id: string, value: string) => {
     setInputs((prev) => ({
@@ -164,7 +164,10 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
       const rawStateValue = inputs[v.id];
 
       // cosphi får default 1 hvis ikke utfylt
-      if ((rawStateValue === undefined || rawStateValue === "") && v.id === "cosphi") {
+      if (
+        (rawStateValue === undefined || rawStateValue === "") &&
+        v.id === "cosphi"
+      ) {
         numericInput[v.id] = 1;
         snapshotInputs[v.id] = "1.0";
         continue;
@@ -222,7 +225,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
       {/* Interaktiv del – skjules ved print */}
       <div className="calc-interactive">
-        {/* Velg "løs for" */}
+        {/* Velg variant */}
         <div
           style={{
             display: "flex",
@@ -232,44 +235,39 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             marginBottom: "0.8rem"
           }}
         >
-          <label style={{ fontSize: "0.9rem" }}>
-            Løs for:
-            <select
-              value={solveFor}
-              onChange={(e) => {
-                const next = e.target.value as SolveForId | "";
-                setSolveFor(next);
-                setResult(null);
-                setErrorText(null);
-              }}
-              style={{
-                marginLeft: "0.5rem",
-                padding: "0.25rem 0.5rem",
-                borderRadius: 6,
-                border: "1px solid var(--mcl-outline)",
-                background: "var(--mcl-surface)",
-                color: "var(--mcl-text)",
-                fontSize: "0.9rem"
-              }}
-            >
-              {/* Første linje i rullegardin: “Løs for …” */}
-              <option value="">
-                Velg hva du vil løse for
-              </option>
-              {solveOptions.map((id) => {
-                const label = makeSolveLabel(formula, id);
-                return (
-                  <option key={id} value={id}>
-                    {label}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
+          <select
+            value={solveFor}
+            onChange={(e) => {
+              const next = e.target.value as SolveForId | "";
+              setSolveFor(next);
+              setResult(null);
+              setErrorText(null);
+            }}
+            style={{
+              padding: "0.25rem 0.5rem",
+              borderRadius: 6,
+              border: "1px solid var(--mcl-outline)",
+              background: "var(--mcl-surface)",
+              color: "var(--mcl-text)",
+              fontSize: "0.9rem"
+            }}
+          >
+            <option value="">Velg hva du vil løse for</option>
+            {solveOptions.map((id) => {
+              const label = makeSolveLabel(formula, id);
+              return (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
 
           {currentVariant && (
             <div style={{ fontSize: "0.9rem" }}>
-              <span style={{ color: "var(--mcl-muted)" }}>Bruker: </span>
+              <span style={{ color: "var(--mcl-muted)" }}>
+                Bruker variant:{" "}
+              </span>
               <MathText text={currentVariant.expression} />
             </div>
           )}
