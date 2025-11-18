@@ -136,7 +136,6 @@ export default function FormelVisning({
           gap: "1.4rem"
         }}
       >
-
         {/* Variabler */}
         <section style={{ marginBottom: "1.4rem" }}>
           <h3 style={{ margin: "0 0 0.4rem" }}>Variabler</h3>
