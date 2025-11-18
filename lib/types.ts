@@ -1,20 +1,11 @@
-export type FormulaId =
-  | "ohm"
-  | "power"
-  | "power_dc"
-  | "energy"
-  | "voltage_drop"
-  | "series_resistors"
-  | "sync_speed"
-  | "three_phase_apparent"
-  | "three_phase_active"
-  | "power_factor"
-  | "single_phase_apparent"
-  | "efficiency"
-  | "torque_from_power",
-  | "slip",
+// lib/types.ts
 
-export type FormulaCategoryId = "core" | "systems" | "machines";
+// I stedet for manuelle union-typer ( "ohm" | "power" | ... )
+// bruker vi string for å slippe å vedlikeholde listen hver gang
+// vi legger til en ny formel-id eller kategori-id.
+
+export type FormulaId = string;
+export type FormulaCategoryId = string;
 
 export type VariableId = string;
 
