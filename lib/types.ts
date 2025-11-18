@@ -2,11 +2,15 @@ export type FormulaId =
   | "ohm"
   | "power"
   | "energy"
-  | "power_dc"
   | "voltage_drop"
   | "series_resistors"
   | "sync_speed"
-  | "torque_from_power";
+  | "three_phase_apparent"
+  | "three_phase_active"
+  | "power_factor"
+  | "single_phase_apparent"
+  | "efficiency"
+  | "slip";
 
 export type FormulaCategoryId = "core" | "systems" | "machines";
 
