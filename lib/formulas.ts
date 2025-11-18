@@ -15,13 +15,15 @@ export const formulaCategories: FormulaCategory[] = [
   {
     id: "systems",
     title: "Systemer og nett",
-    description: "Nett-typer, spenningsnivåer, spenningsfall og enkle kortslutningsstørrelser.",
+    description:
+      "Nett-typer, spenningsnivåer, spenningsfall og enkle kortslutningsstørrelser.",
     order: 2
   },
   {
     id: "machines",
     title: "Motorer og generatorer",
-    description: "Enkle sammenhenger for roterende maskiner, synkronhastighet og moment.",
+    description:
+      "Enkle sammenhenger for roterende maskiner, synkronhastighet og moment.",
     order: 3
   }
 ];
@@ -37,14 +39,14 @@ export const formulaCategories: FormulaCategory[] = [
 export const formulas: Formula[] = [
   /* =======================================================================
    * GRUNNLEGGENDE ELKRAFT
-   * =======================================================================
-   */
+   * ======================================================================= */
   {
     id: "ohm",
     categoryId: "core",
     name: "Ohms lov",
     shortName: "Ohm",
-    description: "Sammenhengen mellom spenning, strøm og motstand i en leder.",
+    description:
+      "Sammenhengen mellom spenning, strøm og motstand i en leder.",
     baseExpression: "U = R * I",
     variables: [
       {
@@ -263,177 +265,174 @@ export const formulas: Formula[] = [
     tags: ["P, U, I, likespenning"]
   },
   {
-  id: "series_resistors",
-  categoryId: "core",
-  name: "Seriekobling av motstander",
-  shortName: "Rₜₒₜ = R₁ + R₂",
-  description: "Total motstand for to seriekoblede motstander.",
-  baseExpression: "R_tot = R_1 + R_2",
-  variables: [
-    {
-      id: "R_tot",
-      symbol: "R_tot",
-      name: "Total motstand",
-      unit: "Ω",
-      role: "output"
-    },
-    {
-      id: "R_1",
-      symbol: "R_1",
-      name: "Motstand 1",
-      unit: "Ω",
-      role: "input"
-    },
-    {
-      id: "R_2",
-      symbol: "R_2",
-      name: "Motstand 2",
-      unit: "Ω",
-      role: "input"
-    }
-  ],
-  variants: [
-    {
-      id: "series_resistors-Rtot",
-      label: "Løs for R_tot",
-      solveFor: "R_tot",
-      expression: "R_tot = R_1 + R_2"
-    },
-    {
-      id: "series_resistors-R1",
-      label: "Løs for R_1",
-      solveFor: "R_1",
-      expression: "R_1 = R_tot - R_2"
-    },
-    {
-      id: "series_resistors-R2",
-      label: "Løs for R_2",
-      solveFor: "R_2",
-      expression: "R_2 = R_tot - R_1"
-    }
-  ],
-  tags: ["R_tot, R_1, R_2"]
-},
+    id: "series_resistors",
+    categoryId: "core",
+    name: "Seriekobling av motstander",
+    shortName: "Rₜₒₜ = R₁ + R₂",
+    description: "Total motstand for to seriekoblede motstander.",
+    baseExpression: "R_tot = R_1 + R_2",
+    variables: [
+      {
+        id: "R_tot",
+        symbol: "R_tot",
+        name: "Total motstand",
+        unit: "Ω",
+        role: "output"
+      },
+      {
+        id: "R_1",
+        symbol: "R_1",
+        name: "Motstand 1",
+        unit: "Ω",
+        role: "input"
+      },
+      {
+        id: "R_2",
+        symbol: "R_2",
+        name: "Motstand 2",
+        unit: "Ω",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "series_resistors-Rtot",
+        label: "Løs for R_tot",
+        solveFor: "R_tot",
+        expression: "R_tot = R_1 + R_2"
+      },
+      {
+        id: "series_resistors-R1",
+        label: "Løs for R_1",
+        solveFor: "R_1",
+        expression: "R_1 = R_tot - R_2"
+      },
+      {
+        id: "series_resistors-R2",
+        label: "Løs for R_2",
+        solveFor: "R_2",
+        expression: "R_2 = R_tot - R_1"
+      }
+    ],
+    tags: ["R_tot, R_1, R_2"]
+  },
 
   /* =======================================================================
    * SYSTEMER OG NETT
-   * =======================================================================
-   */
- {
-  id: "voltage_drop",
-  categoryId: "systems",
-  name: "Spennings­tap i ren motstand",
-  shortName: "ΔU = I · R",
-  description:
-    "Enkel modell for spenningsfall over en ren motstand eller kabel med kjent resistans.",
-  baseExpression: "ΔU = I * R",
-  variables: [
-    {
-      id: "dU",
-      symbol: "ΔU",
-      name: "Spenningsfall",
-      unit: "V",
-      role: "output",
-      description:
-        "Forskjell mellom nominell og faktisk spenning."
-    },
-    {
-      id: "I",
-      symbol: "I",
-      name: "Strøm",
-      unit: "A",
-      role: "input"
-    },
-    {
-      id: "R",
-      symbol: "R",
-      name: "Motstand",
-      unit: "Ω",
-      role: "input",
-      description: "Total resistans i den aktuelle strekningen."
-    }
-  ],
-  variants: [
-    {
-      id: "voltage_drop-dU",
-      label: "Løs for ΔU",
-      solveFor: "dU",
-      expression: "ΔU = I * R"
-    },
-    {
-      id: "voltage_drop-I",
-      label: "Løs for I",
-      solveFor: "I",
-      expression: "I = ΔU / R"
-    },
-    {
-      id: "voltage_drop-R",
-      label: "Løs for R",
-      solveFor: "R",
-      expression: "R = ΔU / I"
-    }
-  ],
-  tags: ["ΔU, I, R"]
-},
+   * ======================================================================= */
+  {
+    id: "voltage_drop",
+    categoryId: "systems",
+    name: "Spennings­tap i ren motstand",
+    shortName: "ΔU = I · R",
+    description:
+      "Enkel modell for spenningsfall over en ren motstand eller kabel med kjent resistans.",
+    baseExpression: "ΔU = I * R",
+    variables: [
+      {
+        id: "dU",
+        symbol: "ΔU",
+        name: "Spenningsfall",
+        unit: "V",
+        role: "output",
+        description: "Forskjell mellom nominell og faktisk spenning."
+      },
+      {
+        id: "I",
+        symbol: "I",
+        name: "Strøm",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "R",
+        symbol: "R",
+        name: "Motstand",
+        unit: "Ω",
+        role: "input",
+        description: "Total resistans i den aktuelle strekningen."
+      }
+    ],
+    variants: [
+      {
+        id: "voltage_drop-dU",
+        label: "Løs for ΔU",
+        solveFor: "dU",
+        expression: "ΔU = I * R"
+      },
+      {
+        id: "voltage_drop-I",
+        label: "Løs for I",
+        solveFor: "I",
+        expression: "I = ΔU / R"
+      },
+      {
+        id: "voltage_drop-R",
+        label: "Løs for R",
+        solveFor: "R",
+        expression: "R = ΔU / I"
+      }
+    ],
+    tags: ["ΔU, I, R"]
+  },
 
   /* =======================================================================
    * MOTORER OG GENERATORER
-   * =======================================================================
-   */
+   * ======================================================================= */
   {
-  id: "sync_speed",
-  categoryId: "machines",
-  name: "Synkron hastighet",
-  shortName: "n_s = 60 · f / p",
-  description:
-    "Synkron hastighet for roterende maskiner basert på frekvens og poltall.",
-  baseExpression: "n_s = 60 * f / p",
-  variables: [
-    {
-      id: "n_s",
-      symbol: "n_s",
-      name: "Synkron hastighet",
-      unit: "rpm",
-      role: "output",
-      description: "Teoretisk synkron hastighet på akselen."
-    },
-    {
-      id: "f",
-      symbol: "f",
-      name: "Frekvens",
-      unit: "Hz",
-      role: "input"
-    },
-    {
-      id: "p",
-      symbol: "p",
-      name: "Poltall",
-      role: "input",
-      description: "Antall polpar i maskinen."
-    }
-  ],
-  variants: [
-    {
-      id: "sync_speed-ns",
-      label: "Løs for n_s",
-      solveFor: "n_s",
-      expression: "n_s = 60 * f / p"
-    },
-    {
-      id: "sync_speed-f",
-      label: "Løs for f",
-      solveFor: "f",
-      expression: "f = n_s * p / 60"
-    },
-    {
-      id: "sync_speed-p",
-      label: "Løs for p",
-      solveFor: "p",
-      expression: "p = 60 * f / n_s"
-    }
-  ],
-  tags: ["n_s, f, p"]
-},
+    id: "sync_speed",
+    categoryId: "machines",
+    name: "Synkron hastighet",
+    shortName: "n_s = 60 · f / p",
+    description:
+      "Synkron hastighet for roterende maskiner basert på frekvens og poltall.",
+    baseExpression: "n_s = 60 * f / p",
+    variables: [
+      {
+        id: "n_s",
+        symbol: "n_s",
+        name: "Synkron hastighet",
+        unit: "rpm",
+        role: "output",
+        description: "Teoretisk synkron hastighet på akselen."
+      },
+      {
+        id: "f",
+        symbol: "f",
+        name: "Frekvens",
+        unit: "Hz",
+        role: "input"
+      },
+      {
+        id: "p",
+        symbol: "p",
+        name: "Poltall",
+        role: "input",
+        description: "Antall polpar i maskinen."
+      }
+    ],
+    variants: [
+      {
+        id: "sync_speed-ns",
+        label: "Løs for n_s",
+        solveFor: "n_s",
+        expression: "n_s = 60 * f / p"
+      },
+      {
+        id: "sync_speed-f",
+        label: "Løs for f",
+        solveFor: "f",
+        expression: "f = n_s * p / 60"
+      },
+      {
+        id: "sync_speed-p",
+        label: "Løs for p",
+        solveFor: "p",
+        expression: "p = 60 * f / n_s"
+      }
+    ],
+    tags: ["n_s, f, p"]
+  },
   {
     id: "torque_from_power",
     categoryId: "machines",
@@ -487,7 +486,7 @@ export const formulas: Formula[] = [
     ],
     tags: ["M, P, n, moment, turtall"]
   },
-    {
+  {
     id: "three_phase_apparent",
     categoryId: "systems",
     name: "Trefase tilsynelatende effekt",
@@ -524,19 +523,19 @@ export const formulas: Formula[] = [
         id: "three_phase_apparent-S",
         label: "Løs for S",
         solveFor: "S",
-        expression: "S = 1.732 * U_L * I_L"
+        expression: "S = √3 · U_L · I_L"
       },
       {
         id: "three_phase_apparent-U_L",
         label: "Løs for U_L",
         solveFor: "U_L",
-        expression: "U_L = S / (1.732 * I_L)"
+        expression: "U_L = S / (√3 · I_L)"
       },
       {
         id: "three_phase_apparent-I_L",
         label: "Løs for I_L",
         solveFor: "I_L",
-        expression: "I_L = S / (1.732 * U_L)"
+        expression: "I_L = S / (√3 · U_L)"
       }
     ],
     tags: ["S, U_L, I_L"]
@@ -584,25 +583,25 @@ export const formulas: Formula[] = [
         id: "three_phase_active-P",
         label: "Løs for P",
         solveFor: "P",
-        expression: "P = 1.732 * U_L * I_L * cosphi"
+        expression: "P = √3 · U_L · I_L · cosφ"
       },
       {
         id: "three_phase_active-U_L",
         label: "Løs for U_L",
         solveFor: "U_L",
-        expression: "U_L = P / (1.732 * I_L * cosphi)"
+        expression: "U_L = P / (√3 · I_L · cosφ)"
       },
       {
         id: "three_phase_active-I_L",
         label: "Løs for I_L",
         solveFor: "I_L",
-        expression: "I_L = P / (1.732 * U_L * cosphi)"
+        expression: "I_L = P / (√3 · U_L · cosφ)"
       },
       {
         id: "three_phase_active-cosphi",
         label: "Løs for cosφ",
         solveFor: "cosphi",
-        expression: "cosphi = P / (1.732 * U_L * I_L)"
+        expression: "cosφ = P / (√3 · U_L · I_L)"
       }
     ],
     tags: ["P, U_L, I_L, cosφ"]
@@ -643,7 +642,7 @@ export const formulas: Formula[] = [
         id: "power_factor-cosphi",
         label: "Løs for cosφ",
         solveFor: "cosphi",
-        expression: "cosphi = P / S"
+        expression: "cosφ = P / S"
       },
       {
         id: "power_factor-P",
@@ -749,19 +748,19 @@ export const formulas: Formula[] = [
         id: "efficiency-eta",
         label: "Løs for η",
         solveFor: "eta",
-        expression: "eta = P_out / P_in"
+        expression: "η = P_ut / P_inn"
       },
       {
         id: "efficiency-P_out",
         label: "Løs for P_ut",
         solveFor: "P_out",
-        expression: "P_out = eta * P_in"
+        expression: "P_ut = η * P_inn"
       },
       {
         id: "efficiency-P_in",
         label: "Løs for P_inn",
         solveFor: "P_in",
-        expression: "P_in = P_out / eta"
+        expression: "P_inn = P_ut / η"
       }
     ],
     tags: ["η, P_ut, P_inn"]
