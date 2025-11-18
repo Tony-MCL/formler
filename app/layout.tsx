@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "../app/globals.css";
+import "katex/dist/katex.min.css"; // ← ny linje
 import { I18nProvider } from "../lib/i18n";
 
 export const metadata: Metadata = {
