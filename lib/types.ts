@@ -12,7 +12,7 @@ export type FormulaId =
   | "single_phase_apparent"
   | "efficiency"
   | "torque_from_power",
-  | "slip";
+  | "slip",
 
 export type FormulaCategoryId = "core" | "systems" | "machines";
 
