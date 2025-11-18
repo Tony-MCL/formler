@@ -1,6 +1,7 @@
 export type FormulaId =
   | "ohm"
   | "power"
+  | "power_dc"
   | "energy"
   | "voltage_drop"
   | "series_resistors"
