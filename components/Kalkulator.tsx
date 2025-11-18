@@ -65,6 +65,7 @@ function scaleValue(
   switch (unit) {
     case "V":
       if (abs >= 1000) return { value: value / 1000, unit: "kV" };
+      // Ikke automatisk mV i elkraft – behold V for små verdier
       return { value, unit: "V" };
 
     case "A":
@@ -113,7 +114,6 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
   const [inputs, setInputs] = useState<InputMap>({});
   const [result, setResult] = useState<ResultState | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
-  const [solveMenuOpen, setSolveMenuOpen] = useState(false);
 
   if (!formula || variants.length === 0) {
     return (
@@ -168,7 +168,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
       }
 
       const num = Number(rawStateValue.toString().replace(",", "."));
-      if (!Number.isFinite(num)) {
+      if (!isFinite(num)) {
         setErrorText(`Ugyldig tall for ${v.symbol} (${v.name}).`);
         return;
       }
@@ -214,73 +214,46 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
       {/* Interaktiv del – skjules ved print */}
       <div className="calc-interactive">
-        {/* Velg "løs for" – custom meny med MathText */}
+        {/* Velg "løs for" */}
         <div
           style={{
             display: "flex",
             flexWrap: "wrap",
             gap: "0.75rem",
-            alignItems: "flex-start",
+            alignItems: "center",
             marginBottom: "0.8rem"
           }}
         >
-          <div className="calc-solvefor">
-            <span className="calc-solvefor-label">Løs for:</span>
-            <button
-              type="button"
-              className="button calc-solvefor-trigger"
-              onClick={() => setSolveMenuOpen((prev) => !prev)}
-              aria-haspopup="listbox"
-              aria-expanded={solveMenuOpen}
+          <label style={{ fontSize: "0.9rem" }}>
+            Løs for:
+            <select
+              value={solveFor}
+              onChange={(e) => {
+                const next = e.target.value as SolveForId;
+                setSolveFor(next);
+                setResult(null);
+                setErrorText(null);
+              }}
+              style={{
+                marginLeft: "0.5rem",
+                padding: "0.25rem 0.5rem",
+                borderRadius: 6,
+                border: "1px solid var(--mcl-outline)",
+                background: "var(--mcl-surface)",
+                color: "var(--mcl-text)",
+                fontSize: "0.9rem"
+              }}
             >
-              <div className="calc-solvefor-trigger-header">
-                <span className="calc-solvefor-current">
-                  {makeSolveLabel(formula, solveFor)}
-                </span>
-                <span className="calc-solvefor-arrow">
-                  {solveMenuOpen ? "▴" : "▾"}
-                </span>
-              </div>
-              {currentVariant && (
-                <div className="calc-solvefor-expression">
-                  <MathText text={currentVariant.expression} />
-                </div>
-              )}
-            </button>
-
-            {solveMenuOpen && (
-              <div
-                className="calc-solvefor-menu"
-                role="listbox"
-                aria-label="Velg variabel å løse for"
-              >
-                {solveOptions.map((id) => {
-                  const label = makeSolveLabel(formula, id);
-                  const v = variants.find((vv) => vv.solveFor === id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      className="calc-solvefor-item"
-                      onClick={() => {
-                        setSolveFor(id);
-                        setResult(null);
-                        setErrorText(null);
-                        setSolveMenuOpen(false);
-                      }}
-                    >
-                      <div className="calc-solvefor-item-main">{label}</div>
-                      {v?.expression && (
-                        <div className="calc-solvefor-item-sub">
-                          <MathText text={v.expression} />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+              {solveOptions.map((id) => {
+                const label = makeSolveLabel(formula, id);
+                return (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
         </div>
 
         {/* Input-felt */}
@@ -383,10 +356,9 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
         </div>
       )}
 
-      {/* PRINT-OPPSUMMERING – pen layout på PDF/utskrift */}
       {result && (
         <div className="calc-print-summary">
-          {/* Header-row: Løs for + Bruker på samme linje */}
+          {/* Header-row: Løs for + Bruker står på samme linje */}
           <div className="calc-print-header-grid">
             <div className="calc-print-header-cell">
               <strong>Løs for:</strong>{" "}
@@ -402,7 +374,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             </div>
           </div>
 
-          {/* Verdier brukt som to kolonner */}
+          {/* Verdier brukt som to kolonner — pent linjet opp */}
           <div className="calc-print-values-grid">
             {formula.variables.map((v) => {
               if (v.id === result.solveFor) return null;
