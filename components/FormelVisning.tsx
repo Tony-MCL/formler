@@ -110,10 +110,10 @@ export default function FormelVisning({
           <button
             type="button"
             className="button"
-            onClick={() => setShowInfo(true)}
+            onClick={() => setShowInfo(prev => !prev)}
             aria-label="Vis variabler og varianter"
             style={{
-              fontSize: "1.2rem",
+              fontSize: "1.4rem",
               fontWeight: 700,
               paddingInline: "0.6rem",
               paddingBlock: "0.2rem",
