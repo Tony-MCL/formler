@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import katex from "katex";
+import "katex/dist/katex.min.css";
 
 type MathTextVariant = "normal" | "large";
 
@@ -11,17 +12,60 @@ type MathTextProps = {
 };
 
 /**
- * Små hjelpefunksjoner som oversetter vår enkle tekstsyntaks til LaTeX
- * som KaTeX kan rendre pent.
- *
- * Støtter blant annet:
- *  - "*"  → "\cdot"
- *  - "cosphi" → "\cos\varphi"
- *  - "phi" → "\varphi"
- *  - subscript: R_1, n_s → R_{1}, n_{s}
- *  - brøker:  U / R  → \frac{U}{R} (med støtte for parenteser)
+ * Gjør en enkel uttrykksstreng om til LaTeX-vennlig tekst:
+ *  - *  → \cdot
+ *  - cosphi → \cos \varphi
+ *  - phi → \varphi
+ *  - dU, dI, dR → \Delta U, \Delta I, ...
+ *  - sqrt(x) → \sqrt{x}
+ *  - R_1, n_s, R_tot → R_{1}, n_{s}, R_{tot}
+ *  - U^2, I^3 → U^{2}, I^{3}
  */
+function applyReplacementsForLatex(text: string): string {
+  let s = text.trim();
+  if (!s) return "";
 
+  // Multiplikasjonstegn
+  s = s.replace(/\s*\*\s*/g, " \\cdot ");
+
+  // cosphi → cos φ
+  s = s.replace(/cosphi/g, "\\cos\\varphi");
+
+  // phi → φ (som eget ord)
+  s = s.replace(/\bphi\b/g, "\\varphi");
+
+  // dX → ΔX (delta-prefiks, f.eks. dU, dI, dR)
+  s = s.replace(/\bd([A-Za-z])\b/g, (_match, letter: string) => {
+    return `\\Delta ${letter}`;
+  });
+
+  // sqrt(...) → \sqrt{...}
+  // Enkel variant (ingen dype, nestede parenteser nødvendig for våre formler)
+  s = s.replace(/sqrt\(([^()]+)\)/g, (_match, inner: string) => {
+    const innerLatex = applyReplacementsForLatex(inner);
+    return `\\sqrt{${innerLatex}}`;
+  });
+
+  // Subscript: R_1, n_s, R_tot, osv.
+  s = s.replace(
+    /([A-Za-z]+)_([A-Za-z0-9]+)/g,
+    (_match, base: string, sub: string) => {
+      return `${base}_{${sub}}`;
+    }
+  );
+
+  // Superscript: U^2, I^3 osv.
+  s = s.replace(
+    /([A-Za-z0-9]+)\^([0-9]+)/g,
+    (_match, base: string, expo: string) => {
+      return `${base}^{${expo}}`;
+    }
+  );
+
+  return s;
+}
+
+/** Finn første divisjonstegn på topp-nivå (ikke inni parenteser) */
 function findTopLevelDivision(expr: string): number {
   let depth = 0;
   for (let i = 0; i < expr.length; i++) {
@@ -33,96 +77,66 @@ function findTopLevelDivision(expr: string): number {
   return -1;
 }
 
-function applyReplacementsForLatex(text: string): string {
-  let s = text.trim();
-  if (!s) return "";
-
-  // Multiplikasjonstegn
-  s = s.replace(/\s*\*\s*/g, " \\cdot ");
-
-  // cosphi → cos φ
-  s = s.replace(/cosphi/g, "\\cos\\varphi");
-
-  // phi → φ
-  s = s.replace(/\bphi\b/g, "\\varphi");
-
-  // dX → ΔX  (delta-prefiks)
-  // Matcher dA, dU, dI, dR, dP, etc. men ikke "d" som eget ord
-  s = s.replace(/\bd([A-Za-z])\b/g, (_: string, letter: string) => {
-    return `\\Delta ${letter}`;
-  });
-
-  // Subscript: R_1, n_s, R_tot ...
-  s = s.replace(
-    /([A-Za-z]+)_([A-Za-z0-9]+)/g,
-    (_: string, base: string, sub: string) => `${base}_{${sub}}`
-  );
-
-  return s;
-}
-
-
-/** Rekursiv konvertering der "/" på top-nivå blir til \frac{...}{...} */
-function convertExpr(expr: string): string {
+/**
+ * Gjør et høyreside-uttrykk om til LaTeX.
+ * Top-nivå "/" blir til brøk, med rekursiv behandling.
+ */
+function exprToLatex(expr: string): string {
   const trimmed = expr.trim();
   if (!trimmed) return "";
 
-  const idx = findTopLevelDivision(trimmed);
-  if (idx === -1) {
+  const index = findTopLevelDivision(trimmed);
+  if (index === -1) {
+    // Ingen brøk på top-nivå – bare vanlige erstatninger
     return applyReplacementsForLatex(trimmed);
   }
 
-  const numerator = trimmed.slice(0, idx);
-  const denominator = trimmed.slice(idx + 1);
+  const numerator = trimmed.slice(0, index).trim();
+  const denominator = trimmed.slice(index + 1).trim();
 
-  const numLatex = convertExpr(numerator);
-  const denLatex = convertExpr(denominator);
+  const numLatex = exprToLatex(numerator);
+  const denLatex = exprToLatex(denominator);
 
   return `\\frac{${numLatex}}{${denLatex}}`;
 }
 
-/** Hoved-funksjon: gjør hele uttrykket om til LaTeX, inkl. likhetstegn. */
+/**
+ * Full formel: "U = R * I" → "U = R \cdot I" med brøk osv.
+ */
 function toLatex(text: string): string {
   const trimmed = text.trim();
   if (!trimmed) return "";
 
-  // Hvis brukeren senere vil skrive ren LaTeX selv (starter med "\"),
-  // lar vi det gå rett igjennom.
-  if (trimmed.startsWith("\\")) {
-    return trimmed;
-  }
-
   const eqIndex = trimmed.indexOf("=");
   if (eqIndex === -1) {
-    return convertExpr(trimmed);
+    // Bare høyreside/enkeltuttrykk
+    return exprToLatex(trimmed);
   }
 
-  const leftRaw = trimmed.slice(0, eqIndex);
-  const rightRaw = trimmed.slice(eqIndex + 1);
+  const left = trimmed.slice(0, eqIndex).trim();
+  const right = trimmed.slice(eqIndex + 1).trim();
 
-  const leftLatex = applyReplacementsForLatex(leftRaw);
-  const rightLatex = convertExpr(rightRaw);
+  const leftLatex = applyReplacementsForLatex(left);
+  const rightLatex = exprToLatex(right);
 
   return `${leftLatex} = ${rightLatex}`;
 }
 
 export default function MathText({ text, variant = "normal" }: MathTextProps) {
-  const latex = useMemo(() => toLatex(text), [text]);
-
+  const latex = toLatex(text);
   if (!latex) return null;
+
+  const html = useMemo(
+    () =>
+      katex.renderToString(latex, {
+        throwOnError: false,
+        displayMode: false
+      }),
+    [latex]
+  );
 
   const className =
     variant === "large" ? "math-text math-text--large" : "math-text";
-
-  let html = "";
-  try {
-    html = katex.renderToString(latex, {
-      throwOnError: false
-    });
-  } catch {
-    // Fallback: vis ren tekst hvis KaTeX feiler
-    return <span className={className}>{text}</span>;
-  }
 
   return (
     <span
