@@ -5,6 +5,7 @@ import type { FormulaId, SolveForId } from "../lib/types";
 import { getFormulaById } from "../lib/formulas";
 import { solveFormula, listVariants } from "../lib/engine";
 import MathText from "./MathText";
+import { formatInlineMath } from "../lib/mathFormat";
 
 type KalkulatorProps = {
   formulaId: FormulaId;
@@ -65,7 +66,6 @@ function scaleValue(
   switch (unit) {
     case "V":
       if (abs >= 1000) return { value: value / 1000, unit: "kV" };
-      // Ikke automatisk mV i elkraft – behold V for små verdier
       return { value, unit: "V" };
 
     case "A":
@@ -95,12 +95,13 @@ function scaleValue(
 }
 
 function makeSolveLabel(
-  formula: ReturnType<typeof getFormulaById> | null,
+  formula: ReturnType<typeof getFormulaById> | undefined,
   id: SolveForId
 ) {
   const v = formula?.variables.find((x) => x.id === id);
   if (!v) return id.toString();
-  return `${v.symbol} (${v.name})`;
+  const symbol = formatInlineMath(v.symbol);
+  return `${symbol} (${v.name})`;
 }
 
 export default function Kalkulator({ formulaId }: KalkulatorProps) {
@@ -164,10 +165,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
       const rawStateValue = inputs[v.id];
 
       // cosphi får default 1 hvis ikke utfylt
-      if (
-        (rawStateValue === undefined || rawStateValue === "") &&
-        v.id === "cosphi"
-      ) {
+      if ((rawStateValue === undefined || rawStateValue === "") && v.id === "cosphi") {
         numericInput[v.id] = 1;
         snapshotInputs[v.id] = "1.0";
         continue;
@@ -206,7 +204,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     const rawText = baseUnit ? `${rawNumber} ${baseUnit}` : rawNumber;
 
     const label = outVar
-      ? `${outVar.symbol} (${outVar.name})`
+      ? `${formatInlineMath(outVar.symbol)} (${outVar.name})`
       : (solveFor as string);
 
     setResult({
@@ -265,9 +263,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
           {currentVariant && (
             <div style={{ fontSize: "0.9rem" }}>
-              <span style={{ color: "var(--mcl-muted)" }}>
-                Bruker variant:{" "}
-              </span>
+              <span style={{ color: "var(--mcl-muted)" }}>Bruker variant: </span>
               <MathText text={currentVariant.expression} />
             </div>
           )}
@@ -296,7 +292,8 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
                   }}
                 >
                   <span>
-                    {v.symbol} ({v.name}){v.unit ? ` [${v.unit}]` : ""}:
+                    {formatInlineMath(v.symbol)} ({v.name})
+                    {v.unit ? ` [${v.unit}]` : ""}:
                   </span>
                   <input
                     type="number"
@@ -380,7 +377,6 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
 
       {result && (
         <div className="calc-print-summary">
-          {/* Header-row: Løs for + Bruker står på samme linje */}
           <div className="calc-print-header-grid">
             <div className="calc-print-header-cell">
               <strong>Løs for:</strong>{" "}
@@ -396,7 +392,6 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             </div>
           </div>
 
-          {/* Verdier brukt som to kolonner — pent linjet opp */}
           <div className="calc-print-values-grid">
             {formula.variables.map((v) => {
               if (v.id === result.solveFor) return null;
@@ -406,7 +401,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
               return (
                 <div key={v.id} className="calc-print-value-field">
                   <div className="calc-print-label">
-                    {v.symbol} ({v.name})
+                    {formatInlineMath(v.symbol)} ({v.name})
                     {v.unit ? ` [${v.unit}]` : ""}:
                   </div>
                   <div className="calc-print-value">
