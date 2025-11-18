@@ -486,6 +486,338 @@ export const formulas: Formula[] = [
       }
     ],
     tags: ["M, P, n, moment, turtall"]
+  },
+    {
+    id: "three_phase_apparent",
+    categoryId: "systems",
+    name: "Trefase tilsynelatende effekt",
+    shortName: "S = √3 · U_L · I_L",
+    description:
+      "Tilsynelatende effekt i et symmetrisk trefasesystem basert på linjespenning og linjestrøm.",
+    baseExpression: "S = √3 · U_L · I_L",
+    variables: [
+      {
+        id: "S",
+        symbol: "S",
+        name: "Tilsynelatende effekt",
+        unit: "VA",
+        role: "output",
+        description: "Tilsynelatende effekt (VA) sett fra nettet."
+      },
+      {
+        id: "U_L",
+        symbol: "U_L",
+        name: "Linjespenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "I_L",
+        symbol: "I_L",
+        name: "Linjestrøm",
+        unit: "A",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "three_phase_apparent-S",
+        label: "Løs for S",
+        solveFor: "S",
+        expression: "S = 1.732 * U_L * I_L"
+      },
+      {
+        id: "three_phase_apparent-U_L",
+        label: "Løs for U_L",
+        solveFor: "U_L",
+        expression: "U_L = S / (1.732 * I_L)"
+      },
+      {
+        id: "three_phase_apparent-I_L",
+        label: "Løs for I_L",
+        solveFor: "I_L",
+        expression: "I_L = S / (1.732 * U_L)"
+      }
+    ],
+    tags: ["S, U_L, I_L"]
+  },
+  {
+    id: "three_phase_active",
+    categoryId: "systems",
+    name: "Trefase aktiv effekt",
+    shortName: "P = √3 · U_L · I_L · cosφ",
+    description:
+      "Aktiv effekt i et symmetrisk trefasesystem basert på linjespenning, linjestrøm og effektfaktor.",
+    baseExpression: "P = √3 · U_L · I_L · cosφ",
+    variables: [
+      {
+        id: "P",
+        symbol: "P",
+        name: "Aktiv effekt",
+        unit: "W",
+        role: "output"
+      },
+      {
+        id: "U_L",
+        symbol: "U_L",
+        name: "Linjespenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "I_L",
+        symbol: "I_L",
+        name: "Linjestrøm",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "cosphi",
+        symbol: "cosφ",
+        name: "Effektfaktor",
+        role: "input",
+        description: "cosφ, mellom 0 og 1."
+      }
+    ],
+    variants: [
+      {
+        id: "three_phase_active-P",
+        label: "Løs for P",
+        solveFor: "P",
+        expression: "P = 1.732 * U_L * I_L * cosphi"
+      },
+      {
+        id: "three_phase_active-U_L",
+        label: "Løs for U_L",
+        solveFor: "U_L",
+        expression: "U_L = P / (1.732 * I_L * cosphi)"
+      },
+      {
+        id: "three_phase_active-I_L",
+        label: "Løs for I_L",
+        solveFor: "I_L",
+        expression: "I_L = P / (1.732 * U_L * cosphi)"
+      },
+      {
+        id: "three_phase_active-cosphi",
+        label: "Løs for cosφ",
+        solveFor: "cosphi",
+        expression: "cosphi = P / (1.732 * U_L * I_L)"
+      }
+    ],
+    tags: ["P, U_L, I_L, cosφ"]
+  },
+  {
+    id: "power_factor",
+    categoryId: "core",
+    name: "Effektfaktor",
+    shortName: "cosφ = P / S",
+    description:
+      "Sammenhengen mellom aktiv effekt og tilsynelatende effekt i AC-systemer.",
+    baseExpression: "cosφ = P / S",
+    variables: [
+      {
+        id: "cosphi",
+        symbol: "cosφ",
+        name: "Effektfaktor",
+        role: "output",
+        description: "Forholdet P / S, mellom 0 og 1."
+      },
+      {
+        id: "P",
+        symbol: "P",
+        name: "Aktiv effekt",
+        unit: "W",
+        role: "input"
+      },
+      {
+        id: "S",
+        symbol: "S",
+        name: "Tilsynelatende effekt",
+        unit: "VA",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "power_factor-cosphi",
+        label: "Løs for cosφ",
+        solveFor: "cosphi",
+        expression: "cosphi = P / S"
+      },
+      {
+        id: "power_factor-P",
+        label: "Løs for P",
+        solveFor: "P",
+        expression: "P = S * cosphi"
+      },
+      {
+        id: "power_factor-S",
+        label: "Løs for S",
+        solveFor: "S",
+        expression: "S = P / cosphi"
+      }
+    ],
+    tags: ["cosφ, P, S"]
+  },
+  {
+    id: "single_phase_apparent",
+    categoryId: "core",
+    name: "Enfaset tilsynelatende effekt",
+    shortName: "S = U · I",
+    description:
+      "Tilsynelatende effekt i enfaset system basert på spenning og strøm.",
+    baseExpression: "S = U * I",
+    variables: [
+      {
+        id: "S",
+        symbol: "S",
+        name: "Tilsynelatende effekt",
+        unit: "VA",
+        role: "output"
+      },
+      {
+        id: "U",
+        symbol: "U",
+        name: "Spenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "I",
+        symbol: "I",
+        name: "Strøm",
+        unit: "A",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "single_phase_apparent-S",
+        label: "Løs for S",
+        solveFor: "S",
+        expression: "S = U * I"
+      },
+      {
+        id: "single_phase_apparent-U",
+        label: "Løs for U",
+        solveFor: "U",
+        expression: "U = S / I"
+      },
+      {
+        id: "single_phase_apparent-I",
+        label: "Løs for I",
+        solveFor: "I",
+        expression: "I = S / U"
+      }
+    ],
+    tags: ["S, U, I"]
+  },
+  {
+    id: "efficiency",
+    categoryId: "machines",
+    name: "Virkningsgrad",
+    shortName: "η = P_ut / P_inn",
+    description:
+      "Sammenheng mellom inn- og uteffekt i maskiner og systemer.",
+    baseExpression: "η = P_ut / P_inn",
+    variables: [
+      {
+        id: "eta",
+        symbol: "η",
+        name: "Virkningsgrad",
+        role: "output",
+        description: "Forholdet mellom uteffekt og inneffekt (0–1)."
+      },
+      {
+        id: "P_out",
+        symbol: "P_ut",
+        name: "Uteffekt",
+        unit: "W",
+        role: "input"
+      },
+      {
+        id: "P_in",
+        symbol: "P_inn",
+        name: "Inneffekt",
+        unit: "W",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "efficiency-eta",
+        label: "Løs for η",
+        solveFor: "eta",
+        expression: "eta = P_out / P_in"
+      },
+      {
+        id: "efficiency-P_out",
+        label: "Løs for P_ut",
+        solveFor: "P_out",
+        expression: "P_out = eta * P_in"
+      },
+      {
+        id: "efficiency-P_in",
+        label: "Løs for P_inn",
+        solveFor: "P_in",
+        expression: "P_in = P_out / eta"
+      }
+    ],
+    tags: ["η, P_ut, P_inn"]
+  },
+  {
+    id: "slip",
+    categoryId: "machines",
+    name: "Slip",
+    shortName: "s = (n_s − n) / n_s",
+    description:
+      "Relativ slip for asynkrone maskiner basert på synkron og faktisk hastighet.",
+    baseExpression: "s = (n_s - n) / n_s",
+    variables: [
+      {
+        id: "s",
+        symbol: "s",
+        name: "Slip",
+        role: "output",
+        description: "Relativ slip (0–1)."
+      },
+      {
+        id: "n_s",
+        symbol: "n_s",
+        name: "Synkron hastighet",
+        unit: "rpm",
+        role: "input"
+      },
+      {
+        id: "n",
+        symbol: "n",
+        name: "Målt hastighet",
+        unit: "rpm",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "slip-s",
+        label: "Løs for s",
+        solveFor: "s",
+        expression: "s = (n_s - n) / n_s"
+      },
+      {
+        id: "slip-n_s",
+        label: "Løs for n_s",
+        solveFor: "n_s",
+        expression: "n_s = n / (1 - s)"
+      },
+      {
+        id: "slip-n",
+        label: "Løs for n",
+        solveFor: "n",
+        expression: "n = n_s * (1 - s)"
+      }
+    ],
+    tags: ["s, n_s, n"]
   }
 ];
 
