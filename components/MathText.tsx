@@ -43,19 +43,24 @@ function applyReplacementsForLatex(text: string): string {
   // cosphi → cos φ
   s = s.replace(/cosphi/g, "\\cos\\varphi");
 
-  // phi → φ (kun som eget ord)
+  // phi → φ
   s = s.replace(/\bphi\b/g, "\\varphi");
 
-  // Subscript: R_1, n_s, R_tot, osv.
+  // dX → ΔX  (delta-prefiks)
+  // Matcher dA, dU, dI, dR, dP, etc. men ikke "d" som eget ord
+  s = s.replace(/\bd([A-Za-z])\b/g, (_: string, letter: string) => {
+    return `\\Delta ${letter}`;
+  });
+
+  // Subscript: R_1, n_s, R_tot ...
   s = s.replace(
     /([A-Za-z]+)_([A-Za-z0-9]+)/g,
-    (_: string, base: string, sub: string) => {
-      return `${base}_{${sub}}`;
-    }
+    (_: string, base: string, sub: string) => `${base}_{${sub}}`
   );
 
   return s;
 }
+
 
 /** Rekursiv konvertering der "/" på top-nivå blir til \frac{...}{...} */
 function convertExpr(expr: string): string {
