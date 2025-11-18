@@ -1,4 +1,3 @@
-// app/components/FormelVisning.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -111,7 +110,7 @@ export default function FormelVisning({
           <button
             type="button"
             className="button"
-            onClick={() => setShowInfo((prev) => !prev)}
+            onClick={() => setShowInfo(prev => !prev)}
             aria-label="Vis variabler og varianter"
             style={{
               fontSize: "1.4rem",
@@ -126,142 +125,76 @@ export default function FormelVisning({
         </div>
       </div>
 
-      // PRINT-ONLY: Variabler + Varianter inne i flisa
-<div className="print-only">
-  {/* Variabler */}
-  <section style={{ marginBottom: "1.4rem" }}>
-    <h3 style={{ margin: "0 0 0.4rem" }}>Variabler</h3>
-    <table
-      style={{
-        width: "100%",
-        borderCollapse: "collapse",
-        fontSize: "0.9rem"
-      }}
-    >
-      <thead>
-        <tr>
-          <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
-            Symbol
-          </th>
-          <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
-            Navn
-          </th>
-          <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
-            Enhet
-          </th>
-          <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
-            Beskrivelse
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {formula.variables.map((v) => (
-          <tr key={v.id}>
-            <td style={{ padding: "0.15rem 0" }}>
-              <MathText text={v.symbol} />
-            </td>
-            <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
-            <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
-            <td
-              style={{
-                padding: "0.15rem 0",
-                color: "var(--mcl-muted)"
-              }}
-            >
-              {v.description ?? "–"}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </section>
-
-  {/* Varianter */}
-  {formula.variants && formula.variants.length > 0 && (
-    <section>
-      <h3 style={{ margin: "0 0 0.4rem" }}>Varianter (løs for …)</h3>
-      <ul
-        style={{
-          margin: 0,
-          paddingLeft: "1.2rem",
-          fontSize: "0.9rem"
-        }}
-      >
-        {formula.variants.map((variant) => (
-          <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
-            <strong>Løs for: </strong>
-            <MathText text={variant.expression} />
-          </li>
-        ))}
-      </ul>
-    </section>
-  )}
-</div>
-
-// ... senere i sidepanelet:
-
-{/* Variabler */}
-<section style={{ marginBottom: "1rem" }}>
-  <h4 style={{ margin: "0 0 0.4rem" }}>Variabler</h4>
-  <table
-    style={{
-      width: "100%",
-      borderCollapse: "collapse",
-      fontSize: "0.85rem"
-    }}
-  >
-    <thead>
-      <tr>
-        <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>Symbol</th>
-        <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>Navn</th>
-        <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>Enhet</th>
-        <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
-          Beskrivelse
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      {formula.variables.map((v) => (
-        <tr key={v.id}>
-          <td style={{ padding: "0.15rem 0" }}>
-            <MathText text={v.symbol} />
-          </td>
-          <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
-          <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
-          <td
+      {/* PRINT-ONLY: Variabler + Varianter inne i flisa */}
+      <div className="print-only">
+        {/* Variabler */}
+        <section style={{ marginBottom: "1.4rem" }}>
+          <h3 style={{ margin: "0 0 0.4rem" }}>Variabler</h3>
+          <table
             style={{
-              padding: "0.15rem 0",
-              color: "var(--mcl-muted)"
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "0.9rem"
             }}
           >
-            {v.description ?? "–"}
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</section>
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                  Symbol
+                </th>
+                <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                  Navn
+                </th>
+                <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                  Enhet
+                </th>
+                <th style={{ textAlign: "left", paddingBottom: "0.2rem" }}>
+                  Beskrivelse
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {formula.variables.map((v) => (
+                <tr key={v.id}>
+                  <td style={{ padding: "0.15rem 0" }}>
+                    <MathText text={v.symbol} />
+                  </td>
+                  <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
+                  <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
+                  <td
+                    style={{
+                      padding: "0.15rem 0",
+                      color: "var(--mcl-muted)"
+                    }}
+                  >
+                    {v.description ?? "–"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
 
-{/* Varianter */}
-{formula.variants && formula.variants.length > 0 && (
-  <section>
-    <h4 style={{ margin: "0 0 0.4rem" }}>Varianter (løs for …)</h4>
-    <ul
-      style={{
-        margin: 0,
-        paddingLeft: "1.2rem",
-        fontSize: "0.85rem"
-      }}
-    >
-      {formula.variants.map((variant) => (
-        <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
-          <strong>Løs for: </strong>
-          <MathText text={variant.expression} />
-        </li>
-      ))}
-    </ul>
-  </section>
-)}
+        {/* Varianter */}
+        {formula.variants && formula.variants.length > 0 && (
+          <section>
+            <h3 style={{ margin: "0 0 0.4rem" }}>Varianter (løs for …)</h3>
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: "1.2rem",
+                fontSize: "0.9rem"
+              }}
+            >
+              {formula.variants.map((variant) => (
+                <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
+                  <strong>Løs for: </strong>
+                  <MathText text={variant.expression} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
       {/* Kalkulator-seksjon (interaktiv på skjerm, med egen print-oppsummering) */}
@@ -344,10 +277,12 @@ export default function FormelVisning({
                   {formula.variables.map((v) => (
                     <tr key={v.id}>
                       <td style={{ padding: "0.15rem 0" }}>
-                        <code>{v.symbol}</code>
+                        <MathText text={v.symbol} />
                       </td>
                       <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
-                      <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
+                      <td style={{ padding: "0.15rem 0" }}>
+                        {v.unit ?? "–"}
+                      </td>
                       <td
                         style={{
                           padding: "0.15rem 0",
@@ -365,9 +300,7 @@ export default function FormelVisning({
             {/* Varianter */}
             {formula.variants && formula.variants.length > 0 && (
               <section>
-                <h4 style={{ margin: "0 0 0.4rem" }}>
-                  Varianter (løs for …)
-                </h4>
+                <h4 style={{ margin: "0 0 0.4rem" }}>Varianter (løs for …)</h4>
                 <ul
                   style={{
                     margin: 0,
