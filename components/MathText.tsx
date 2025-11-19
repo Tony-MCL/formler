@@ -23,7 +23,11 @@ function prettifyAtomic(text: string): string {
 
   // dU (intern id for spenningsfall) → ΔU
   s = s.replace(/\bdU\b/g, "ΔU");
-
+  
+// 1.732 → √3  (kun i visning!)
+  // Støtter: 1.732 , 1,732 og 1.7320 osv.
+  s = s.replace(/\b1[.,]732\d*\b/g, "√3");
+  
   return s;
 }
 
