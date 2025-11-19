@@ -22,8 +22,6 @@ type ResultState = {
   variantExpression?: string;
 };
 
-type PhaseMode = "single" | "three";
-
 /** Formater pen verdi med antall desimaler basert på enhet */
 function formatPrettyNumber(value: number, unit?: string): string {
   let decimals = 2;
@@ -112,43 +110,11 @@ function makeSolveLabel(
   return `${symbol} (${v.name})`;
 }
 
-/**
- * Hvilke formler skal ha 1-/3-fase-toggle, og hvilke underformler brukes?
- *
- * baseId = formelen som vises i lista (flisen)
- * effectiveId = faktisk formel som motoren bruker for valgt fase-modus
- */
-function resolveEffectiveFormulaId(
-  baseId: FormulaId,
-  phaseMode: PhaseMode
-): FormulaId {
-  if (phaseMode === "three") {
-    if (baseId === "power") {
-      return "three_phase_active" as FormulaId;
-    }
-    if (baseId === "single_phase_apparent") {
-      return "three_phase_apparent" as FormulaId;
-    }
-  }
-  return baseId;
-}
-
-function supportsPhaseToggle(baseId: FormulaId): boolean {
-  return baseId === "power" || baseId === "single_phase_apparent";
-}
-
 export default function Kalkulator({ formulaId }: KalkulatorProps) {
-  const [phaseMode, setPhaseMode] = useState<PhaseMode>("single");
-
-  const effectiveFormulaId = useMemo(
-    () => resolveEffectiveFormulaId(formulaId, phaseMode),
-    [formulaId, phaseMode]
-  );
-
-  const formula = getFormulaById(effectiveFormulaId);
+  const formula = getFormulaById(formulaId);
   const variants = useMemo(
-    () => listVariants(effectiveFormulaId),
-    [effectiveFormulaId]
+    () => listVariants(formulaId),
+    [formulaId]
   );
 
   // Tom streng = ingen variant valgt ennå
@@ -157,13 +123,13 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
   const [result, setResult] = useState<ResultState | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
 
-  // Reset kalkulator når aktiv formel byttes (inkl. fase-modus)
+  // Reset kalkulator når aktiv formel byttes
   useEffect(() => {
     setSolveFor("");
     setInputs({});
     setResult(null);
     setErrorText(null);
-  }, [effectiveFormulaId]);
+  }, [formulaId]);
 
   if (!formula || variants.length === 0) {
     return (
@@ -232,7 +198,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     }
 
     const res = solveFormula(
-      effectiveFormulaId,
+      formulaId,
       solveFor as SolveForId,
       numericInput
     );
@@ -267,8 +233,6 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     });
   };
 
-  const showPhaseToggle = supportsPhaseToggle(formulaId);
-
   return (
     <section style={{ marginTop: "1.5rem" }}>
       <div
@@ -281,52 +245,6 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
         }}
       >
         <h3 style={{ margin: 0 }}>Kalkulator</h3>
-
-        {showPhaseToggle && (
-          <div
-            className="phase-toggle"
-            style={{
-              display: "inline-flex",
-              borderRadius: 999,
-              border: "1px solid var(--mcl-outline)",
-              overflow: "hidden",
-              fontSize: "0.8rem"
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setPhaseMode("single")}
-              style={{
-                padding: "0.2rem 0.6rem",
-                border: "none",
-                background:
-                  phaseMode === "single"
-                    ? "var(--mcl-brand)"
-                    : "var(--mcl-surface)",
-                color: phaseMode === "single" ? "#fff" : "var(--mcl-text)",
-                cursor: "pointer"
-              }}
-            >
-              1-fase
-            </button>
-            <button
-              type="button"
-              onClick={() => setPhaseMode("three")}
-              style={{
-                padding: "0.2rem 0.6rem",
-                border: "none",
-                background:
-                  phaseMode === "three"
-                    ? "var(--mcl-brand)"
-                    : "var(--mcl-surface)",
-                color: phaseMode === "three" ? "#fff" : "var(--mcl-text)",
-                cursor: "pointer"
-              }}
-            >
-              3-fase
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Interaktiv del – skjules ved print */}
