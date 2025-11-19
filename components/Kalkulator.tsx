@@ -89,6 +89,12 @@ function scaleValue(
       if (abs > 0 && abs < 0.01) return { value: value * 1000, unit: "mΩ" };
       return { value, unit: "Ω" };
 
+    case "VA":
+      if (abs >= 1000) return { value: value / 1000, unit: "kVA" };
+      // (valgfritt: mVA for veldig små verdier)
+      // if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mVA" };
+      return { value, unit: "VA" };
+
     default:
       return { value, unit };
   }
