@@ -719,7 +719,6 @@ export const formulas: Formula[] = [
     ],
     tags: ["S, U, I"]
   },
-  {
       {
     id: "efficiency",
     categoryId: "machines",
