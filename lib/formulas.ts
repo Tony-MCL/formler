@@ -325,7 +325,7 @@ export const formulas: Formula[] = [
    * SYSTEMER OG NETT
    * =======================================================================
    */
-  {
+    {
     id: "voltage_drop",
     categoryId: "systems",
     name: "Spennings­tap i ren motstand",
@@ -381,6 +381,7 @@ export const formulas: Formula[] = [
     ],
     tags: ["ΔU, I, R"]
   },
+
 
   /* =======================================================================
    * MOTORER OG GENERATORER
