@@ -15,15 +15,13 @@ export const formulaCategories: FormulaCategory[] = [
   {
     id: "systems",
     title: "Systemer og nett",
-    description:
-      "Nett-typer, spenningsnivåer, spenningsfall og enkle kortslutningsstørrelser.",
+    description: "Nett-typer, spenningsnivåer, spenningsfall og enkle kortslutningsstørrelser.",
     order: 2
   },
   {
     id: "machines",
     title: "Motorer og generatorer",
-    description:
-      "Enkle sammenhenger for roterende maskiner, synkronhastighet og moment.",
+    description: "Enkle sammenhenger for roterende maskiner, synkronhastighet og moment.",
     order: 3
   }
 ];
@@ -39,14 +37,14 @@ export const formulaCategories: FormulaCategory[] = [
 export const formulas: Formula[] = [
   /* =======================================================================
    * GRUNNLEGGENDE ELKRAFT
-   * ======================================================================= */
+   * =======================================================================
+   */
   {
     id: "ohm",
     categoryId: "core",
     name: "Ohms lov",
     shortName: "Ohm",
-    description:
-      "Sammenhengen mellom spenning, strøm og motstand i en leder.",
+    description: "Sammenhengen mellom spenning, strøm og motstand i en leder.",
     baseExpression: "U = R * I",
     variables: [
       {
@@ -155,7 +153,10 @@ export const formulas: Formula[] = [
         expression: "U = P / (I * cosphi)"
       }
     ],
-    tags: ["P, U, I, cosφ"]
+    tags: ["P, U, I, cosφ"],
+    familyId: "active_power",
+    modeLabel: "1-fase",
+    isPrimaryInFamily: true
   },
   {
     id: "energy",
@@ -319,7 +320,8 @@ export const formulas: Formula[] = [
 
   /* =======================================================================
    * SYSTEMER OG NETT
-   * ======================================================================= */
+   * =======================================================================
+   */
   {
     id: "voltage_drop",
     categoryId: "systems",
@@ -335,7 +337,8 @@ export const formulas: Formula[] = [
         name: "Spenningsfall",
         unit: "V",
         role: "output",
-        description: "Forskjell mellom nominell og faktisk spenning."
+        description:
+          "Forskjell mellom nominell og faktisk spenning."
       },
       {
         id: "I",
@@ -378,7 +381,8 @@ export const formulas: Formula[] = [
 
   /* =======================================================================
    * MOTORER OG GENERATORER
-   * ======================================================================= */
+   * =======================================================================
+   */
   {
     id: "sync_speed",
     categoryId: "machines",
@@ -523,22 +527,24 @@ export const formulas: Formula[] = [
         id: "three_phase_apparent-S",
         label: "Løs for S",
         solveFor: "S",
-        expression: "S = √3 · U_L · I_L"
+        expression: "S = 1.732 * U_L * I_L"
       },
       {
         id: "three_phase_apparent-U_L",
         label: "Løs for U_L",
         solveFor: "U_L",
-        expression: "U_L = S / (√3 · I_L)"
+        expression: "U_L = S / (1.732 * I_L)"
       },
       {
         id: "three_phase_apparent-I_L",
         label: "Løs for I_L",
         solveFor: "I_L",
-        expression: "I_L = S / (√3 · U_L)"
+        expression: "I_L = S / (1.732 * U_L)"
       }
     ],
-    tags: ["S, U_L, I_L"]
+    tags: ["S, U_L, I_L"],
+    familyId: "apparent_power",
+    modeLabel: "3-fase"
   },
   {
     id: "three_phase_active",
@@ -583,28 +589,30 @@ export const formulas: Formula[] = [
         id: "three_phase_active-P",
         label: "Løs for P",
         solveFor: "P",
-        expression: "P = √3 · U_L · I_L · cosφ"
+        expression: "P = 1.732 * U_L * I_L * cosphi"
       },
       {
         id: "three_phase_active-U_L",
         label: "Løs for U_L",
         solveFor: "U_L",
-        expression: "U_L = P / (√3 · I_L · cosφ)"
+        expression: "U_L = P / (1.732 * I_L * cosphi)"
       },
       {
         id: "three_phase_active-I_L",
         label: "Løs for I_L",
         solveFor: "I_L",
-        expression: "I_L = P / (√3 · U_L · cosφ)"
+        expression: "I_L = P / (1.732 * U_L * cosphi)"
       },
       {
         id: "three_phase_active-cosphi",
         label: "Løs for cosφ",
         solveFor: "cosphi",
-        expression: "cosφ = P / (√3 · U_L · I_L)"
+        expression: "cosphi = P / (1.732 * U_L * I_L)"
       }
     ],
-    tags: ["P, U_L, I_L, cosφ"]
+    tags: ["P, U_L, I_L, cosφ"],
+    familyId: "active_power",
+    modeLabel: "3-fase"
   },
   {
     id: "power_factor",
@@ -642,7 +650,7 @@ export const formulas: Formula[] = [
         id: "power_factor-cosphi",
         label: "Løs for cosφ",
         solveFor: "cosphi",
-        expression: "cosφ = P / S"
+        expression: "cosphi = P / S"
       },
       {
         id: "power_factor-P",
@@ -710,7 +718,10 @@ export const formulas: Formula[] = [
         expression: "I = S / U"
       }
     ],
-    tags: ["S, U, I"]
+    tags: ["S, U, I"],
+    familyId: "apparent_power",
+    modeLabel: "1-fase",
+    isPrimaryInFamily: true
   },
   {
     id: "efficiency",
@@ -748,19 +759,19 @@ export const formulas: Formula[] = [
         id: "efficiency-eta",
         label: "Løs for η",
         solveFor: "eta",
-        expression: "η = P_ut / P_inn"
+        expression: "eta = P_out / P_in"
       },
       {
         id: "efficiency-P_out",
         label: "Løs for P_ut",
         solveFor: "P_out",
-        expression: "P_ut = η * P_inn"
+        expression: "P_out = eta * P_in"
       },
       {
         id: "efficiency-P_in",
         label: "Løs for P_inn",
         solveFor: "P_in",
-        expression: "P_inn = P_ut / η"
+        expression: "P_in = P_out / eta"
       }
     ],
     tags: ["η, P_ut, P_inn"]
@@ -822,7 +833,7 @@ export const formulas: Formula[] = [
 
 /**
  * Hjelper til visning: grupper formler etter kategori, sortert pr. order.
- * Brukes bl.a. i Sidebar.
+ * - Hvis flere formler i samme kategori deler familyId, vis kun «primary» i menyen.
  */
 export function getFormulasGroupedByCategory(): {
   category: FormulaCategory;
@@ -831,10 +842,32 @@ export function getFormulasGroupedByCategory(): {
   return formulaCategories
     .slice()
     .sort((a, b) => a.order - b.order)
-    .map((category) => ({
-      category,
-      formulas: formulas.filter((f) => f.categoryId === category.id)
-    }))
+    .map((category) => {
+      const inCategory = formulas.filter((f) => f.categoryId === category.id);
+      const picked: Formula[] = [];
+      const seenFamilies = new Set<string>();
+
+      for (const f of inCategory) {
+        if (f.familyId) {
+          if (seenFamilies.has(f.familyId)) continue;
+
+          const familyMembers = inCategory.filter(
+            (m) => m.familyId === f.familyId
+          );
+          const primary =
+            familyMembers.find((m) => m.isPrimaryInFamily) ?? familyMembers[0];
+
+          if (primary) {
+            picked.push(primary);
+            seenFamilies.add(f.familyId);
+          }
+        } else {
+          picked.push(f);
+        }
+      }
+
+      return { category, formulas: picked };
+    })
     .filter((group) => group.formulas.length > 0);
 }
 
