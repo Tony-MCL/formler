@@ -29,11 +29,11 @@ function formatPrettyNumber(value: number, unit?: string): string {
   if (unit) {
     const u = unit.toLowerCase();
 
-    // kilo-enheter: kV, kA, kW, kWh, kΩ → 1 desimal
+    // kilo-enheter: kV, kA, kW, kWh, kΩ, kVA → 1 desimal
     if (u.startsWith("k")) {
       decimals = 1;
     }
-    // milli-enheter: mA, mW, mΩ osv. → 2 desimaler
+    // milli-enheter: mA, mW, mΩ, mva osv. → 2 desimaler
     else if (u.startsWith("m")) {
       decimals = 2;
     } else {
@@ -48,13 +48,14 @@ function formatPrettyNumber(value: number, unit?: string): string {
 }
 
 /**
- * Skaler verdier til kV, kA, mA, kW, kWh, kΩ, mΩ der det er naturlig.
+ * Skaler verdier til kV, kA, mA, kW, mW, kWh, kΩ, mΩ, kVA der det er naturlig.
  * Terskler:
  *  - V → kV fra 1000 V
  *  - A → kA fra 1000 A, mA under 1 A
  *  - W → kW fra 1000 W, mW under 1 W
  *  - Wh → kWh fra 1000 Wh
  *  - Ω → kΩ fra 1000 Ω, mΩ under 0,01 Ω
+ *  - VA → kVA fra 1000 VA
  */
 function scaleValue(
   value: number,
@@ -82,18 +83,17 @@ function scaleValue(
       if (abs >= 1000) return { value: value / 1000, unit: "kWh" };
       return { value, unit: "Wh" };
 
+    case "VA":
+      if (abs >= 1000) return { value: value / 1000, unit: "kVA" };
+      if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mVA" };
+      return { value, unit: "VA" };
+
     case "Ω":
     case "ohm":
     case "Ohm":
       if (abs >= 1000) return { value: value / 1000, unit: "kΩ" };
       if (abs > 0 && abs < 0.01) return { value: value * 1000, unit: "mΩ" };
       return { value, unit: "Ω" };
-
-    case "VA":
-      if (abs >= 1000) return { value: value / 1000, unit: "kVA" };
-      // (valgfritt: mVA for veldig små verdier)
-      // if (abs > 0 && abs < 1) return { value: value * 1000, unit: "mVA" };
-      return { value, unit: "VA" };
 
     default:
       return { value, unit };
@@ -171,7 +171,10 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
       const rawStateValue = inputs[v.id];
 
       // cosphi får default 1 hvis ikke utfylt
-      if ((rawStateValue === undefined || rawStateValue === "") && v.id === "cosphi") {
+      if (
+        (rawStateValue === undefined || rawStateValue === "") &&
+        v.id === "cosphi"
+      ) {
         numericInput[v.id] = 1;
         snapshotInputs[v.id] = "1.0";
         continue;
@@ -250,7 +253,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             style={{
               padding: "0.25rem 0.5rem",
               borderRadius: 6,
-              border: "1px solid var(--mcl-outline)",
+              border: "1px solid var(--mcl-outline)`,
               background: "var(--mcl-surface)",
               color: "var(--mcl-text)",
               fontSize: "0.9rem"
