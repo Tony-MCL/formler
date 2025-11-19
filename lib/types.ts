@@ -66,6 +66,10 @@ export type Formula = {
   variants?: FormulaVariant[];
   /** Fritekstagger, f.eks. "U, I, R" eller "P, U, I, cosphi" – brukt bl.a. i sidebar-hint */
   tags?: string[];
+/** Gruppér enfase/trefase osv. i samme «familie» */
+  familyId?: string;          // f.eks. "active_power"
+  modeLabel?: string;         // f.eks. "1-fase", "3-fase"
+  isPrimaryInFamily?: boolean; // Hvilken som skal vises i menyen (dersom flere i samme kategori)
 };
 
 /**
