@@ -827,7 +827,7 @@ export const formulas: Formula[] = [
     ],
     tags: ["s, n_s, n"]
   },
-    {
+      {
     id: "ohmic_loss",
     categoryId: "core",
     name: "Effekttap i motstand",
@@ -870,7 +870,14 @@ export const formulas: Formula[] = [
         id: "ohmic_loss-I",
         label: "Løs for I",
         solveFor: "I",
-        expression: "I = sqrt(P_tap / R)" // KUN VISNING, motoren bruker ikke denne
+        // I = sqrt(P_tap / R)  →  I = (P_tap / R) ** 0.5
+        expression: "I = (P_tap / R) ** 0.5"
+      },
+      {
+        id: "ohmic_loss-R",
+        label: "Løs for R",
+        solveFor: "R",
+        expression: "R = P_tap / (I * I)"
       }
     ],
     tags: ["P_tap, I, R"]
@@ -929,7 +936,7 @@ export const formulas: Formula[] = [
     ],
     tags: ["Q, I, t"]
   },
-  {
+    {
     id: "cap_energy",
     categoryId: "core",
     name: "Energilagring i kondensator",
@@ -971,7 +978,14 @@ export const formulas: Formula[] = [
         id: "cap_energy-U",
         label: "Løs for U",
         solveFor: "U",
-        expression: "U = sqrt(2 * W_C / C)" // igjen: kan kommenteres ut hvis vi vil unngå sqrt i motor
+        // U = sqrt(2 * W_C / C) → U = (2 * W_C / C) ** 0.5
+        expression: "U = (2 * W_C / C) ** 0.5"
+      },
+      {
+        id: "cap_energy-C",
+        label: "Løs for C",
+        solveFor: "C",
+        expression: "C = 2 * W_C / (U * U)"
       }
     ],
     tags: ["W_C, C, U"]
