@@ -21,6 +21,9 @@ function prettifyAtomic(text: string): string {
   // eta (brukes som intern id i motoren) → η i UI
   s = s.replace(/\beta/g, "η"); // "eta" som eget ord
 
+  // dU (intern id for spenningsfall) → ΔU
+  s = s.replace(/\bdU\b/g, "ΔU");
+
   return s;
 }
 
