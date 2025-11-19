@@ -825,6 +825,248 @@ export const formulas: Formula[] = [
       }
     ],
     tags: ["s, n_s, n"]
+  },
+    {
+    id: "ohmic_loss",
+    categoryId: "core",
+    name: "Effekttap i motstand",
+    shortName: "P_tap = I² · R",
+    description:
+      "Effekttap (varmetap) i en motstand eller leder ved kjent strøm og motstand.",
+    baseExpression: "P_tap = I * I * R",
+    variables: [
+      {
+        id: "P_tap",
+        symbol: "P_tap",
+        name: "Effekttap",
+        unit: "W",
+        role: "output",
+        description: "Tapt effekt (varme) i komponenten."
+      },
+      {
+        id: "I",
+        symbol: "I",
+        name: "Strøm",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "R",
+        symbol: "R",
+        name: "Motstand",
+        unit: "Ω",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "ohmic_loss-P_tap",
+        label: "Løs for P_tap",
+        solveFor: "P_tap",
+        expression: "P_tap = I * I * R"
+      },
+      {
+        id: "ohmic_loss-I",
+        label: "Løs for I",
+        solveFor: "I",
+        expression: "I = sqrt(P_tap / R)" // KUN VISNING, motoren bruker ikke denne
+      }
+    ],
+    tags: ["P_tap, I, R"]
+  },
+  {
+    id: "charge",
+    categoryId: "core",
+    name: "Ladning",
+    shortName: "Q = I · t",
+    description:
+      "Sammenheng mellom strøm, tid og elektrisk ladning.",
+    baseExpression: "Q = I * t",
+    variables: [
+      {
+        id: "Q",
+        symbol: "Q",
+        name: "Ladning",
+        unit: "C",
+        role: "output",
+        description: "Elektrisk ladning (coulomb)."
+      },
+      {
+        id: "I",
+        symbol: "I",
+        name: "Strøm",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "t",
+        symbol: "t",
+        name: "Tid",
+        unit: "s",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "charge-Q",
+        label: "Løs for Q",
+        solveFor: "Q",
+        expression: "Q = I * t"
+      },
+      {
+        id: "charge-I",
+        label: "Løs for I",
+        solveFor: "I",
+        expression: "I = Q / t"
+      },
+      {
+        id: "charge-t",
+        label: "Løs for t",
+        solveFor: "t",
+        expression: "t = Q / I"
+      }
+    ],
+    tags: ["Q, I, t"]
+  },
+  {
+    id: "cap_energy",
+    categoryId: "core",
+    name: "Energilagring i kondensator",
+    shortName: "W_C = ½ · C · U²",
+    description:
+      "Energi lagret i en kondensator ved gitt kapasitans og spenning.",
+    baseExpression: "W_C = 0.5 * C * U^2",
+    variables: [
+      {
+        id: "W_C",
+        symbol: "W_C",
+        name: "Energi i kondensator",
+        unit: "J",
+        role: "output"
+      },
+      {
+        id: "C",
+        symbol: "C",
+        name: "Kapasitans",
+        unit: "F",
+        role: "input"
+      },
+      {
+        id: "U",
+        symbol: "U",
+        name: "Spenning",
+        unit: "V",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "cap_energy-W_C",
+        label: "Løs for W_C",
+        solveFor: "W_C",
+        expression: "W_C = 0.5 * C * U * U"
+      },
+      {
+        id: "cap_energy-U",
+        label: "Løs for U",
+        solveFor: "U",
+        expression: "U = sqrt(2 * W_C / C)" // igjen: kan kommenteres ut hvis vi vil unngå sqrt i motor
+      }
+    ],
+    tags: ["W_C, C, U"]
+  },
+  {
+    id: "voltage_drop_percent",
+    categoryId: "systems",
+    name: "Spenningsfall i prosent",
+    shortName: "ΔU_% = (ΔU / U_n) · 100",
+    description:
+      "Spenningsfall uttrykt i prosent av nominell spenning.",
+    baseExpression: "ΔU_% = (ΔU / U_n) * 100",
+    variables: [
+      {
+        id: "dU_percent",
+        symbol: "ΔU_%",
+        name: "Spenningsfall i prosent",
+        unit: "%",
+        role: "output"
+      },
+      {
+        id: "dU",
+        symbol: "ΔU",
+        name: "Spenningsfall",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "U_n",
+        symbol: "U_n",
+        name: "Nominell spenning",
+        unit: "V",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "voltage_drop_percent-dU_percent",
+        label: "Løs for ΔU_%",
+        solveFor: "dU_percent",
+        expression: "dU_percent = (dU / U_n) * 100"
+      },
+      {
+        id: "voltage_drop_percent-dU",
+        label: "Løs for ΔU",
+        solveFor: "dU",
+        expression: "dU = dU_percent * U_n / 100"
+      },
+      {
+        id: "voltage_drop_percent-U_n",
+        label: "Løs for U_n",
+        solveFor: "U_n",
+        expression: "U_n = dU * 100 / dU_percent"
+      }
+    ],
+    tags: ["ΔU, U_n, %"]
+  },
+  {
+    id: "line_phase_voltage",
+    categoryId: "systems",
+    name: "Linje- og fasespenning (trefase)",
+    shortName: "U_L = √3 · U_f",
+    description:
+      "Sammenheng mellom linjespenning og fasespenning i et symmetrisk trefasesystem.",
+    baseExpression: "U_L = √3 · U_f",
+    variables: [
+      {
+        id: "U_L",
+        symbol: "U_L",
+        name: "Linjespenning",
+        unit: "V",
+        role: "output"
+      },
+      {
+        id: "U_f",
+        symbol: "U_f",
+        name: "Fasespenning",
+        unit: "V",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "line_phase_voltage-U_L",
+        label: "Løs for U_L",
+        solveFor: "U_L",
+        expression: "U_L = 1.732 * U_f"
+      },
+      {
+        id: "line_phase_voltage-U_f",
+        label: "Løs for U_f",
+        solveFor: "U_f",
+        expression: "U_f = U_L / 1.732"
+      }
+    ],
+    tags: ["U_L, U_f, √3"]
   }
 ];
 
