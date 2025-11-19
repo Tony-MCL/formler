@@ -10,6 +10,20 @@ type MathTextProps = {
   variant?: MathTextVariant;
 };
 
+/** Felles "pen" tekstbehandling før vi sender til formatInlineMath */
+function prettifyAtomic(text: string): string {
+  let s = text;
+
+  // Multiplikasjonstegn: * → ·
+  s = s.replace(/\*/g, "·");
+
+  // ascii-navn → greske symboler i visning
+  // eta (brukes som intern id i motoren) → η i UI
+  s = s.replace(/\beta/g, "η"); // "eta" som eget ord
+
+  return s;
+}
+
 /** Finn første divisjonstegn på top-nivå (ikke inne i parenteser) */
 function findTopLevelDivision(expr: string): number {
   let depth = 0;
@@ -29,10 +43,9 @@ function renderExpr(expr: string): React.ReactNode {
 
   const index = findTopLevelDivision(trimmed);
   if (index === -1) {
-    // Multiplikasjonstegn: * → ·
-    const cleaned = trimmed.replace(/\*/g, "·");
+    const cleaned = prettifyAtomic(trimmed);
     return formatInlineMath(cleaned);
-}
+  }
 
   const numerator = trimmed.slice(0, index).trim();
   const denominator = trimmed.slice(index + 1).trim();
@@ -54,10 +67,10 @@ export default function MathText({ text, variant = "normal" }: MathTextProps) {
 
   const eqIndex = trimmed.indexOf("=");
   if (eqIndex !== -1) {
-    // Multiplikasjonstegn på venstre side av likhetstegn
-    const left = trimmed.slice(0, eqIndex).trim().replace(/\*/g, "·");
+    const leftRaw = trimmed.slice(0, eqIndex).trim();
     const right = trimmed.slice(eqIndex + 1).trim();
 
+    const left = prettifyAtomic(leftRaw);
 
     return (
       <span className={className}>
