@@ -107,6 +107,10 @@ export const formulas: Formula[] = [
     shortName: "P = U · I · cosφ",
     description:
       "Aktiv effekt i vekselstrømskrets (en- eller trefase) med faseforskyvning (cosφ).",
+    // Familie: aktiv effekt AC – 1-fase
+    familyId: "active_power_ac",
+    modeLabel: "1-fase",
+    isPrimaryInFamily: true,
     baseExpression: "P = U * I * cosphi",
     variables: [
       {
@@ -325,7 +329,7 @@ export const formulas: Formula[] = [
    * SYSTEMER OG NETT
    * =======================================================================
    */
-      {
+  {
     id: "voltage_drop",
     categoryId: "systems",
     name: "Spennings­tap i ren motstand",
@@ -380,8 +384,6 @@ export const formulas: Formula[] = [
     ],
     tags: ["ΔU, I, R"]
   },
-
-
 
   /* =======================================================================
    * MOTORER OG GENERATORER
@@ -501,6 +503,10 @@ export const formulas: Formula[] = [
     shortName: "S = √3 · U_L · I_L",
     description:
       "Tilsynelatende effekt i et symmetrisk trefasesystem basert på linjespenning og linjestrøm.",
+    // Familie: tilsynelatende effekt AC – 3-fase
+    familyId: "apparent_power_ac",
+    modeLabel: "3-fase",
+    isPrimaryInFamily: false,
     baseExpression: "S = √3 · U_L · I_L",
     variables: [
       {
@@ -555,6 +561,10 @@ export const formulas: Formula[] = [
     shortName: "P = √3 · U_L · I_L · cosφ",
     description:
       "Aktiv effekt i et symmetrisk trefasesystem basert på linjespenning, linjestrøm og effektfaktor.",
+    // Familie: aktiv effekt AC – 3-fase
+    familyId: "active_power_ac",
+    modeLabel: "3-fase",
+    isPrimaryInFamily: false,
     baseExpression: "P = √3 · U_L · I_L · cosφ",
     variables: [
       {
@@ -674,6 +684,10 @@ export const formulas: Formula[] = [
     shortName: "S = U · I",
     description:
       "Tilsynelatende effekt basert på spenning og strøm (en- eller trefasesystem).",
+    // Familie: tilsynelatende effekt AC – 1-fase
+    familyId: "apparent_power_ac",
+    modeLabel: "1-fase",
+    isPrimaryInFamily: true,
     baseExpression: "S = U * I",
     variables: [
       {
@@ -720,7 +734,7 @@ export const formulas: Formula[] = [
     ],
     tags: ["S, U, I"]
   },
-      {
+  {
     id: "efficiency",
     categoryId: "machines",
     name: "Virkningsgrad",
@@ -827,7 +841,7 @@ export const formulas: Formula[] = [
     ],
     tags: ["s, n_s, n"]
   },
-      {
+  {
     id: "ohmic_loss",
     categoryId: "core",
     name: "Effekttap i motstand",
@@ -936,7 +950,7 @@ export const formulas: Formula[] = [
     ],
     tags: ["Q, I, t"]
   },
-    {
+  {
     id: "cap_energy",
     categoryId: "core",
     name: "Energilagring i kondensator",
