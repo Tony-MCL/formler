@@ -325,7 +325,7 @@ export const formulas: Formula[] = [
    * SYSTEMER OG NETT
    * =======================================================================
    */
-    {
+      {
     id: "voltage_drop",
     categoryId: "systems",
     name: "Spennings­tap i ren motstand",
@@ -340,8 +340,7 @@ export const formulas: Formula[] = [
         name: "Spenningsfall",
         unit: "V",
         role: "output",
-        description:
-          "Forskjell mellom nominell og faktisk spenning."
+        description: "Forskjell mellom nominell og faktisk spenning."
       },
       {
         id: "I",
@@ -364,23 +363,24 @@ export const formulas: Formula[] = [
         id: "voltage_drop-dU",
         label: "Løs for ΔU",
         solveFor: "dU",
-        expression: "ΔU = I * R"
+        expression: "dU = I * R"
       },
       {
         id: "voltage_drop-I",
         label: "Løs for I",
         solveFor: "I",
-        expression: "I = ΔU / R"
+        expression: "I = dU / R"
       },
       {
         id: "voltage_drop-R",
         label: "Løs for R",
         solveFor: "R",
-        expression: "R = ΔU / I"
+        expression: "R = dU / I"
       }
     ],
     tags: ["ΔU, I, R"]
   },
+
 
 
   /* =======================================================================
