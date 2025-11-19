@@ -29,9 +29,10 @@ function renderExpr(expr: string): React.ReactNode {
 
   const index = findTopLevelDivision(trimmed);
   if (index === -1) {
-    // Ingen brøk på top-nivå – bare pen inline-tekst
-    return formatInlineMath(trimmed);
-  }
+    // Multiplikasjonstegn: * → ·
+    const cleaned = trimmed.replace(/\*/g, "·");
+    return formatInlineMath(cleaned);
+}
 
   const numerator = trimmed.slice(0, index).trim();
   const denominator = trimmed.slice(index + 1).trim();
@@ -53,8 +54,10 @@ export default function MathText({ text, variant = "normal" }: MathTextProps) {
 
   const eqIndex = trimmed.indexOf("=");
   if (eqIndex !== -1) {
-    const left = trimmed.slice(0, eqIndex).trim();
+    // Multiplikasjonstegn på venstre side av likhetstegn
+    const left = trimmed.slice(0, eqIndex).trim().replace(/\*/g, "·");
     const right = trimmed.slice(eqIndex + 1).trim();
+
 
     return (
       <span className={className}>
