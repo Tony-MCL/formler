@@ -33,7 +33,7 @@ function formatPrettyNumber(value: number, unit?: string): string {
     if (u.startsWith("k")) {
       decimals = 1;
     }
-    // milli-enheter: mA, mW, mΩ, mva osv. → 2 desimaler
+    // milli-enheter: mA, mW, mΩ, mVA osv. → 2 desimaler
     else if (u.startsWith("m")) {
       decimals = 2;
     } else {
@@ -253,7 +253,7 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
             style={{
               padding: "0.25rem 0.5rem",
               borderRadius: 6,
-              border: "1px solid var(--mcl-outline)`,
+              border: "1px solid var(--mcl-outline)",
               background: "var(--mcl-surface)",
               color: "var(--mcl-text)",
               fontSize: "0.9rem"
