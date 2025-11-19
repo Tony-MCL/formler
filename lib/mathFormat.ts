@@ -45,6 +45,9 @@ function toSubscript(text: string): string {
 export function formatInlineMath(symbol: string): string {
   if (!symbol.includes("_")) return symbol;
 
+    // Vis '·' i stedet for '*'
+  const pretty = symbol.replace(/\*/g, "·");
+
   const [base, sub] = symbol.split("_");
   if (!sub) {
     return base;
