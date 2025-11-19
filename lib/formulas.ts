@@ -26,6 +26,12 @@ export const formulaCategories: FormulaCategory[] = [
   }
 ];
 
+// Formler som skal være tilgjengelige i motoren, men IKKE vises som egne linjer i sidebaren
+const HIDDEN_IN_SIDEBAR: FormulaId[] = [
+  "three_phase_apparent",
+  "three_phase_active"
+];
+
 /**
  * Enkel, tekstbasert formelsyntaks (stil B), f.eks.:
  * - "U = R * I"
@@ -97,10 +103,10 @@ export const formulas: Formula[] = [
   {
     id: "power",
     categoryId: "core",
-    name: "Effekt (enfaset)",
+    name: "Effekt",
     shortName: "P = U · I · cosφ",
     description:
-      "Aktiv effekt i enfaset vekselstrømskrets med faseforskyvning (cosφ).",
+      "Aktiv effekt i vekselstrømskrets (en- eller trefase) med faseforskyvning (cosφ).",
     baseExpression: "P = U * I * cosphi",
     variables: [
       {
@@ -153,10 +159,7 @@ export const formulas: Formula[] = [
         expression: "U = P / (I * cosphi)"
       }
     ],
-    tags: ["P, U, I, cosφ"],
-    familyId: "active_power",
-    modeLabel: "1-fase",
-    isPrimaryInFamily: true
+    tags: ["P, U, I, cosφ"]
   },
   {
     id: "energy",
@@ -542,9 +545,7 @@ export const formulas: Formula[] = [
         expression: "I_L = S / (1.732 * U_L)"
       }
     ],
-    tags: ["S, U_L, I_L"],
-    familyId: "apparent_power",
-    modeLabel: "3-fase"
+    tags: ["S, U_L, I_L"]
   },
   {
     id: "three_phase_active",
@@ -610,9 +611,7 @@ export const formulas: Formula[] = [
         expression: "cosphi = P / (1.732 * U_L * I_L)"
       }
     ],
-    tags: ["P, U_L, I_L, cosφ"],
-    familyId: "active_power",
-    modeLabel: "3-fase"
+    tags: ["P, U_L, I_L, cosφ"]
   },
   {
     id: "power_factor",
@@ -670,10 +669,10 @@ export const formulas: Formula[] = [
   {
     id: "single_phase_apparent",
     categoryId: "core",
-    name: "Enfaset tilsynelatende effekt",
+    name: "Tilsynelatende effekt",
     shortName: "S = U · I",
     description:
-      "Tilsynelatende effekt i enfaset system basert på spenning og strøm.",
+      "Tilsynelatende effekt basert på spenning og strøm (en- eller trefasesystem).",
     baseExpression: "S = U * I",
     variables: [
       {
@@ -718,10 +717,7 @@ export const formulas: Formula[] = [
         expression: "I = S / U"
       }
     ],
-    tags: ["S, U, I"],
-    familyId: "apparent_power",
-    modeLabel: "1-fase",
-    isPrimaryInFamily: true
+    tags: ["S, U, I"]
   },
   {
     id: "efficiency",
@@ -740,14 +736,14 @@ export const formulas: Formula[] = [
         description: "Forholdet mellom uteffekt og inneffekt (0–1)."
       },
       {
-        id: "P_ut",
+        id: "P_out",
         symbol: "P_ut",
         name: "Uteffekt",
         unit: "W",
         role: "input"
       },
       {
-        id: "P_inn",
+        id: "P_in",
         symbol: "P_inn",
         name: "Inneffekt",
         unit: "W",
@@ -762,16 +758,16 @@ export const formulas: Formula[] = [
         expression: "eta = P_out / P_in"
       },
       {
-        id: "efficiency-P_ut",
+        id: "efficiency-P_out",
         label: "Løs for P_ut",
-        solveFor: "P_ut",
-        expression: "P_ut = eta * P_inn"
+        solveFor: "P_out",
+        expression: "P_out = eta * P_in"
       },
       {
-        id: "efficiency-P_inn",
+        id: "efficiency-P_in",
         label: "Løs for P_inn",
-        solveFor: "P_inn",
-        expression: "P_inn = P_ut / eta"
+        solveFor: "P_in",
+        expression: "P_in = P_out / eta"
       }
     ],
     tags: ["η, P_ut, P_inn"]
@@ -833,7 +829,7 @@ export const formulas: Formula[] = [
 
 /**
  * Hjelper til visning: grupper formler etter kategori, sortert pr. order.
- * - Hvis flere formler i samme kategori deler familyId, vis kun «primary» i menyen.
+ * Brukes bl.a. i Sidebar.
  */
 export function getFormulasGroupedByCategory(): {
   category: FormulaCategory;
@@ -842,32 +838,14 @@ export function getFormulasGroupedByCategory(): {
   return formulaCategories
     .slice()
     .sort((a, b) => a.order - b.order)
-    .map((category) => {
-      const inCategory = formulas.filter((f) => f.categoryId === category.id);
-      const picked: Formula[] = [];
-      const seenFamilies = new Set<string>();
-
-      for (const f of inCategory) {
-        if (f.familyId) {
-          if (seenFamilies.has(f.familyId)) continue;
-
-          const familyMembers = inCategory.filter(
-            (m) => m.familyId === f.familyId
-          );
-          const primary =
-            familyMembers.find((m) => m.isPrimaryInFamily) ?? familyMembers[0];
-
-          if (primary) {
-            picked.push(primary);
-            seenFamilies.add(f.familyId);
-          }
-        } else {
-          picked.push(f);
-        }
-      }
-
-      return { category, formulas: picked };
-    })
+    .map((category) => ({
+      category,
+      formulas: formulas.filter(
+        (f) =>
+          f.categoryId === category.id &&
+          !HIDDEN_IN_SIDEBAR.includes(f.id as FormulaId)
+      )
+    }))
     .filter((group) => group.formulas.length > 0);
 }
 
