@@ -740,14 +740,14 @@ export const formulas: Formula[] = [
         description: "Forholdet mellom uteffekt og inneffekt (0–1)."
       },
       {
-        id: "P_out",
+        id: "P_ut",
         symbol: "P_ut",
         name: "Uteffekt",
         unit: "W",
         role: "input"
       },
       {
-        id: "P_in",
+        id: "P_inn",
         symbol: "P_inn",
         name: "Inneffekt",
         unit: "W",
@@ -762,16 +762,16 @@ export const formulas: Formula[] = [
         expression: "eta = P_out / P_in"
       },
       {
-        id: "efficiency-P_out",
+        id: "efficiency-P_ut",
         label: "Løs for P_ut",
-        solveFor: "P_out",
-        expression: "P_out = eta * P_in"
+        solveFor: "P_ut",
+        expression: "P_ut = eta * P_inn"
       },
       {
-        id: "efficiency-P_in",
+        id: "efficiency-P_inn",
         label: "Løs for P_inn",
-        solveFor: "P_in",
-        expression: "P_in = P_out / eta"
+        solveFor: "P_inn",
+        expression: "P_inn = P_ut / eta"
       }
     ],
     tags: ["η, P_ut, P_inn"]
