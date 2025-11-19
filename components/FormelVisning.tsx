@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { getFormulaById } from "../lib/formulas";
-import type { FormulaId } from "../lib/types";
+import React, { useEffect, useMemo, useState } from "react";
+import { getFormulaById, formulas } from "../lib/formulas";
+import type { Formula, FormulaId } from "../lib/types";
 import MathText from "./MathText";
 import Kalkulator from "./Kalkulator";
 import PDFExport from "./PDFExport";
@@ -17,11 +17,23 @@ export default function FormelVisning({
   formulaId,
   onGoHome
 }: FormelVisningProps) {
-  const formula = getFormulaById(formulaId);
   const { basePath } = useI18n();
+
   const [showInfo, setShowInfo] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Aktiv formel – kan skifte mellom familiemedlemmer (1-fase / 3-fase osv.)
+  const [activeFormulaId, setActiveFormulaId] = useState<FormulaId>(formulaId);
+
+  // Reset aktiv formel når bruker velger ny i menyen
+  useEffect(() => {
+    setActiveFormulaId(formulaId);
+    setShowInfo(false);
+  }, [formulaId]);
+
+  const formula: Formula | undefined = getFormulaById(activeFormulaId);
+
+  // Håndter mobil / desktop for sidepanel
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -33,6 +45,12 @@ export default function FormelVisning({
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  // Finn alle familiemedlemmer (enfase/trefase osv.)
+  const familyMembers = useMemo(() => {
+    if (!formula?.familyId) return [] as Formula[];
+    return formulas.filter((f) => f.familyId === formula.familyId);
+  }, [formula?.familyId]);
 
   if (!formula) {
     return (
@@ -110,7 +128,7 @@ export default function FormelVisning({
           <button
             type="button"
             className="button"
-            onClick={() => setShowInfo(prev => !prev)}
+            onClick={() => setShowInfo((prev) => !prev)}
             aria-label="Vis variabler og varianter"
             style={{
               fontSize: "1.4rem",
@@ -124,6 +142,44 @@ export default function FormelVisning({
           </button>
         </div>
       </div>
+
+      {/* Toggle for 1-fase / 3-fase (eller andre moduser i samme familie) */}
+      {familyMembers.length > 1 && (
+        <div
+          className="no-print"
+          style={{
+            display: "flex",
+            gap: "0.5rem",
+            marginBottom: "1rem",
+            flexWrap: "wrap"
+          }}
+        >
+          {familyMembers.map((member) => {
+            const isActive = member.id === activeFormulaId;
+            return (
+              <button
+                key={member.id}
+                type="button"
+                className="button"
+                onClick={() => setActiveFormulaId(member.id as FormulaId)}
+                style={{
+                  fontSize: "0.85rem",
+                  paddingInline: "0.7rem",
+                  paddingBlock: "0.25rem",
+                  borderRadius: 999,
+                  border: "1px solid var(--mcl-outline)",
+                  background: isActive
+                    ? "var(--mcl-brand)"
+                    : "var(--mcl-surface)",
+                  color: isActive ? "#fff" : "var(--mcl-text)"
+                }}
+              >
+                {member.modeLabel ?? member.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* PRINT-ONLY: Variabler + Varianter inne i flisa */}
       <div className="print-only">
@@ -157,7 +213,7 @@ export default function FormelVisning({
               {formula.variables.map((v) => (
                 <tr key={v.id}>
                   <td style={{ padding: "0.15rem 0" }}>
-                    <MathText text={v.symbol} />
+                    <code>{v.symbol}</code>
                   </td>
                   <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
                   <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
@@ -188,7 +244,7 @@ export default function FormelVisning({
             >
               {formula.variants.map((variant) => (
                 <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
-                  <strong>Løs for: </strong>
+                  <strong>{variant.label}: </strong>
                   <MathText text={variant.expression} />
                 </li>
               ))}
@@ -198,7 +254,7 @@ export default function FormelVisning({
       </div>
 
       {/* Kalkulator-seksjon (interaktiv på skjerm, med egen print-oppsummering) */}
-      <Kalkulator formulaId={formulaId} />
+      <Kalkulator formulaId={activeFormulaId} />
 
       {/* Sidepanel: mobil med backdrop, desktop uten */}
       {showInfo && isMobile && (
@@ -277,12 +333,10 @@ export default function FormelVisning({
                   {formula.variables.map((v) => (
                     <tr key={v.id}>
                       <td style={{ padding: "0.15rem 0" }}>
-                        <MathText text={v.symbol} />
+                        <code>{v.symbol}</code>
                       </td>
                       <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
-                      <td style={{ padding: "0.15rem 0" }}>
-                        {v.unit ?? "–"}
-                      </td>
+                      <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
                       <td
                         style={{
                           padding: "0.15rem 0",
@@ -300,7 +354,9 @@ export default function FormelVisning({
             {/* Varianter */}
             {formula.variants && formula.variants.length > 0 && (
               <section>
-                <h4 style={{ margin: "0 0 0.4rem" }}>Varianter (løs for …)</h4>
+                <h4 style={{ margin: "0 0 0.4rem" }}>
+                  Varianter (løs for …)
+                </h4>
                 <ul
                   style={{
                     margin: 0,
@@ -310,7 +366,7 @@ export default function FormelVisning({
                 >
                   {formula.variants.map((variant) => (
                     <li key={variant.id} style={{ marginBottom: "0.2rem" }}>
-                      <strong>Løs for: </strong>
+                      <strong>{variant.label}: </strong>
                       <MathText text={variant.expression} />
                     </li>
                   ))}
