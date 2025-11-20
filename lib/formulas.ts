@@ -1708,7 +1708,64 @@ export const formulas: Formula[] = [
       }
     ],
     tags: ["selektivitet", "I_1, I_2, k_sel", "vern"]
-  }
+  },
+  /* =======================================================================
+   * SPENNINGSFALL
+   * ======================================================================= */
+  {
+  id: "voltdrop_single_phase",
+  categoryId: "voltdrop",
+  name: "Spenningsfall 1-fase",
+  shortName: "ΔU = 2 · I · (R·cosφ + X·sinφ) · L",
+  description:
+    "Standardformel for spenningsfall i enfaset kabel. Basert på ledermotstand og induktans pr. meter etter NEK 400.",
+  baseExpression: "ΔU = 2 · I · (R·cosφ + X·sinφ) · L",
+  variables: [
+    { id: "dU", symbol: "ΔU", name: "Spenningsfall", unit: "V", role: "output" },
+    { id: "I", symbol: "I", name: "Strøm", unit: "A", role: "input" },
+    { id: "R", symbol: "R", name: "Resistans per meter", unit: "Ω/m", role: "input" },
+    { id: "X", symbol: "X", name: "Reaktans per meter", unit: "Ω/m", role: "input" },
+    { id: "cosphi", symbol: "cos φ", name: "Effektfaktor", unit: "–", role: "input" },
+    { id: "sinphi", symbol: "sin φ", name: "Sinus til effektvinkel", unit: "–", role: "input" },
+    { id: "L", symbol: "L", name: "Lengde kabel", unit: "m", role: "input" }
+  ],
+  variants: [
+    {
+      id: "voltdrop_single_phase-dU",
+      label: "Løs for ΔU",
+      solveFor: "dU",
+      expression: "dU = 2 * I * (R*cosphi + X*sinphi) * L"
+    }
+  ],
+  tags: ["spenningsfall", "kabel", "1-fase", "NEK400"]
+},
+{
+  id: "voltdrop_three_phase",
+  categoryId: "voltdrop",
+  name: "Spenningsfall 3-fase",
+  shortName: "ΔU = √3 · I · (R·cosφ + X·sinφ) · L",
+  description:
+    "Standardformel for spenningsfall i trefaset kabel. Basert på ledermotstand og induktans pr. meter etter NEK 400.",
+  baseExpression: "ΔU = √3 · I · (R·cosφ + X·sinφ) · L",
+  variables: [
+    { id: "dU", symbol: "ΔU", name: "Spenningsfall", unit: "V", role: "output" },
+    { id: "I", symbol: "I", name: "Strøm", unit: "A", role: "input" },
+    { id: "R", symbol: "R", name: "Resistans per meter", unit: "Ω/m", role: "input" },
+    { id: "X", symbol: "X", name: "Reaktans per meter", unit: "Ω/m", role: "input" },
+    { id: "cosphi", symbol: "cos φ", name: "Effektfaktor", unit: "–", role: "input" },
+    { id: "sinphi", symbol: "sin φ", name: "Sinus til effektvinkel", unit: "–", role: "input" },
+    { id: "L", symbol: "L", name: "Lengde kabel", unit: "m", role: "input" }
+  ],
+  variants: [
+    {
+      id: "voltdrop_three_phase-dU",
+      label: "Løs for ΔU",
+      solveFor: "dU",
+      expression: "dU = 1.732 * I * (R*cosphi + X*sinphi) * L"
+    }
+  ],
+  tags: ["spenningsfall", "kabel", "3-fase", "NEK400"]
+},
 ];
 
 /**
