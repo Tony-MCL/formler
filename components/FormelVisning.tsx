@@ -141,19 +141,17 @@ export default function FormelVisning({
             aria-label={`Bytt fase-modus (nå: ${phaseLabel})`}
             style={{
               fontSize: "0.8rem",
-              paddingInline: "0.8rem",
-              paddingBlock: "0.25rem",
+              paddingInline: "0.65rem",
+              paddingBlock: "0.2rem",
               borderRadius: 999,
               border: "1px solid var(--mcl-outline)",
+              // Tydelig farge i begge moduser:
               background: isSinglePhase
-                ? "var(--mcl-header-bg, var(--mcl-surface-strong))"
-                : "var(--mcl-brand)",
-              color: isSinglePhase ? "#000" : "#fff"
+                ? "var(--mcl-header, #e5c3a5)"   // samme som header, med varm fallback
+                : "var(--mcl-brand)",            // mørk MCL-brand for 3-fase
+              color: isSinglePhase ? "#000" : "#fff",
+              fontWeight: 600
             }}
-          >
-            {phaseLabel}
-          </button>
-        )}
       </div>
 
       {formula.description && (
