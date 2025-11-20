@@ -41,7 +41,15 @@ export const formulaCategories: FormulaCategory[] = [
     description:
       "Dimensjonering av vern, automatisk utkobling, termisk bestandighet og enkel selektivitetskontroll.",
     order: 5
-  }
+  },
+  {
+  id: "voltdrop",
+  title: "Spenningsfall",
+  description: 
+    "Standardformler for spenningsfall i kabler etter NEK 400.",
+  order:6
+},
+
 ];
 
 // Formler som skal være tilgjengelige i motoren, men IKKE vises som egne linjer i sidebaren
