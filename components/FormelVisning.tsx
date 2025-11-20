@@ -53,25 +53,28 @@ export default function FormelVisning({
   }, [formula?.familyId]);
 
   const hasFamilyToggle = familyMembers.length > 1;
-  const activeFamilyMember =
-    (hasFamilyToggle &&
-      familyMembers.find((m) => m.id === activeFormulaId)) ||
-    null;
 
-  const isPrimary = activeFamilyMember?.isPrimaryInFamily ?? true;
-  const phaseLabel =
-    activeFamilyMember?.modeLabel ?? activeFamilyMember?.name ?? "";
-  const phaseBg = isPrimary ? "var(--mcl-header)" : "var(--mcl-brand)";
-  const phaseColor = isPrimary ? "#1b1a17" : "#ffffff";
+  const handleToggleFamilyMember = () => {
+    if (!formula || !hasFamilyToggle) return;
 
-  function handleTogglePhase() {
-    if (!hasFamilyToggle || !formula?.familyId) return;
-    const members = familyMembers;
-    if (members.length < 2) return;
-    const currentIndex = members.findIndex((m) => m.id === activeFormulaId);
-    const nextIndex = (currentIndex + 1) % members.length;
-    setActiveFormulaId(members[nextIndex].id as FormulaId);
-  }
+    const currentIndex = familyMembers.findIndex((m) => m.id === formula.id);
+    const nextIndex =
+      currentIndex === -1
+        ? 0
+        : (currentIndex + 1) % familyMembers.length;
+
+    const next = familyMembers[nextIndex];
+    setActiveFormulaId(next.id as FormulaId);
+  };
+
+  const phaseLabel = formula?.modeLabel ?? formula?.name ?? "";
+  const isSinglePhase =
+    (formula?.modeLabel ?? "")
+      .toLowerCase()
+      .includes("1-fase") ||
+    (formula?.modeLabel ?? "")
+      .toLowerCase()
+      .includes("enfase");
 
   if (!formula) {
     return (
@@ -119,7 +122,44 @@ export default function FormelVisning({
         <PDFExport />
       </div>
 
-      <h2 className="main-hero-title">{formula.name}</h2>
+      {/* Tittel + fase-toggle i samme linje */}
+      <div
+        className="no-print"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "0.75rem",
+          marginBottom: "0.25rem"
+        }}
+      >
+        <h2 className="main-hero-title" style={{ margin: 0 }}>
+          {formula.name}
+        </h2>
+
+        {hasFamilyToggle && (
+          <button
+            type="button"
+            className="button"
+            onClick={handleToggleFamilyMember}
+            aria-label={`Bytt fase-modus (nå: ${phaseLabel})`}
+            style={{
+              fontSize: "0.8rem",
+              paddingInline: "0.8rem",
+              paddingBlock: "0.25rem",
+              borderRadius: 999,
+              border: "1px solid var(--mcl-outline)",
+              background: isSinglePhase
+                ? "var(--mcl-header-bg, var(--mcl-surface-strong))"
+                : "var(--mcl-brand)",
+              color: isSinglePhase ? "#000" : "#fff"
+            }}
+          >
+            {phaseLabel}
+          </button>
+        )}
+      </div>
+
       {formula.description && (
         <p className="main-hero-sub">{formula.description}</p>
       )}
@@ -164,36 +204,7 @@ export default function FormelVisning({
         </div>
       </div>
 
-      {/* ÉN toggle-knapp for 1-fase / 3-fase (eller andre moduser i samme familie) */}
-      {hasFamilyToggle && (
-        <div
-          className="no-print"
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            marginBottom: "1rem"
-          }}
-        >
-          <button
-            type="button"
-            onClick={handleTogglePhase}
-            style={{
-              fontSize: "0.85rem",
-              paddingInline: "0.9rem",
-              paddingBlock: "0.25rem",
-              borderRadius: 999,
-              border: "1px solid var(--mcl-outline)",
-              background: phaseBg,
-              color: phaseColor,
-              cursor: "pointer",
-              minWidth: "4.5rem",
-              textAlign: "center"
-            }}
-          >
-            {phaseLabel}
-          </button>
-        </div>
-      )}
+      {/* (Tidligere fase-toggle under uttrykket er fjernet) */}
 
       {/* PRINT-ONLY: Variabler + Varianter inne i flisa */}
       <div className="print-only">
