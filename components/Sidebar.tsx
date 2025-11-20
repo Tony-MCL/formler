@@ -6,6 +6,22 @@ import type { FormulaId } from "../lib/types";
 
 const FAVORITES_STORAGE_KEY = "mcl_formula_favorites_v1";
 
+function loadFavoritesFromStorage(): FormulaId[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(FAVORITES_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? (parsed as FormulaId[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function broadcastFavoritesUpdated() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event("mcl:favorites-updated"));
+}
+
 type SidebarProps = {
   open: boolean;
   onClose: () => void;
@@ -45,19 +61,20 @@ export default function Sidebar({
     return initial;
   });
 
-  // Les favoritter fra localStorage ved første render på klient
+  // Les favoritter + lytt på global oppdatering
   useEffect(() => {
     if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem(FAVORITES_STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        setFavorites(parsed as FormulaId[]);
-      }
-    } catch {
-      // Ignorer feil – vi vil ikke krasje sidebar pga localStorage
-    }
+
+    setFavorites(loadFavoritesFromStorage());
+
+    const handleUpdate = () => {
+      setFavorites(loadFavoritesFromStorage());
+    };
+
+    window.addEventListener("mcl:favorites-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("mcl:favorites-updated", handleUpdate);
+    };
   }, []);
 
   // Skriv favoritter til localStorage når de endres
@@ -68,6 +85,7 @@ export default function Sidebar({
         FAVORITES_STORAGE_KEY,
         JSON.stringify(favorites)
       );
+      broadcastFavoritesUpdated();
     } catch {
       // Ignorer lagringsfeil stille
     }
@@ -106,7 +124,6 @@ export default function Sidebar({
 
   const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
 
-  // Flater ut alle items for å kunne bygge en "Favoritter"-gruppe
   const allItems: SidebarItemView[] = useMemo(
     () => baseGroups.flatMap((g) => g.items),
     [baseGroups]
@@ -117,7 +134,6 @@ export default function Sidebar({
     [allItems, favoriteSet]
   );
 
-  // Bygg endelig liste av grupper inkludert "Favoritter" øverst
   const groups: SidebarGroupView[] = useMemo(() => {
     if (favoriteItems.length === 0) return baseGroups;
 
@@ -135,8 +151,6 @@ export default function Sidebar({
   const toggleGroup = (groupId: string) => {
     setOpenGroups((prev) => {
       const current = prev[groupId];
-      // Hvis vi ikke har eksplisitt verdi ennå, tolkes den som "åpen".
-      // Første klikk skal da lukke (false).
       const next = current === undefined ? false : !current;
       return {
         ...prev,
@@ -238,7 +252,16 @@ export default function Sidebar({
                       const isFavorite = favoriteSet.has(item.id);
 
                       return (
-                        <li key={item.id} className="sidebar-item">
+                        <li
+                          key={item.id}
+                          className="sidebar-item"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: "0.25rem"
+                          }}
+                        >
                           <button
                             type="button"
                             className="sidebar-link"
@@ -248,6 +271,7 @@ export default function Sidebar({
                                 onClose();
                               }
                             }}
+                            style={{ flex: 1, textAlign: "left" }}
                           >
                             <span className="sidebar-item-label">
                               {isActive ? "• " : ""}
@@ -256,7 +280,6 @@ export default function Sidebar({
                           </button>
                           <button
                             type="button"
-                            className="sidebar-favorite-button"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleFavorite(item.id);
@@ -268,7 +291,6 @@ export default function Sidebar({
                                 : "Legg til i favoritter"
                             }
                             style={{
-                              marginLeft: "0.25rem",
                               padding: "0 0.25rem",
                               border: "none",
                               background: "transparent",
