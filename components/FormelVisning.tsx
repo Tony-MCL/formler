@@ -59,9 +59,7 @@ export default function FormelVisning({
 
     const currentIndex = familyMembers.findIndex((m) => m.id === formula.id);
     const nextIndex =
-      currentIndex === -1
-        ? 0
-        : (currentIndex + 1) % familyMembers.length;
+      currentIndex === -1 ? 0 : (currentIndex + 1) % familyMembers.length;
 
     const next = familyMembers[nextIndex];
     setActiveFormulaId(next.id as FormulaId);
@@ -69,8 +67,8 @@ export default function FormelVisning({
 
   const phaseLabel = formula?.modeLabel ?? formula?.name ?? "";
   const isSinglePhase =
-  activeFormulaId === "power" ||
-  activeFormulaId === "single_phase_apparent";
+    activeFormulaId === "power" ||
+    activeFormulaId === "single_phase_apparent";
 
   if (!formula) {
     return (
@@ -89,7 +87,7 @@ export default function FormelVisning({
         alt=""
         className="print-watermark"
       />
-      
+
       {/* Topp-rad: Hjem + PDF-knapp */}
       <div
         style={{
@@ -145,13 +143,16 @@ export default function FormelVisning({
               paddingBlock: "0.2rem",
               borderRadius: 999,
               border: "1px solid var(--mcl-outline)",
-              // Tydelig farge i begge moduser:
               background: isSinglePhase
-                ? "var(--mcl-header, #e5c3a5)"   // samme som header, med varm fallback
-                : "var(--mcl-brand)",            // mørk MCL-brand for 3-fase
+                ? "var(--mcl-header, #e5c3a5)" // 1-fase: header-farge
+                : "var(--mcl-brand)", // 3-fase: MCL-brand
               color: isSinglePhase ? "#000" : "#fff",
               fontWeight: 600
             }}
+          >
+            {isSinglePhase ? "1-fase" : "3-fase"}
+          </button>
+        )}
       </div>
 
       {formula.description && (
@@ -197,8 +198,6 @@ export default function FormelVisning({
           </button>
         </div>
       </div>
-
-      {/* (Tidligere fase-toggle under uttrykket er fjernet) */}
 
       {/* PRINT-ONLY: Variabler + Varianter inne i flisa */}
       <div className="print-only">
@@ -355,7 +354,9 @@ export default function FormelVisning({
                         <code>{v.symbol}</code>
                       </td>
                       <td style={{ padding: "0.15rem 0" }}>{v.name}</td>
-                      <td style={{ padding: "0.15rem 0" }}>{v.unit ?? "–"}</td>
+                      <td style={{ padding: "0.15rem 0" }}>
+                        {v.unit ?? "–"}
+                      </td>
                       <td
                         style={{
                           padding: "0.15rem 0",
