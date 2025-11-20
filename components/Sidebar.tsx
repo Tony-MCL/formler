@@ -1,26 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { getFormulasGroupedByCategory } from "../lib/formulas";
 import type { FormulaId } from "../lib/types";
-
-const FAVORITES_STORAGE_KEY = "mcl_formula_favorites_v1";
-
-function loadFavoritesFromStorage(): FormulaId[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(FAVORITES_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? (parsed as FormulaId[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function broadcastFavoritesUpdated() {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new Event("mcl:favorites-updated"));
-}
 
 type SidebarProps = {
   open: boolean;
@@ -41,15 +23,27 @@ type SidebarGroupView = {
   items: SidebarItemView[];
 };
 
+// Intern id for favoritt-gruppen
+const FAVORITES_GROUP_ID = "__favorites__";
+// Default-nøkkel for localStorage (vi forsøker å gjenbruke eksisterende nøkkel hvis vi finner en)
+const DEFAULT_FAVORITES_KEY = "mcl-formula-favorites";
+
 export default function Sidebar({
   open,
   onClose,
   selectedFormulaId,
   onSelectFormula
 }: SidebarProps) {
+  // === Hooks ALLTID først ===
+
   const [isMobile, setIsMobile] = useState(false);
 
-  // Favoritter (lagres i localStorage)
+  // Nøkkel vi bruker mot localStorage – settes på første render / effekt
+  const [favoritesStorageKey, setFavoritesStorageKey] = useState<string>(
+    DEFAULT_FAVORITES_KEY
+  );
+
+  // Liste over favoritt-formler (id’er)
   const [favorites, setFavorites] = useState<FormulaId[]>([]);
 
   // Hvilke grupper er åpne (kollapsbare seksjoner)
@@ -58,26 +52,12 @@ export default function Sidebar({
     getFormulasGroupedByCategory().forEach(({ category }) => {
       initial[category.id] = true; // alle åpne som start
     });
+    // Favoritter-gruppen er også åpen når den finnes
+    initial[FAVORITES_GROUP_ID] = true;
     return initial;
   });
 
-  // Les favoritter + lytt på global oppdatering
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    setFavorites(loadFavoritesFromStorage());
-
-    const handleUpdate = () => {
-      setFavorites(loadFavoritesFromStorage());
-    };
-
-    window.addEventListener("mcl:favorites-updated", handleUpdate);
-    return () => {
-      window.removeEventListener("mcl:favorites-updated", handleUpdate);
-    };
-  }, []);
-
-  // Track mobil/desktop
+  // Oppdater isMobile
   useEffect(() => {
     const update = () => {
       if (typeof window !== "undefined") {
@@ -89,13 +69,50 @@ export default function Sidebar({
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // På desktop: ikke vis sidebar i det hele tatt når den er lukket
-  if (!open && !isMobile) {
-    return null;
-  }
+  // Last inn favoritter fra localStorage (prøver å gjenbruke eksisterende nøkkel om mulig)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
+    try {
+      // Let etter en eventuell eksisterende nøkkel som inneholder "favorite"
+      const keys = Object.keys(window.localStorage);
+      const candidateKey =
+        keys.find((k) => k.toLowerCase().includes("favorite")) ??
+        DEFAULT_FAVORITES_KEY;
+
+      setFavoritesStorageKey(candidateKey);
+
+      const raw = window.localStorage.getItem(candidateKey);
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setFavorites(parsed as FormulaId[]);
+      }
+    } catch {
+      // Ignorer parsing-feil – vi starter bare uten favoritter
+    }
+  }, []);
+
+  // Lagre favoritter når de endres
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        favoritesStorageKey,
+        JSON.stringify(favorites)
+      );
+    } catch {
+      // Ignorer lagringsfeil (f.eks. quota)
+    }
+  }, [favorites, favoritesStorageKey]);
+
+  // === Vanlig logikk (ingen hooks under her) ===
+
+  const isVisible = open || isMobile;
   const stopClick: React.MouseEventHandler = (e) => e.stopPropagation();
 
+  // Grunn-grupper fra formel-lista
   const baseGroups: SidebarGroupView[] = getFormulasGroupedByCategory().map(
     ({ category, formulas }) => ({
       id: category.id,
@@ -108,65 +125,48 @@ export default function Sidebar({
     })
   );
 
-  const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
+  // Bygg favoritt-gruppe øverst
+  const favoriteSet = new Set<FormulaId>(favorites);
+  const favoriteItems: SidebarItemView[] = [];
 
-  const allItems: SidebarItemView[] = useMemo(
-    () => baseGroups.flatMap((g) => g.items),
-    [baseGroups]
-  );
+  baseGroups.forEach((group) => {
+    group.items.forEach((item) => {
+      if (favoriteSet.has(item.id)) {
+        favoriteItems.push(item);
+      }
+    });
+  });
 
-  const favoriteItems: SidebarItemView[] = useMemo(
-    () => allItems.filter((item) => favoriteSet.has(item.id)),
-    [allItems, favoriteSet]
-  );
+  const groups: SidebarGroupView[] = [];
 
-  const groups: SidebarGroupView[] = useMemo(() => {
-    if (favoriteItems.length === 0) return baseGroups;
+  if (favoriteItems.length > 0) {
+    groups.push({
+      id: FAVORITES_GROUP_ID,
+      title: "Favoritter",
+      description: undefined,
+      items: favoriteItems
+    });
+  }
 
-    return [
-      {
-        id: "favorites",
-        title: "Favoritter",
-        description: undefined,
-        items: favoriteItems
-      },
-      ...baseGroups
-    ];
-  }, [baseGroups, favoriteItems]);
+  groups.push(...baseGroups);
 
   const toggleGroup = (groupId: string) => {
-    setOpenGroups((prev) => {
-      const current = prev[groupId];
-      const next = current === undefined ? false : !current;
-      return {
-        ...prev,
-        [groupId]: next
-      };
-    });
+    setOpenGroups((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
   };
 
   const toggleFavorite = (id: FormulaId) => {
-    if (typeof window === "undefined") return;
-
-    setFavorites((prev) => {
-      const exists = prev.includes(id);
-      const next = exists
-        ? prev.filter((x) => x !== id)
-        : [...prev, id];
-
-      try {
-        window.localStorage.setItem(
-          FAVORITES_STORAGE_KEY,
-          JSON.stringify(next)
-        );
-        broadcastFavoritesUpdated();
-      } catch {
-        // ignorer lagringsfeil
-      }
-
-      return next;
-    });
+    setFavorites((prev) =>
+      prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
+    );
   };
+
+  if (!isVisible) {
+    // NB: ingen hooks under her – trygg tidlig return
+    return null;
+  }
 
   return (
     <>
@@ -199,8 +199,7 @@ export default function Sidebar({
 
         <nav className="sidebar-nav">
           {groups.map((group) => {
-            const stored = openGroups[group.id];
-            const isOpen = stored === undefined ? true : stored;
+            const isOpen = openGroups[group.id] ?? true;
 
             return (
               <div key={group.id} className="sidebar-section">
@@ -233,7 +232,7 @@ export default function Sidebar({
                 </button>
 
                 {/* Beskrivelse + liste kun når gruppen er åpen */}
-                {isOpen && group.description && group.id !== "favorites" && (
+                {isOpen && group.description && (
                   <p
                     style={{
                       margin: "0.1rem 0 0.3rem",
@@ -249,20 +248,10 @@ export default function Sidebar({
                   <ul className="sidebar-list">
                     {group.items.map((item) => {
                       const isActive = item.id === selectedFormulaId;
-                      const isFav = favoriteSet.has(item.id);
+                      const isFav = favorites.includes(item.id);
 
                       return (
-                        <li
-                          key={item.id}
-                          className="sidebar-item"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: "0.25rem"
-                          }}
-                        >
-                            {/* Formelnavn-knapp */}
+                        <li key={item.id} className="sidebar-item">
                           <button
                             type="button"
                             className="sidebar-link"
@@ -272,38 +261,43 @@ export default function Sidebar({
                                 onClose();
                               }
                             }}
-                            style={{ flex: 1, textAlign: "left" }}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              width: "100%"
+                            }}
                           >
                             <span className="sidebar-item-label">
                               {isActive ? "• " : ""}
                               {item.label}
                             </span>
-                          </button>
 
-                          {/* Favoritt-stjerne */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavorite(item.id);
-                            }}
-                            aria-pressed={isFav}
-                            aria-label={
-                              isFav
-                                ? "Fjern fra favoritter"
-                                : "Legg til i favoritter"
-                            }
-                            style={{
-                              padding: "0 0.25rem",
-                              border: "none",
-                              background: "transparent",
-                              cursor: "pointer",
-                              fontSize: "0.9rem",
-                              lineHeight: 1,
-                              color: isFav ? "gold" : "var(--mcl-muted)"
-                            }}
-                          >
-                            {isFav ? "★" : "☆"}
+                            {/* Favoritt-stjerne */}
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                toggleFavorite(item.id);
+                              }}
+                              aria-label={
+                                isFav
+                                  ? "Fjern fra favoritter"
+                                  : "Legg til i favoritter"
+                              }
+                              style={{
+                                marginLeft: "0.5rem",
+                                fontSize: "0.9rem",
+                                cursor: "pointer",
+                                lineHeight: 1,
+                                // Gul når aktiv, ellers dempet
+                                color: isFav
+                                  ? "#f4b400"
+                                  : "var(--mcl-muted, #999)"
+                              }}
+                            >
+                              ★
+                            </span>
                           </button>
                         </li>
                       );
