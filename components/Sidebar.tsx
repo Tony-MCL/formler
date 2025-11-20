@@ -77,20 +77,6 @@ export default function Sidebar({
     };
   }, []);
 
-  // Skriv favoritter til localStorage når de endres
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(
-        FAVORITES_STORAGE_KEY,
-        JSON.stringify(favorites)
-      );
-      broadcastFavoritesUpdated();
-    } catch {
-      // Ignorer lagringsfeil stille
-    }
-  }, [favorites]);
-
   // Track mobil/desktop
   useEffect(() => {
     const update = () => {
@@ -160,11 +146,25 @@ export default function Sidebar({
   };
 
   const toggleFavorite = (id: FormulaId) => {
+    if (typeof window === "undefined") return;
+
     setFavorites((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((x) => x !== id);
+      const exists = prev.includes(id);
+      const next = exists
+        ? prev.filter((x) => x !== id)
+        : [...prev, id];
+
+      try {
+        window.localStorage.setItem(
+          FAVORITES_STORAGE_KEY,
+          JSON.stringify(next)
+        );
+        broadcastFavoritesUpdated();
+      } catch {
+        // ignorer lagringsfeil
       }
-      return [...prev, id];
+
+      return next;
     });
   };
 
@@ -249,7 +249,7 @@ export default function Sidebar({
                   <ul className="sidebar-list">
                     {group.items.map((item) => {
                       const isActive = item.id === selectedFormulaId;
-                      const isFavorite = favoriteSet.has(item.id);
+                      const isFav = favoriteSet.has(item.id);
 
                       return (
                         <li
@@ -262,6 +262,7 @@ export default function Sidebar({
                             gap: "0.25rem"
                           }}
                         >
+                            {/* Formelnavn-knapp */}
                           <button
                             type="button"
                             className="sidebar-link"
@@ -278,15 +279,17 @@ export default function Sidebar({
                               {item.label}
                             </span>
                           </button>
+
+                          {/* Favoritt-stjerne */}
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleFavorite(item.id);
                             }}
-                            aria-pressed={isFavorite}
+                            aria-pressed={isFav}
                             aria-label={
-                              isFavorite
+                              isFav
                                 ? "Fjern fra favoritter"
                                 : "Legg til i favoritter"
                             }
@@ -297,10 +300,10 @@ export default function Sidebar({
                               cursor: "pointer",
                               fontSize: "0.9rem",
                               lineHeight: 1,
-                              color: isFavorite ? "gold" : "var(--mcl-muted)"
+                              color: isFav ? "gold" : "var(--mcl-muted)"
                             }}
                           >
-                            {isFavorite ? "★" : "☆"}
+                            {isFav ? "★" : "☆"}
                           </button>
                         </li>
                       );
