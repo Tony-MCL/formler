@@ -52,6 +52,27 @@ export default function FormelVisning({
     return formulas.filter((f) => f.familyId === formula.familyId);
   }, [formula?.familyId]);
 
+  const hasFamilyToggle = familyMembers.length > 1;
+  const activeFamilyMember =
+    (hasFamilyToggle &&
+      familyMembers.find((m) => m.id === activeFormulaId)) ||
+    null;
+
+  const isPrimary = activeFamilyMember?.isPrimaryInFamily ?? true;
+  const phaseLabel =
+    activeFamilyMember?.modeLabel ?? activeFamilyMember?.name ?? "";
+  const phaseBg = isPrimary ? "var(--mcl-header)" : "var(--mcl-brand)";
+  const phaseColor = isPrimary ? "#1b1a17" : "#ffffff";
+
+  function handleTogglePhase() {
+    if (!hasFamilyToggle || !formula?.familyId) return;
+    const members = familyMembers;
+    if (members.length < 2) return;
+    const currentIndex = members.findIndex((m) => m.id === activeFormulaId);
+    const nextIndex = (currentIndex + 1) % members.length;
+    setActiveFormulaId(members[nextIndex].id as FormulaId);
+  }
+
   if (!formula) {
     return (
       <section className="card">
@@ -143,41 +164,34 @@ export default function FormelVisning({
         </div>
       </div>
 
-      {/* Toggle for 1-fase / 3-fase (eller andre moduser i samme familie) */}
-      {familyMembers.length > 1 && (
+      {/* ÉN toggle-knapp for 1-fase / 3-fase (eller andre moduser i samme familie) */}
+      {hasFamilyToggle && (
         <div
           className="no-print"
           style={{
             display: "flex",
-            gap: "0.5rem",
-            marginBottom: "1rem",
-            flexWrap: "wrap"
+            justifyContent: "center",
+            marginBottom: "1rem"
           }}
         >
-          {familyMembers.map((member) => {
-            const isActive = member.id === activeFormulaId;
-            return (
-              <button
-                key={member.id}
-                type="button"
-                className="button"
-                onClick={() => setActiveFormulaId(member.id as FormulaId)}
-                style={{
-                  fontSize: "0.85rem",
-                  paddingInline: "0.7rem",
-                  paddingBlock: "0.25rem",
-                  borderRadius: 999,
-                  border: "1px solid var(--mcl-outline)",
-                  background: isActive
-                    ? "var(--mcl-brand)"
-                    : "var(--mcl-surface)",
-                  color: isActive ? "#fff" : "var(--mcl-text)"
-                }}
-              >
-                {member.modeLabel ?? member.name}
-              </button>
-            );
-          })}
+          <button
+            type="button"
+            onClick={handleTogglePhase}
+            style={{
+              fontSize: "0.85rem",
+              paddingInline: "0.9rem",
+              paddingBlock: "0.25rem",
+              borderRadius: 999,
+              border: "1px solid var(--mcl-outline)",
+              background: phaseBg,
+              color: phaseColor,
+              cursor: "pointer",
+              minWidth: "4.5rem",
+              textAlign: "center"
+            }}
+          >
+            {phaseLabel}
+          </button>
         </div>
       )}
 
