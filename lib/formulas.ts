@@ -24,7 +24,12 @@ export const formulaCategories: FormulaCategory[] = [
     title: "Motorer og generatorer",
     description: "Enkle sammenhenger for roterende maskiner, synkronhastighet og moment.",
     order: 3
-  }
+  },
+  {
+  id: "shortcircuit",
+  title: "Kortslutning",
+  description: "Forenklede og normative kortslutningsberegninger etter NEK 400 og relevante metoder."
+},
 ];
 
 // Formler som skal være tilgjengelige i motoren, men IKKE vises som egne linjer i sidebaren
