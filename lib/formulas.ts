@@ -1100,7 +1100,114 @@ export const formulas: Formula[] = [
     ],
     tags: ["s, n_s, n"]
   },
-
+  {
+    id: "motor_start_current_ratio",
+    categoryId: "machines",
+    name: "Startstrøm fra merkestrøm",
+    shortName: "I_start = k_start · I_n",
+    description:
+      "Forholdet mellom startstrøm og merkestrøm for en motor. Nyttig når datablad oppgir I_start som multippel av I_n.",
+    baseExpression: "I_start = k_start · I_n",
+    variables: [
+      {
+        id: "I_start",
+        symbol: "I_start",
+        name: "Startstrøm",
+        unit: "A",
+        role: "output"
+      },
+      {
+        id: "I_n",
+        symbol: "I_n",
+        name: "Merkestrøm motor",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "k_start",
+        symbol: "k_start",
+        name: "Startstrømsfaktor",
+        unit: "–",
+        role: "input",
+        description:
+          "Typisk 4–8 for direkte start, lavere for mykstarter/frekvensomformer."
+      }
+    ],
+    variants: [
+      {
+        id: "motor_start_current_ratio-Istart",
+        label: "Løs for I_start",
+        solveFor: "I_start",
+        expression: "I_start = k_start * I_n"
+      },
+      {
+        id: "motor_start_current_ratio-In",
+        label: "Løs for I_n",
+        solveFor: "I_n",
+        expression: "I_n = I_start / k_start"
+      },
+      {
+        id: "motor_start_current_ratio-kstart",
+        label: "Løs for k_start",
+        solveFor: "k_start",
+        expression: "k_start = I_start / I_n"
+      }
+    ],
+    tags: ["motorstart", "I_start, I_n, k_start"]
+  },
+  {
+    id: "motor_start_voltage_dip",
+    categoryId: "machines",
+    name: "Spenningsfall ved motorstart (fra I_k)",
+    shortName: "ΔU_% ≈ (I_start / I_k3) · 100",
+    description:
+      "Tilnærmet spenningsfall ved motorstart basert på forholdet mellom startstrøm og trefase kortslutningsstrøm i tilknytningspunktet.",
+    baseExpression: "ΔU_% = (I_start / I_k3) · 100",
+    variables: [
+      {
+        id: "dU_percent",
+        symbol: "ΔU_%",
+        name: "Spenningsfall i prosent",
+        unit: "%",
+        role: "output"
+      },
+      {
+        id: "I_start",
+        symbol: "I_start",
+        name: "Startstrøm motor",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "I_k3",
+        symbol: "I_k3",
+        name: "Trefase kortslutningsstrøm i punktet",
+        unit: "A",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "motor_start_voltage_dip-dU_percent",
+        label: "Løs for ΔU_%",
+        solveFor: "dU_percent",
+        expression: "dU_percent = (I_start / I_k3) * 100"
+      },
+      {
+        id: "motor_start_voltage_dip-Istart",
+        label: "Løs for I_start",
+        solveFor: "I_start",
+        expression: "I_start = dU_percent * I_k3 / 100"
+      },
+      {
+        id: "motor_start_voltage_dip-Ik3",
+        label: "Løs for I_k3",
+        solveFor: "I_k3",
+        expression: "I_k3 = I_start * 100 / dU_percent"
+      }
+    ],
+    tags: ["motorstart", "spenningsfall", "I_start, I_k3, ΔU"]
+  },
   /* =======================================================================
    * KORTSLUTNING OG FEILSTRØM
    * (enkle NEK 400-nære uttrykk – c_min/c_max brukes som faktorer)
