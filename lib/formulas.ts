@@ -22,7 +22,7 @@ export const formulaCategories: FormulaCategory[] = [
   {
   id: "shortcircuit",
   title: "Kortslutning",
-  description: "Forenklede og normative kortslutningsberegninger etter NEK 400 og relevante metoder."
+  description: "Forenklede og normative kortslutningsberegninger etter NEK 400 og relevante metoder.",
   order: 3
   },
   {
