@@ -25,8 +25,16 @@ type SidebarGroupView = {
 
 // Intern id for favoritt-gruppen
 const FAVORITES_GROUP_ID = "__favorites__";
-// Default-nøkkel for localStorage (vi forsøker å gjenbruke eksisterende nøkkel hvis vi finner en)
-const DEFAULT_FAVORITES_KEY = "mcl-formula-favorites";
+// Samme nøkkel som FormelVisning bruker
+const DEFAULT_FAVORITES_KEY = "mcl_formula_favorites_v1";
+
+// Felles event-navn for sync med FormelVisning
+const FAVORITES_EVENT_NAME = "mcl:favorites-updated";
+
+function broadcastFavoritesUpdated() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(FAVORITES_EVENT_NAME));
+}
 
 export default function Sidebar({
   open,
@@ -94,7 +102,7 @@ export default function Sidebar({
     }
   }, []);
 
-  // Lagre favoritter når de endres
+  // Lagre favoritter når de endres + informer FormelVisning
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
@@ -102,6 +110,8 @@ export default function Sidebar({
         favoritesStorageKey,
         JSON.stringify(favorites)
       );
+      // Gi FormelVisning beskjed om at lista er endret
+      broadcastFavoritesUpdated();
     } catch {
       // Ignorer lagringsfeil (f.eks. quota)
     }
@@ -251,7 +261,17 @@ export default function Sidebar({
                       const isFav = favorites.includes(item.id);
 
                       return (
-                        <li key={item.id} className="sidebar-item">
+                        <li
+                          key={item.id}
+                          className="sidebar-item"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: "0.4rem"
+                          }}
+                        >
+                          {/* Selve formel-linja */}
                           <button
                             type="button"
                             className="sidebar-link"
@@ -262,42 +282,41 @@ export default function Sidebar({
                               }
                             }}
                             style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              width: "100%"
+                              flex: 1,
+                              textAlign: "left"
                             }}
                           >
                             <span className="sidebar-item-label">
                               {isActive ? "• " : ""}
                               {item.label}
                             </span>
+                          </button>
 
-                            {/* Favoritt-stjerne */}
-                            <span
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                toggleFavorite(item.id);
-                              }}
-                              aria-label={
-                                isFav
-                                  ? "Fjern fra favoritter"
-                                  : "Legg til i favoritter"
-                              }
-                              style={{
-                                marginLeft: "0.5rem",
-                                fontSize: "0.9rem",
-                                cursor: "pointer",
-                                lineHeight: 1,
-                                // Gul når aktiv, ellers dempet
-                                color: isFav
-                                  ? "#f4b400"
-                                  : "var(--mcl-muted, #999)"
-                              }}
-                            >
-                              ★
-                            </span>
+                          {/* Favoritt-stjerne – egen knapp på samme linje */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(item.id);
+                            }}
+                            aria-label={
+                              isFav
+                                ? "Fjern fra favoritter"
+                                : "Legg til i favoritter"
+                            }
+                            style={{
+                              padding: 0,
+                              border: "none",
+                              background: "transparent",
+                              cursor: "pointer",
+                              fontSize: "0.9rem",
+                              lineHeight: 1,
+                              color: isFav
+                                ? "#f4b400" // gul utfylt
+                                : "var(--mcl-muted, #999)" // hul/grå
+                            }}
+                          >
+                            {isFav ? "★" : "☆"}
                           </button>
                         </li>
                       );
