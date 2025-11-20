@@ -1,3 +1,4 @@
+// lib/formulas.ts
 import type {
   Formula,
   FormulaCategory,
@@ -9,28 +10,38 @@ export const formulaCategories: FormulaCategory[] = [
   {
     id: "core",
     title: "Grunnleggende elkraft",
-    description: "Basisforhold for spenning, strøm, motstand, effekt og energi.",
+    description:
+      "Basisforhold for spenning, strøm, motstand, effekt, energi og tap.",
     order: 1
   },
   {
     id: "systems",
     title: "Systemer og nett",
     description:
-      "Nett-typer, spenningsnivåer, spenningsfall og enkle kortslutningsstørrelser.",
+      "Nett-typer, spenningsnivåer, spenningsfall og sammenhenger i trefasesystemer.",
     order: 2
-  },
-  {
-  id: "shortcircuit",
-  title: "Kortslutning",
-  description: "Forenklede og normative kortslutningsberegninger etter NEK 400 og relevante metoder.",
-  order: 3
   },
   {
     id: "machines",
     title: "Motorer og generatorer",
-    description: "Enkle sammenhenger for roterende maskiner, synkronhastighet og moment.",
+    description:
+      "Synkronhastighet, slip, moment og virkningsgrad for roterende maskiner.",
+    order: 3
+  },
+  {
+    id: "shortcircuit",
+    title: "Kortslutning og feilstrøm",
+    description:
+      "Enkle formler for beregning av kortslutnings- og feilstrømmer i henhold til NEK 400.",
     order: 4
   },
+  {
+    id: "protection",
+    title: "Vern og selektivitet",
+    description:
+      "Dimensjonering av vern, automatisk utkobling, termisk bestandighet og enkel selektivitetskontroll.",
+    order: 5
+  }
 ];
 
 // Formler som skal være tilgjengelige i motoren, men IKKE vises som egne linjer i sidebaren
@@ -50,13 +61,12 @@ const HIDDEN_IN_SIDEBAR: FormulaId[] = [
 export const formulas: Formula[] = [
   /* =======================================================================
    * GRUNNLEGGENDE ELKRAFT
-   * =======================================================================
-   */
+   * ======================================================================= */
   {
     id: "ohm",
     categoryId: "core",
     name: "Ohms lov",
-    shortName: "Ohm",
+    shortName: "U = R · I",
     description: "Sammenhengen mellom spenning, strøm og motstand i en leder.",
     baseExpression: "U = R * I",
     variables: [
@@ -282,7 +292,7 @@ export const formulas: Formula[] = [
     id: "series_resistors",
     categoryId: "core",
     name: "Seriekobling av motstander",
-    shortName: "Rₜₒₜ = R₁ + R₂",
+    shortName: "R_tot = R_1 + R_2",
     description: "Total motstand for to seriekoblede motstander.",
     baseExpression: "R_tot = R_1 + R_2",
     variables: [
@@ -330,11 +340,279 @@ export const formulas: Formula[] = [
     ],
     tags: ["R_tot, R_1, R_2"]
   },
+  {
+    id: "ohmic_loss",
+    categoryId: "core",
+    name: "Effekttap i motstand",
+    shortName: "P_tap = I² · R",
+    description:
+      "Effekttap (varmetap) i en motstand eller leder ved kjent strøm og motstand.",
+    baseExpression: "P_tap = I * I * R",
+    variables: [
+      {
+        id: "P_tap",
+        symbol: "P_tap",
+        name: "Effekttap",
+        unit: "W",
+        role: "output",
+        description: "Tapt effekt (varme) i komponenten."
+      },
+      {
+        id: "I",
+        symbol: "I",
+        name: "Strøm",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "R",
+        symbol: "R",
+        name: "Motstand",
+        unit: "Ω",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "ohmic_loss-P_tap",
+        label: "Løs for P_tap",
+        solveFor: "P_tap",
+        expression: "P_tap = I * I * R"
+      },
+      {
+        id: "ohmic_loss-I",
+        label: "Løs for I",
+        solveFor: "I",
+        expression: "I = (P_tap / R) ** 0.5"
+      },
+      {
+        id: "ohmic_loss-R",
+        label: "Løs for R",
+        solveFor: "R",
+        expression: "R = P_tap / (I * I)"
+      }
+    ],
+    tags: ["P_tap, I, R"]
+  },
+  {
+    id: "charge",
+    categoryId: "core",
+    name: "Ladning",
+    shortName: "Q = I · t",
+    description: "Sammenheng mellom strøm, tid og elektrisk ladning.",
+    baseExpression: "Q = I * t",
+    variables: [
+      {
+        id: "Q",
+        symbol: "Q",
+        name: "Ladning",
+        unit: "C",
+        role: "output",
+        description: "Elektrisk ladning (coulomb)."
+      },
+      {
+        id: "I",
+        symbol: "I",
+        name: "Strøm",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "t",
+        symbol: "t",
+        name: "Tid",
+        unit: "s",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "charge-Q",
+        label: "Løs for Q",
+        solveFor: "Q",
+        expression: "Q = I * t"
+      },
+      {
+        id: "charge-I",
+        label: "Løs for I",
+        solveFor: "I",
+        expression: "I = Q / t"
+      },
+      {
+        id: "charge-t",
+        label: "Løs for t",
+        solveFor: "t",
+        expression: "t = Q / I"
+      }
+    ],
+    tags: ["Q, I, t"]
+  },
+  {
+    id: "cap_energy",
+    categoryId: "core",
+    name: "Energilagring i kondensator",
+    shortName: "W_C = ½ · C · U²",
+    description:
+      "Energi lagret i en kondensator ved gitt kapasitans og spenning.",
+    baseExpression: "W_C = 0.5 * C * U^2",
+    variables: [
+      {
+        id: "W_C",
+        symbol: "W_C",
+        name: "Energi i kondensator",
+        unit: "J",
+        role: "output"
+      },
+      {
+        id: "C",
+        symbol: "C",
+        name: "Kapasitans",
+        unit: "F",
+        role: "input"
+      },
+      {
+        id: "U",
+        symbol: "U",
+        name: "Spenning",
+        unit: "V",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "cap_energy-W_C",
+        label: "Løs for W_C",
+        solveFor: "W_C",
+        expression: "W_C = 0.5 * C * U * U"
+      },
+      {
+        id: "cap_energy-U",
+        label: "Løs for U",
+        solveFor: "U",
+        expression: "U = (2 * W_C / C) ** 0.5"
+      },
+      {
+        id: "cap_energy-C",
+        label: "Løs for C",
+        solveFor: "C",
+        expression: "C = 2 * W_C / (U * U)"
+      }
+    ],
+    tags: ["W_C, C, U"]
+  },
+  {
+    id: "power_factor",
+    categoryId: "core",
+    name: "Effektfaktor",
+    shortName: "cosφ = P / S",
+    description:
+      "Sammenhengen mellom aktiv effekt og tilsynelatende effekt i AC-systemer.",
+    baseExpression: "cosφ = P / S",
+    variables: [
+      {
+        id: "cosphi",
+        symbol: "cosφ",
+        name: "Effektfaktor",
+        role: "output",
+        description: "Forholdet P / S, mellom 0 og 1."
+      },
+      {
+        id: "P",
+        symbol: "P",
+        name: "Aktiv effekt",
+        unit: "W",
+        role: "input"
+      },
+      {
+        id: "S",
+        symbol: "S",
+        name: "Tilsynelatende effekt",
+        unit: "VA",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "power_factor-cosphi",
+        label: "Løs for cosφ",
+        solveFor: "cosphi",
+        expression: "cosphi = P / S"
+      },
+      {
+        id: "power_factor-P",
+        label: "Løs for P",
+        solveFor: "P",
+        expression: "P = S * cosphi"
+      },
+      {
+        id: "power_factor-S",
+        label: "Løs for S",
+        solveFor: "S",
+        expression: "S = P / cosphi"
+      }
+    ],
+    tags: ["cosφ, P, S"]
+  },
+  {
+    id: "single_phase_apparent",
+    categoryId: "core",
+    name: "Tilsynelatende effekt",
+    shortName: "S = U · I",
+    description:
+      "Tilsynelatende effekt basert på spenning og strøm (en- eller trefasesystem).",
+    baseExpression: "S = U * I",
+    variables: [
+      {
+        id: "S",
+        symbol: "S",
+        name: "Tilsynelatende effekt",
+        unit: "VA",
+        role: "output"
+      },
+      {
+        id: "U",
+        symbol: "U",
+        name: "Spenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "I",
+        symbol: "I",
+        name: "Strøm",
+        unit: "A",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "single_phase_apparent-S",
+        label: "Løs for S",
+        solveFor: "S",
+        expression: "S = U * I"
+      },
+      {
+        id: "single_phase_apparent-U",
+        label: "Løs for U",
+        solveFor: "U",
+        expression: "U = S / I"
+      },
+      {
+        id: "single_phase_apparent-I",
+        label: "Løs for I",
+        solveFor: "I",
+        expression: "I = S / U"
+      }
+    ],
+    tags: ["S, U, I"],
+    familyId: "apparent_power",
+    modeLabel: "1-fase",
+    isPrimaryInFamily: true
+  },
 
   /* =======================================================================
    * SYSTEMER OG NETT
-   * =======================================================================
-   */
+   * ======================================================================= */
   {
     id: "voltage_drop",
     categoryId: "systems",
@@ -390,455 +668,97 @@ export const formulas: Formula[] = [
     ],
     tags: ["ΔU, I, R"]
   },
-    {
-    id: "fault_current_earth",
-    categoryId: "shortcircuit",
-    name: "Feilstrøm i sluttpunkt (TN/TT)",
-    shortName: "I_k = c · U_0 / Z_s",
-    description:
-      "Forenklet beregning av feilstrøm i enden av en kurs i TN-/TT-system basert på fasespenning, spenningsfaktor og feilsløyfe-impedans.",
-    baseExpression: "I_k = c * U_0 / Z_s",
-    variables: [
-      {
-        id: "I_k",
-        symbol: "I_k",
-        name: "Feilstrøm",
-        unit: "A",
-        role: "output",
-        description: "Prospektiv feilstrøm i sluttpunktet."
-      },
-      {
-        id: "c",
-        symbol: "c",
-        name: "Spenningsfaktor",
-        role: "input",
-        description:
-          "Spenningsfaktor for min. nettspenning (typisk 0,8 i henhold til NEK 400)."
-      },
-      {
-        id: "U_0",
-        symbol: "U_0",
-        name: "Fasespenning mot jord",
-        unit: "V",
-        role: "input",
-        description: "Nominell fasespenning mot jord i aktuell installasjon."
-      },
-      {
-        id: "Z_s",
-        symbol: "Z_s",
-        name: "Feilsløyfe-impedans",
-        unit: "Ω",
-        role: "input",
-        description:
-          "Total impedans i feilsløyfen (fase–PE/PE+N tilbake til trafo)."
-      }
-    ],
-    variants: [
-      {
-        id: "fault_current_earth-I_k",
-        label: "Løs for I_k",
-        solveFor: "I_k",
-        expression: "I_k = c * U_0 / Z_s"
-      },
-      {
-        id: "fault_current_earth-Z_s",
-        label: "Løs for Z_s",
-        solveFor: "Z_s",
-        expression: "Z_s = c * U_0 / I_k"
-      },
-      {
-        id: "fault_current_earth-U_0",
-        label: "Løs for U_0",
-        solveFor: "U_0",
-        expression: "U_0 = I_k * Z_s / c"
-      }
-    ],
-    tags: ["I_k, U_0, Z_s, c, TN, TT"]
-  },
   {
-    id: "max_fault_loop_impedance",
-    categoryId: "shortcircuit",
-    name: "Maksimal feilsløyfe-impedans",
-    shortName: "Z_s,max = c · U_0 / I_a",
-    description:
-      "Sammenheng mellom maksimal tillatt feilsløyfe-impedans, fasespenning, spenningsfaktor og frakoblingsstrøm for vernet. Brukes ved kontroll mot NEK 400-krav til automatisk utkobling.",
-    baseExpression: "Z_s_max = c * U_0 / I_a",
+    id: "voltage_drop_percent",
+    categoryId: "systems",
+    name: "Spenningsfall i prosent",
+    shortName: "ΔU_% = (ΔU / U_n) · 100",
+    description: "Spenningsfall uttrykt i prosent av nominell spenning.",
+    baseExpression: "ΔU_% = (ΔU / U_n) * 100",
     variables: [
       {
-        id: "Z_s_max",
-        symbol: "Z_s,max",
-        name: "Maksimal feilsløyfe-impedans",
-        unit: "Ω",
-        role: "output",
-        description:
-          "Største tillatte feilsløyfe-impedans for å sikre automatisk utkobling."
+        id: "dU_percent",
+        symbol: "ΔU_%",
+        name: "Spenningsfall i prosent",
+        unit: "%",
+        role: "output"
       },
       {
-        id: "c",
-        symbol: "c",
-        name: "Spenningsfaktor",
-        role: "input",
-        description:
-          "Spenningsfaktor for min. nettspenning (typisk 0,8 i henhold til NEK 400)."
-      },
-      {
-        id: "U_0",
-        symbol: "U_0",
-        name: "Fasespenning mot jord",
+        id: "dU",
+        symbol: "ΔU",
+        name: "Spenningsfall",
         unit: "V",
         role: "input"
-      },
-      {
-        id: "I_a",
-        symbol: "I_a",
-        name: "Frakoblingsstrøm",
-        unit: "A",
-        role: "input",
-        description:
-          "Strømmen som sikring/vern er garantert å koble ut ved innen nødvendig tid."
-      }
-    ],
-    variants: [
-      {
-        id: "max_fault_loop_impedance-Z_s_max",
-        label: "Løs for Z_s,max",
-        solveFor: "Z_s_max",
-        expression: "Z_s_max = c * U_0 / I_a"
-      },
-      {
-        id: "max_fault_loop_impedance-I_a",
-        label: "Løs for I_a",
-        solveFor: "I_a",
-        expression: "I_a = c * U_0 / Z_s_max"
-      },
-      {
-        id: "max_fault_loop_impedance-U_0",
-        label: "Løs for U_0",
-        solveFor: "U_0",
-        expression: "U_0 = Z_s_max * I_a / c"
-      }
-    ],
-    tags: ["Z_s,max, U_0, I_a, c, NEK400"]
-  },
-  {
-    id: "short_circuit_3ph_impedance",
-    categoryId: "shortcircuit",
-    name: "Trefase kortslutningsstrøm fra impedans",
-    shortName: "I_k3 = c · U_n / (√3 · Z_k)",
-    description:
-      "Forenklet beregning av symmetrisk trefase kortslutningsstrøm i et punkt, basert på nominell spenning, spenningsfaktor og total kortslutningsimpedans.",
-    baseExpression: "I_k3 = c * U_n / (1.732 * Z_k)",
-    variables: [
-      {
-        id: "I_k3",
-        symbol: "I_k3",
-        name: "Trefase kortslutningsstrøm",
-        unit: "A",
-        role: "output",
-        description:
-          "Prospektiv trefase kortslutningsstrøm i beregningspunktet."
-      },
-      {
-        id: "c",
-        symbol: "c",
-        name: "Spenningsfaktor",
-        role: "input",
-        description:
-          "Spenningsfaktor for min. nettspenning (typisk 0,95–1,1 avhengig av metode)."
       },
       {
         id: "U_n",
         symbol: "U_n",
-        name: "Nominell linjespenning",
+        name: "Nominell spenning",
         unit: "V",
         role: "input"
-      },
-      {
-        id: "Z_k",
-        symbol: "Z_k",
-        name: "Kortslutningsimpedans",
-        unit: "Ω",
-        role: "input",
-        description:
-          "Total positiv-sekvens-impedans i kortslutningssløyfen frem til beregningspunktet."
       }
     ],
     variants: [
       {
-        id: "short_circuit_3ph_impedance-I_k3",
-        label: "Løs for I_k3",
-        solveFor: "I_k3",
-        expression: "I_k3 = c * U_n / (1.732 * Z_k)"
+        id: "voltage_drop_percent-dU_percent",
+        label: "Løs for ΔU_%",
+        solveFor: "dU_percent",
+        expression: "dU_percent = (dU / U_n) * 100"
       },
       {
-        id: "short_circuit_3ph_impedance-Z_k",
-        label: "Løs for Z_k",
-        solveFor: "Z_k",
-        expression: "Z_k = c * U_n / (1.732 * I_k3)"
+        id: "voltage_drop_percent-dU",
+        label: "Løs for ΔU",
+        solveFor: "dU",
+        expression: "dU = dU_percent * U_n / 100"
       },
       {
-        id: "short_circuit_3ph_impedance-U_n",
+        id: "voltage_drop_percent-U_n",
         label: "Løs for U_n",
         solveFor: "U_n",
-        expression: "U_n = 1.732 * I_k3 * Z_k / c"
+        expression: "U_n = dU * 100 / dU_percent"
       }
     ],
-    tags: ["I_k3, U_n, Z_k, kortslutning, trefase"]
+    tags: ["ΔU, U_n, %"]
   },
   {
-  id: "ik_min_80",
-  familyId: "ik_min",
-  categoryId: "shortcircuit",
-  modeLabel: "Ik,min",
-  name: "Minste kortslutningsstrøm – 0,8 · U_n",
-  description: "Minste prospektive kortslutningsstrøm med sikkerhetsfaktor 0,8 på driftsspenning.",
-  baseExpression: "I_k,min = 0.8 · U_n / Z_s",
-  variables: [
-    { id: "un", symbol: "U_n", name: "Merkespenning", unit: "V" },
-    { id: "zs", symbol: "Z_s", name: "Sløyfeimpedans", unit: "Ω" }
-    }
-  ],
-  variants: [
-    {
-      id: "solve_ikmin",
-      label: "Løs for minste I_k",
-      expression: "I_k_min = 0.8 * U_n / Z_s"
-    }
-  ]
-},
-  {
-  id: "ik1_tn",
-  familyId: "ik1_tn",
-  categoryId: "shortcircuit",
-  modeLabel: "Ik1 TN",
-  name: "Enfase kortslutningsstrøm – TN-system",
-  description: "Enfase kortslutningsstrøm i TN-systemer. Bruker spenning fase–nøytral og Zs.",
-  baseExpression: "I_k1 = U_0 / Z_s",
-  variables: [
-    { id: "u0", symbol: "U_0", name: "Fasespenning", unit: "V" },
-    { id: "zs", symbol: "Z_s", name: "Total sløyfeimpedans", unit: "Ω" }
-  ],
-  variants: [
-    {
-      id: "solve_ik1",
-      label: "Løs for I_k1",
-      expression: "I_k1 = U_0 / Z_s"
-    }
-  ]
-},
-  {
-  id: "ik3_min",
-  familyId: "ik3_min",
-  categoryId: "shortcircuit",
-  modeLabel: "Min. Ik3",
-  name: "Minste 3-fase kortslutningsstrøm",
-  description: "NEK 400-korrekt minimum Ik3 i enden av kurs med 0,95 · U_n og total impedans.",
-  baseExpression: "I_k3,min = 0.95 · U_n / (√3 · Z_total)",
-  variables: [
-    { id: "un", symbol: "U_n", name: "Merkespenning", unit: "V" },
-    { id: "zt", symbol: "Z_total", name: "Total impedans", unit: "Ω", description: "Impedans fra trafo til kursende" }
-  ],
-  variants: [
-    {
-      id: "solve_ik3min",
-      label: "Løs for I_k3,min",
-      expression: "I_k3_min = (0.95 * U_n) / (sqrt(3) * Z_total)"
-    }
-  ]
-},
-  {
-  id: "ik1_pe",
-  familyId: "ik1_tn",
-  categoryId: "shortcircuit",
-  modeLabel: "Ik1 F–PE",
-  name: "Enfase kortslutning fase–PE",
-  description: "Typisk brukt for automatisk utkobling i TN. Basert på Zs og 0,95 · U_0.",
-  baseExpression: "I_k1,min = 0.95 · U_0 / Z_s",
-  variables: [
-    { id: "u0", symbol: "U_0", name: "Fasespenning", unit: "V" },
-    { id: "zs", symbol: "Z_s", name: "Total sløyfeimpedans", unit: "Ω" }
-  ],
-  variants: [
-    {
-      id: "solve_ik1min",
-      label: "Løs for minste Ik1",
-      expression: "I_k1_min = (0.95 * U_0) / Z_s"
-    }
-  ]
-},
-  {
-  id: "ik2",
-  familyId: "ik2",
-  categoryId: "shortcircuit",
-  modeLabel: "Ik2",
-  name: "Tofase kortslutningsstrøm",
-  description: "Fase–fase kortslutningsstrøm uten nøytral.",
-  baseExpression: "I_k2 = U_n / (√3 · Z_12)",
-  variables: [
-    { id: "un", symbol: "U_n", name: "Merkespenning", unit: "V" },
-    { id: "z12", symbol: "Z_12", name: "Impedans fase–fase", unit: "Ω" }
-  ],
-  variants: [
-    {
-      id: "solve_ik2",
-      label: "Løs for I_k2",
-      expression: "I_k2 = U_n / (sqrt(3) * Z_12)"
-    }
-  ]
-},
-  {
-  id: "ik_dynamisk",
-  familyId: "ik_dynamisk",
-  categoryId: "shortcircuit",
-  modeLabel: "Ikd",
-  name: "Dynamisk kortslutningsstrøm",
-  description: "Dynamisk kortslutningsstrøm basert på Ip og c = 2,5 (typisk).",
-  baseExpression: "I_kd = c · I_k3",
-  variables: [
-    { id: "ik3", symbol: "I_k3", name: "3-fase kortslutningsstrøm", unit: "A" },
-    { id: "c", symbol: "c", name: "Dynamisk faktor", unit: "–", description: "Typisk 2,0–2,5" }
-  ],
-  variants: [
-    {
-      id: "solve_ikd",
-      label: "Løs for I_kd",
-      expression: "I_kd = c * I_k3"
-    }
-  ]
-},
-  {
-  id: "ik3_transformer",
-  familyId: "ik3_transformer",
-  categoryId: "shortcircuit",
-  modeLabel: "Trafo – Ik3",
-  name: "3-fase kortslutningsstrøm fra transformator",
-  description: "Prospektiv 3-fase kortslutningsstrøm basert på Sn og uk%. Standardmetode i norske anlegg.",
-  baseExpression: "I_k3 = (100 · S_n) / (√3 · U_n · u_k%)",
-  variables: [
-    { id: "sn", symbol: "S_n", name: "Merkeytelse", unit: "VA", description: "Transformatorens merkekapasitet" },
-    { id: "un", symbol: "U_n", name: "Merkespenning", unit: "V", description: "Nominell spenning" },
-    { id: "uk", symbol: "u_k%", name: "Kortslutningsspenning", unit: "%", description: "Transformatorens uk-verdi" }
-  ],
-  variants: [
-    {
-      id: "solve_ik3",
-      label: "Løs for I_k3",
-      expression: "I_k3 = (100 * S_n) / (sqrt(3) * U_n * u_k)"
-    }
-  ]
-},
-
-
-  /* =======================================================================
-   * MOTORER OG GENERATORER
-   * =======================================================================
-   */
-  {
-    id: "sync_speed",
-    categoryId: "machines",
-    name: "Synkron hastighet",
-    shortName: "n_s = 60 · f / p",
+    id: "line_phase_voltage",
+    categoryId: "systems",
+    name: "Linje- og fasespenning (trefase)",
+    shortName: "U_L = √3 · U_f",
     description:
-      "Synkron hastighet for roterende maskiner basert på frekvens og poltall.",
-    baseExpression: "n_s = 60 * f / p",
+      "Sammenheng mellom linjespenning og fasespenning i et symmetrisk trefasesystem.",
+    baseExpression: "U_L = √3 · U_f",
     variables: [
       {
-        id: "n_s",
-        symbol: "n_s",
-        name: "Synkron hastighet",
-        unit: "rpm",
-        role: "output",
-        description: "Teoretisk synkron hastighet på akselen."
-      },
-      {
-        id: "f",
-        symbol: "f",
-        name: "Frekvens",
-        unit: "Hz",
-        role: "input"
-      },
-      {
-        id: "p",
-        symbol: "p",
-        name: "Poltall",
-        role: "input",
-        description: "Antall polpar i maskinen."
-      }
-    ],
-    variants: [
-      {
-        id: "sync_speed-ns",
-        label: "Løs for n_s",
-        solveFor: "n_s",
-        expression: "n_s = 60 * f / p"
-      },
-      {
-        id: "sync_speed-f",
-        label: "Løs for f",
-        solveFor: "f",
-        expression: "f = n_s * p / 60"
-      },
-      {
-        id: "sync_speed-p",
-        label: "Løs for p",
-        solveFor: "p",
-        expression: "p = 60 * f / n_s"
-      }
-    ],
-    tags: ["n_s, f, p"]
-  },
-  {
-    id: "torque_from_power",
-    categoryId: "machines",
-    name: "Moment fra effekt og turtall",
-    shortName: "M = 9550 · P / n",
-    description:
-      "Sammenheng mellom akselmoment, effekt og turtall for roterende maskiner.",
-    baseExpression: "M = 9550 * P / n",
-    variables: [
-      {
-        id: "M",
-        symbol: "M",
-        name: "Moment",
-        unit: "Nm",
+        id: "U_L",
+        symbol: "U_L",
+        name: "Linjespenning",
+        unit: "V",
         role: "output"
       },
       {
-        id: "P",
-        symbol: "P",
-        name: "Mekanisk effekt",
-        unit: "kW",
-        role: "input"
-      },
-      {
-        id: "n",
-        symbol: "n",
-        name: "Turtall",
-        unit: "rpm",
+        id: "U_f",
+        symbol: "U_f",
+        name: "Fasespenning",
+        unit: "V",
         role: "input"
       }
     ],
     variants: [
       {
-        id: "torque_from_power-M",
-        label: "Løs for M",
-        solveFor: "M",
-        expression: "M = 9550 * P / n"
+        id: "line_phase_voltage-U_L",
+        label: "Løs for U_L",
+        solveFor: "U_L",
+        expression: "U_L = 1.732 * U_f"
       },
       {
-        id: "torque_from_power-P",
-        label: "Løs for P",
-        solveFor: "P",
-        expression: "P = M * n / 9550"
-      },
-      {
-        id: "torque_from_power-n",
-        label: "Løs for n",
-        solveFor: "n",
-        expression: "n = 9550 * P / M"
+        id: "line_phase_voltage-U_f",
+        label: "Løs for U_f",
+        solveFor: "U_f",
+        expression: "U_f = U_L / 1.732"
       }
     ],
-    tags: ["M, P, n, moment, turtall"]
+    tags: ["U_L, U_f, √3"]
   },
   {
     id: "three_phase_apparent",
@@ -964,114 +884,116 @@ export const formulas: Formula[] = [
     familyId: "active_power",
     modeLabel: "3-fase"
   },
+
+  /* =======================================================================
+   * MOTORER OG GENERATORER
+   * ======================================================================= */
   {
-    id: "power_factor",
-    categoryId: "core",
-    name: "Effektfaktor",
-    shortName: "cosφ = P / S",
+    id: "sync_speed",
+    categoryId: "machines",
+    name: "Synkron hastighet",
+    shortName: "n_s = 60 · f / p",
     description:
-      "Sammenhengen mellom aktiv effekt og tilsynelatende effekt i AC-systemer.",
-    baseExpression: "cosφ = P / S",
+      "Synkron hastighet for roterende maskiner basert på frekvens og poltall.",
+    baseExpression: "n_s = 60 * f / p",
     variables: [
       {
-        id: "cosphi",
-        symbol: "cosφ",
-        name: "Effektfaktor",
+        id: "n_s",
+        symbol: "n_s",
+        name: "Synkron hastighet",
+        unit: "rpm",
         role: "output",
-        description: "Forholdet P / S, mellom 0 og 1."
+        description: "Teoretisk synkron hastighet på akselen."
+      },
+      {
+        id: "f",
+        symbol: "f",
+        name: "Frekvens",
+        unit: "Hz",
+        role: "input"
+      },
+      {
+        id: "p",
+        symbol: "p",
+        name: "Poltall",
+        role: "input",
+        description: "Antall polpar i maskinen."
+      }
+    ],
+    variants: [
+      {
+        id: "sync_speed-ns",
+        label: "Løs for n_s",
+        solveFor: "n_s",
+        expression: "n_s = 60 * f / p"
+      },
+      {
+        id: "sync_speed-f",
+        label: "Løs for f",
+        solveFor: "f",
+        expression: "f = n_s * p / 60"
+      },
+      {
+        id: "sync_speed-p",
+        label: "Løs for p",
+        solveFor: "p",
+        expression: "p = 60 * f / n_s"
+      }
+    ],
+    tags: ["n_s, f, p"]
+  },
+  {
+    id: "torque_from_power",
+    categoryId: "machines",
+    name: "Moment fra effekt og turtall",
+    shortName: "M = 9550 · P / n",
+    description:
+      "Sammenheng mellom akselmoment, effekt og turtall for roterende maskiner.",
+    baseExpression: "M = 9550 * P / n",
+    variables: [
+      {
+        id: "M",
+        symbol: "M",
+        name: "Moment",
+        unit: "Nm",
+        role: "output"
       },
       {
         id: "P",
         symbol: "P",
-        name: "Aktiv effekt",
-        unit: "W",
+        name: "Mekanisk effekt",
+        unit: "kW",
         role: "input"
       },
       {
-        id: "S",
-        symbol: "S",
-        name: "Tilsynelatende effekt",
-        unit: "VA",
+        id: "n",
+        symbol: "n",
+        name: "Turtall",
+        unit: "rpm",
         role: "input"
       }
     ],
     variants: [
       {
-        id: "power_factor-cosphi",
-        label: "Løs for cosφ",
-        solveFor: "cosphi",
-        expression: "cosphi = P / S"
+        id: "torque_from_power-M",
+        label: "Løs for M",
+        solveFor: "M",
+        expression: "M = 9550 * P / n"
       },
       {
-        id: "power_factor-P",
+        id: "torque_from_power-P",
         label: "Løs for P",
         solveFor: "P",
-        expression: "P = S * cosphi"
+        expression: "P = M * n / 9550"
       },
       {
-        id: "power_factor-S",
-        label: "Løs for S",
-        solveFor: "S",
-        expression: "S = P / cosphi"
+        id: "torque_from_power-n",
+        label: "Løs for n",
+        solveFor: "n",
+        expression: "n = 9550 * P / M"
       }
     ],
-    tags: ["cosφ, P, S"]
-  },
-  {
-    id: "single_phase_apparent",
-    categoryId: "core",
-    name: "Tilsynelatende effekt",
-    shortName: "S = U · I",
-    description:
-      "Tilsynelatende effekt basert på spenning og strøm (en- eller trefasesystem).",
-    baseExpression: "S = U * I",
-    variables: [
-      {
-        id: "S",
-        symbol: "S",
-        name: "Tilsynelatende effekt",
-        unit: "VA",
-        role: "output"
-      },
-      {
-        id: "U",
-        symbol: "U",
-        name: "Spenning",
-        unit: "V",
-        role: "input"
-      },
-      {
-        id: "I",
-        symbol: "I",
-        name: "Strøm",
-        unit: "A",
-        role: "input"
-      }
-    ],
-    variants: [
-      {
-        id: "single_phase_apparent-S",
-        label: "Løs for S",
-        solveFor: "S",
-        expression: "S = U * I"
-      },
-      {
-        id: "single_phase_apparent-U",
-        label: "Løs for U",
-        solveFor: "U",
-        expression: "U = S / I"
-      },
-      {
-        id: "single_phase_apparent-I",
-        label: "Løs for I",
-        solveFor: "I",
-        expression: "I = S / U"
-      }
-    ],
-    tags: ["S, U, I"],
-    familyId: "apparent_power",
-    modeLabel: "1-fase",
-    isPrimaryInFamily: true
+    tags: ["M, P, n, moment, turtall"]
   },
   {
     id: "efficiency",
@@ -1178,259 +1100,499 @@ export const formulas: Formula[] = [
     ],
     tags: ["s, n_s, n"]
   },
+
+  /* =======================================================================
+   * KORTSLUTNING OG FEILSTRØM
+   * (enkle NEK 400-nære uttrykk – c_min/c_max brukes som faktorer)
+   * ======================================================================= */
   {
-    id: "ohmic_loss",
-    categoryId: "core",
-    name: "Effekttap i motstand",
-    shortName: "P_tap = I² · R",
+    id: "ik3_tn",
+    categoryId: "shortcircuit",
+    name: "Trefase kortslutningsstrøm – TN",
+    shortName: "I_k3 = c_min · U_n / (√3 · Z_s)",
     description:
-      "Effekttap (varmetap) i en motstand eller leder ved kjent strøm og motstand.",
-    baseExpression: "P_tap = I * I * R",
+      "Tilnærmet trefase kortslutningsstrøm i et TN-system basert på spenningsnivå, sløyfeimpedans og korrektionsfaktor c_min.",
+    baseExpression: "I_k3 = c_min · U_n / (√3 · Z_s)",
     variables: [
       {
-        id: "P_tap",
-        symbol: "P_tap",
-        name: "Effekttap",
-        unit: "W",
-        role: "output",
-        description: "Tapt effekt (varme) i komponenten."
+        id: "I_k3",
+        symbol: "I_k3",
+        name: "Trefase kortslutningsstrøm",
+        unit: "A",
+        role: "output"
       },
       {
-        id: "I",
-        symbol: "I",
-        name: "Strøm",
-        unit: "A",
+        id: "c_min",
+        symbol: "c_min",
+        name: "Korreksjonsfaktor (min)",
+        unit: "–",
+        role: "input",
+        description:
+          "F.eks. 0,95–1,0 avhengig av spenningsvariasjoner og toleranser."
+      },
+      {
+        id: "U_n",
+        symbol: "U_n",
+        name: "Merkespenning",
+        unit: "V",
         role: "input"
       },
       {
-        id: "R",
-        symbol: "R",
-        name: "Motstand",
+        id: "Z_s",
+        symbol: "Z_s",
+        name: "Sløyfeimpedans",
         unit: "Ω",
         role: "input"
       }
     ],
     variants: [
       {
-        id: "ohmic_loss-P_tap",
-        label: "Løs for P_tap",
-        solveFor: "P_tap",
-        expression: "P_tap = I * I * R"
+        id: "ik3_tn-Ik3",
+        label: "Løs for I_k3",
+        solveFor: "I_k3",
+        expression: "I_k3 = c_min * U_n / (1.732 * Z_s)"
       },
       {
-        id: "ohmic_loss-I",
-        label: "Løs for I",
-        solveFor: "I",
-        // I = sqrt(P_tap / R)  →  I = (P_tap / R) ** 0.5
-        expression: "I = (P_tap / R) ** 0.5"
+        id: "ik3_tn-Zs",
+        label: "Løs for Z_s",
+        solveFor: "Z_s",
+        expression: "Z_s = c_min * U_n / (1.732 * I_k3)"
       },
       {
-        id: "ohmic_loss-R",
-        label: "Løs for R",
-        solveFor: "R",
-        expression: "R = P_tap / (I * I)"
+        id: "ik3_tn-Un",
+        label: "Løs for U_n",
+        solveFor: "U_n",
+        expression: "U_n = I_k3 * 1.732 * Z_s / c_min"
+      },
+      {
+        id: "ik3_tn-cmin",
+        label: "Løs for c_min",
+        solveFor: "c_min",
+        expression: "c_min = I_k3 * 1.732 * Z_s / U_n"
       }
     ],
-    tags: ["P_tap, I, R"]
+    tags: ["I_k3, U_n, Z_s, c_min", "kortslutning", "TN"]
   },
   {
-    id: "charge",
-    categoryId: "core",
-    name: "Ladning",
-    shortName: "Q = I · t",
-    description: "Sammenheng mellom strøm, tid og elektrisk ladning.",
-    baseExpression: "Q = I * t",
+    id: "ik1_phase_fault",
+    categoryId: "shortcircuit",
+    name: "1-fase jordfeilstrøm (enkel modell)",
+    shortName: "I_f = c_min · U_0 / Z_s",
+    description:
+      "Forenklet beregning av 1-fase jordfeilstrøm basert på fasespenning mot jord og sløyfeimpedans.",
+    baseExpression: "I_f = c_min · U_0 / Z_s",
     variables: [
       {
-        id: "Q",
-        symbol: "Q",
-        name: "Ladning",
-        unit: "C",
-        role: "output",
-        description: "Elektrisk ladning (coulomb)."
+        id: "I_f",
+        symbol: "I_f",
+        name: "Jordfeilstrøm",
+        unit: "A",
+        role: "output"
       },
       {
-        id: "I",
-        symbol: "I",
-        name: "Strøm",
+        id: "c_min",
+        symbol: "c_min",
+        name: "Korreksjonsfaktor (min)",
+        unit: "–",
+        role: "input"
+      },
+      {
+        id: "U_0",
+        symbol: "U_0",
+        name: "Fasespenning mot jord",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "Z_s",
+        symbol: "Z_s",
+        name: "Sløyfeimpedans",
+        unit: "Ω",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "ik1_phase_fault-If",
+        label: "Løs for I_f",
+        solveFor: "I_f",
+        expression: "I_f = c_min * U_0 / Z_s"
+      },
+      {
+        id: "ik1_phase_fault-Zs",
+        label: "Løs for Z_s",
+        solveFor: "Z_s",
+        expression: "Z_s = c_min * U_0 / I_f"
+      },
+      {
+        id: "ik1_phase_fault-U0",
+        label: "Løs for U_0",
+        solveFor: "U_0",
+        expression: "U_0 = I_f * Z_s / c_min"
+      },
+      {
+        id: "ik1_phase_fault-cmin",
+        label: "Løs for c_min",
+        solveFor: "c_min",
+        expression: "c_min = I_f * Z_s / U_0"
+      }
+    ],
+    tags: ["I_f, U_0, Z_s, c_min", "jordfeil", "kortslutning"]
+  },
+  {
+    id: "ik3_max_source",
+    categoryId: "shortcircuit",
+    name: "Maksimal trefase kortslutningsstrøm",
+    shortName: "I_k3,max = c_max · S_k / (√3 · U_n)",
+    description:
+      "Enkel sammenheng mellom nettets kortslutningsytelse S_k og maksimal trefase kortslutningsstrøm i tilknytningspunktet.",
+    baseExpression: "I_k3,max = c_max · S_k / (√3 · U_n)",
+    variables: [
+      {
+        id: "I_k3_max",
+        symbol: "I_k3,max",
+        name: "Maks trefase kortslutningsstrøm",
+        unit: "A",
+        role: "output"
+      },
+      {
+        id: "c_max",
+        symbol: "c_max",
+        name: "Korreksjonsfaktor (max)",
+        unit: "–",
+        role: "input",
+        description: "F.eks. 1,05–1,1 ved høy spenning og gunstige toleranser."
+      },
+      {
+        id: "S_k",
+        symbol: "S_k",
+        name: "Kortslutningsytelse",
+        unit: "VA",
+        role: "input"
+      },
+      {
+        id: "U_n",
+        symbol: "U_n",
+        name: "Merkespenning",
+        unit: "V",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "ik3_max_source-Ik3max",
+        label: "Løs for I_k3,max",
+        solveFor: "I_k3_max",
+        expression: "I_k3_max = c_max * S_k / (1.732 * U_n)"
+      },
+      {
+        id: "ik3_max_source-Sk",
+        label: "Løs for S_k",
+        solveFor: "S_k",
+        expression: "S_k = I_k3_max * 1.732 * U_n / c_max"
+      },
+      {
+        id: "ik3_max_source-Un",
+        label: "Løs for U_n",
+        solveFor: "U_n",
+        expression: "U_n = c_max * S_k / (1.732 * I_k3_max)"
+      },
+      {
+        id: "ik3_max_source-cmax",
+        label: "Løs for c_max",
+        solveFor: "c_max",
+        expression: "c_max = I_k3_max * 1.732 * U_n / S_k"
+      }
+    ],
+    tags: ["I_k3,max, S_k, U_n, c_max", "kortslutningsytelse"]
+  },
+
+  /* =======================================================================
+   * VERN OG SELEKTIVITET
+   * ======================================================================= */
+  {
+    id: "max_loop_impedance_tn",
+    categoryId: "protection",
+    name: "Maks sløyfeimpedans – TN",
+    shortName: "Z_s,max = U_0 / I_a",
+    description:
+      "Maksimal sløyfeimpedans for automatisk utkobling i TN-systemer. Brukes til å kontrollere at vernet løser ut innenfor kravene i NEK 400.",
+    baseExpression: "Z_s,max = U_0 / I_a",
+    variables: [
+      {
+        id: "Z_s_max",
+        symbol: "Z_s,max",
+        name: "Maks sløyfeimpedans",
+        unit: "Ω",
+        role: "output",
+        description: "Største tillatte Z_s for valgt vern og utkoblingstid."
+      },
+      {
+        id: "U_0",
+        symbol: "U_0",
+        name: "Fasespenning mot jord",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "I_a",
+        symbol: "I_a",
+        name: "Utløserstrøm for vern",
+        unit: "A",
+        role: "input",
+        description:
+          "Strømmen som sikrer at vernet kobler ut innenfor tillatt tid (I_a fra fabrikant/kurve)."
+      }
+    ],
+    variants: [
+      {
+        id: "max_loop_impedance_tn-Zsmax",
+        label: "Løs for Z_s,max",
+        solveFor: "Z_s_max",
+        expression: "Z_s_max = U_0 / I_a"
+      },
+      {
+        id: "max_loop_impedance_tn-Ia",
+        label: "Løs for I_a",
+        solveFor: "I_a",
+        expression: "I_a = U_0 / Z_s_max"
+      },
+      {
+        id: "max_loop_impedance_tn-U0",
+        label: "Løs for U_0",
+        solveFor: "U_0",
+        expression: "U_0 = Z_s_max * I_a"
+      }
+    ],
+    tags: ["Z_s,max, U_0, I_a", "automatisk utkobling", "TN"]
+  },
+  {
+    id: "i2t_energy",
+    categoryId: "protection",
+    name: "I²t – energi fra kortslutning",
+    shortName: "I²t = I_k² · t",
+    description:
+      "Energi fra en kortslutning basert på feilstrøm og varighet. Brukes mot kablers og verns termiske tåleevne.",
+    baseExpression: "I²t = I_k² · t",
+    variables: [
+      {
+        id: "I2t",
+        symbol: "I²t",
+        name: "Energiintegral",
+        unit: "A²s",
+        role: "output",
+        description: "I²t-verdi som sammenlignes mot vern/kabel-data."
+      },
+      {
+        id: "I_k",
+        symbol: "I_k",
+        name: "Kortslutningsstrøm",
         unit: "A",
         role: "input"
       },
       {
         id: "t",
         symbol: "t",
-        name: "Tid",
+        name: "Varighet",
         unit: "s",
         role: "input"
       }
     ],
     variants: [
       {
-        id: "charge-Q",
-        label: "Løs for Q",
-        solveFor: "Q",
-        expression: "Q = I * t"
+        id: "i2t_energy-I2t",
+        label: "Løs for I²t",
+        solveFor: "I2t",
+        expression: "I2t = I_k * I_k * t"
       },
       {
-        id: "charge-I",
-        label: "Løs for I",
-        solveFor: "I",
-        expression: "I = Q / t"
+        id: "i2t_energy-Ik",
+        label: "Løs for I_k",
+        solveFor: "I_k",
+        expression: "I_k = (I2t / t) ** 0.5"
       },
       {
-        id: "charge-t",
+        id: "i2t_energy-t",
         label: "Løs for t",
         solveFor: "t",
-        expression: "t = Q / I"
+        expression: "t = I2t / (I_k * I_k)"
       }
     ],
-    tags: ["Q, I, t"]
+    tags: ["I²t, I_k, t", "energi", "vern", "kabel"]
   },
   {
-    id: "cap_energy",
-    categoryId: "core",
-    name: "Energilagring i kondensator",
-    shortName: "W_C = ½ · C · U²",
+    id: "thermal_withstand_cable",
+    categoryId: "protection",
+    name: "Termisk kortslutningsbestandighet (k²·S² = I²·t)",
+    shortName: "k² · S² = I_k² · t",
     description:
-      "Energi lagret i en kondensator ved gitt kapasitans og spenning.",
-    baseExpression: "W_C = 0.5 * C * U^2",
+      "Kontroll av at lederen tåler kortslutningen termisk i henhold til k²·S² ≥ I²·t.",
+    baseExpression: "k² · S² = I_k² · t",
     variables: [
       {
-        id: "W_C",
-        symbol: "W_C",
-        name: "Energi i kondensator",
-        unit: "J",
+        id: "k",
+        symbol: "k",
+        name: "Materialkonstant",
+        unit: "√(A²s)/mm²",
+        role: "input",
+        description:
+          "Avhengig av ledermateriale og isolasjon (f.eks. CU/PEX, CU/PVC)."
+      },
+      {
+        id: "S",
+        symbol: "S",
+        name: "Leder-tverrsnitt",
+        unit: "mm²",
         role: "output"
       },
       {
-        id: "C",
-        symbol: "C",
-        name: "Kapasitans",
-        unit: "F",
+        id: "I_k",
+        symbol: "I_k",
+        name: "Kortslutningsstrøm",
+        unit: "A",
         role: "input"
       },
       {
-        id: "U",
-        symbol: "U",
-        name: "Spenning",
-        unit: "V",
+        id: "t",
+        symbol: "t",
+        name: "Kortslutningsvarighet",
+        unit: "s",
         role: "input"
       }
     ],
     variants: [
       {
-        id: "cap_energy-W_C",
-        label: "Løs for W_C",
-        solveFor: "W_C",
-        expression: "W_C = 0.5 * C * U * U"
+        id: "thermal_withstand_cable-S",
+        label: "Løs for S (minste tverrsnitt)",
+        solveFor: "S",
+        expression: "S = (I_k * (t ** 0.5)) / k"
       },
       {
-        id: "cap_energy-U",
-        label: "Løs for U",
-        solveFor: "U",
-        // U = sqrt(2 * W_C / C) → U = (2 * W_C / C) ** 0.5
-        expression: "U = (2 * W_C / C) ** 0.5"
+        id: "thermal_withstand_cable-Ik",
+        label: "Løs for I_k (maks tillatt)",
+        solveFor: "I_k",
+        expression: "I_k = k * S / (t ** 0.5)"
       },
       {
-        id: "cap_energy-C",
-        label: "Løs for C",
-        solveFor: "C",
-        expression: "C = 2 * W_C / (U * U)"
+        id: "thermal_withstand_cable-t",
+        label: "Løs for t (maks varighet)",
+        solveFor: "t",
+        expression: "t = (k * k * S * S) / (I_k * I_k)"
       }
     ],
-    tags: ["W_C, C, U"]
+    tags: ["k, S, I_k, t", "termisk", "kortslutning", "kabel"]
   },
   {
-    id: "voltage_drop_percent",
-    categoryId: "systems",
-    name: "Spenningsfall i prosent",
-    shortName: "ΔU_% = (ΔU / U_n) · 100",
-    description: "Spenningsfall uttrykt i prosent av nominell spenning.",
-    baseExpression: "ΔU_% = (ΔU / U_n) * 100",
-    variables: [
-      {
-        id: "dU_percent",
-        symbol: "ΔU_%",
-        name: "Spenningsfall i prosent",
-        unit: "%",
-        role: "output"
-      },
-      {
-        id: "dU",
-        symbol: "ΔU",
-        name: "Spenningsfall",
-        unit: "V",
-        role: "input"
-      },
-      {
-        id: "U_n",
-        symbol: "U_n",
-        name: "Nominell spenning",
-        unit: "V",
-        role: "input"
-      }
-    ],
-    variants: [
-      {
-        id: "voltage_drop_percent-dU_percent",
-        label: "Løs for ΔU_%",
-        solveFor: "dU_percent",
-        expression: "dU_percent = (dU / U_n) * 100"
-      },
-      {
-        id: "voltage_drop_percent-dU",
-        label: "Løs for ΔU",
-        solveFor: "dU",
-        expression: "dU = dU_percent * U_n / 100"
-      },
-      {
-        id: "voltage_drop_percent-U_n",
-        label: "Løs for U_n",
-        solveFor: "U_n",
-        expression: "U_n = dU * 100 / dU_percent"
-      }
-    ],
-    tags: ["ΔU, U_n, %"]
-  },
-  {
-    id: "line_phase_voltage",
-    categoryId: "systems",
-    name: "Linje- og fasespenning (trefase)",
-    shortName: "U_L = √3 · U_f",
+    id: "cable_rating_min",
+    categoryId: "protection",
+    name: "Min. kabelstrømføringsevne for vern",
+    shortName: "I_z ≥ k · I_n",
     description:
-      "Sammenheng mellom linjespenning og fasespenning i et symmetrisk trefasesystem.",
-    baseExpression: "U_L = √3 · U_f",
+      "Sammenheng mellom vernets merkestrøm og nødvendig strømføringsevne til kabelen. k kan settes til f.eks. 1,0–1,45 avhengig av type vern og metode.",
+    baseExpression: "I_z = k_dim · I_n",
     variables: [
       {
-        id: "U_L",
-        symbol: "U_L",
-        name: "Linjespenning",
-        unit: "V",
+        id: "I_z",
+        symbol: "I_z",
+        name: "Strømføringsevne kabel",
+        unit: "A",
         role: "output"
       },
       {
-        id: "U_f",
-        symbol: "U_f",
-        name: "Fasespenning",
-        unit: "V",
+        id: "I_n",
+        symbol: "I_n",
+        name: "Vernets merkestrøm",
+        unit: "A",
         role: "input"
+      },
+      {
+        id: "k_dim",
+        symbol: "k",
+        name: "Dimensjoneringsfaktor",
+        unit: "–",
+        role: "input",
+        description:
+          "F.eks. 1,0–1,45 avhengig av verntype, kabling og forlegningsmåte."
       }
     ],
     variants: [
       {
-        id: "line_phase_voltage-U_L",
-        label: "Løs for U_L",
-        solveFor: "U_L",
-        expression: "U_L = 1.732 * U_f"
+        id: "cable_rating_min-Iz",
+        label: "Løs for I_z (min kabel)",
+        solveFor: "I_z",
+        expression: "I_z = k_dim * I_n"
       },
       {
-        id: "line_phase_voltage-U_f",
-        label: "Løs for U_f",
-        solveFor: "U_f",
-        expression: "U_f = U_L / 1.732"
+        id: "cable_rating_min-In",
+        label: "Løs for I_n (maks vern)",
+        solveFor: "I_n",
+        expression: "I_n = I_z / k_dim"
+      },
+      {
+        id: "cable_rating_min-kdim",
+        label: "Løs for k",
+        solveFor: "k_dim",
+        expression: "k_dim = I_z / I_n"
       }
     ],
-    tags: ["U_L, U_f, √3"]
+    tags: ["I_z, I_n, k", "vern", "kabel", "dimensjonering"]
+  },
+  {
+    id: "selectivity_factor",
+    categoryId: "protection",
+    name: "Selektivitetsfaktor mellom to vern",
+    shortName: "k_sel = I_2 / I_1",
+    description:
+      "Enkel selektivitetskontroll mellom to vern basert på forholdet mellom strømnivåer oppstrøms og nedstrøms.",
+    baseExpression: "k_sel = I_2 / I_1",
+    variables: [
+      {
+        id: "k_sel",
+        symbol: "k_sel",
+        name: "Selektivitetsfaktor",
+        unit: "–",
+        role: "output",
+        description:
+          "Forholdet I_2 / I_1. Kan sammenlignes mot anbefalt grense (for eksempel ≥ 1,3)."
+      },
+      {
+        id: "I_1",
+        symbol: "I_1",
+        name: "Nedstrøms vern-nivå",
+        unit: "A",
+        role: "input",
+        description: "Strøm der nedstrøms vern forventes å løse ut."
+      },
+      {
+        id: "I_2",
+        symbol: "I_2",
+        name: "Oppstrøms vern-nivå",
+        unit: "A",
+        role: "input",
+        description: "Strøm der oppstrøms vern forventes å løse ut."
+      }
+    ],
+    variants: [
+      {
+        id: "selectivity_factor-ksel",
+        label: "Løs for k_sel",
+        solveFor: "k_sel",
+        expression: "k_sel = I_2 / I_1"
+      },
+      {
+        id: "selectivity_factor-I2",
+        label: "Løs for I_2 (krav til oppstrøms vern)",
+        solveFor: "I_2",
+        expression: "I_2 = k_sel * I_1"
+      },
+      {
+        id: "selectivity_factor-I1",
+        label: "Løs for I_1 (nedstrøms nivå)",
+        solveFor: "I_1",
+        expression: "I_1 = I_2 / k_sel"
+      }
+    ],
+    tags: ["selektivitet", "I_1, I_2, k_sel", "vern"]
   }
 ];
 
