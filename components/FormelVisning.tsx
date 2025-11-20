@@ -89,7 +89,7 @@ export default function FormelVisning({
         alt=""
         className="print-watermark"
       />
-
+      );
       {/* Topp-rad: Hjem + PDF-knapp */}
       <div
         style={{
