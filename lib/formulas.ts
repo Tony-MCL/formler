@@ -1,5 +1,3 @@
-// lib/formulas.ts
-
 import type {
   Formula,
   FormulaCategory,
@@ -17,7 +15,8 @@ export const formulaCategories: FormulaCategory[] = [
   {
     id: "systems",
     title: "Systemer og nett",
-    description: "Nett-typer, spenningsnivåer, spenningsfall og enkle kortslutningsstørrelser.",
+    description:
+      "Nett-typer, spenningsnivåer, spenningsfall og enkle kortslutningsstørrelser.",
     order: 2
   },
   {
@@ -551,8 +550,7 @@ export const formulas: Formula[] = [
     ],
     tags: ["S, U_L, I_L"],
     familyId: "apparent_power",
-    modeLabel: "3-fase",
-    isPrimaryInFamily: false
+    modeLabel: "3-fase"
   },
   {
     id: "three_phase_active",
@@ -620,8 +618,7 @@ export const formulas: Formula[] = [
     ],
     tags: ["P, U_L, I_L, cosφ"],
     familyId: "active_power",
-    modeLabel: "3-fase",
-    isPrimaryInFamily: false
+    modeLabel: "3-fase"
   },
   {
     id: "power_factor",
@@ -737,8 +734,7 @@ export const formulas: Formula[] = [
     categoryId: "machines",
     name: "Virkningsgrad",
     shortName: "η = P_ut / P_inn",
-    description:
-      "Sammenheng mellom inn- og uteffekt i maskiner og systemer.",
+    description: "Sammenheng mellom inn- og uteffekt i maskiner og systemer.",
     baseExpression: "η = P_ut / P_inn",
     variables: [
       {
@@ -898,8 +894,7 @@ export const formulas: Formula[] = [
     categoryId: "core",
     name: "Ladning",
     shortName: "Q = I · t",
-    description:
-      "Sammenheng mellom strøm, tid og elektrisk ladning.",
+    description: "Sammenheng mellom strøm, tid og elektrisk ladning.",
     baseExpression: "Q = I * t",
     variables: [
       {
@@ -1006,8 +1001,7 @@ export const formulas: Formula[] = [
     categoryId: "systems",
     name: "Spenningsfall i prosent",
     shortName: "ΔU_% = (ΔU / U_n) · 100",
-    description:
-      "Spenningsfall uttrykt i prosent av nominell spenning.",
+    description: "Spenningsfall uttrykt i prosent av nominell spenning.",
     baseExpression: "ΔU_% = (ΔU / U_n) * 100",
     variables: [
       {
