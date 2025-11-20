@@ -69,12 +69,8 @@ export default function FormelVisning({
 
   const phaseLabel = formula?.modeLabel ?? formula?.name ?? "";
   const isSinglePhase =
-    (formula?.modeLabel ?? "")
-      .toLowerCase()
-      .includes("1-fase") ||
-    (formula?.modeLabel ?? "")
-      .toLowerCase()
-      .includes("enfase");
+  activeFormulaId === "power" ||
+  activeFormulaId === "single_phase_apparent";
 
   if (!formula) {
     return (
