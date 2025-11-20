@@ -384,6 +384,201 @@ export const formulas: Formula[] = [
     ],
     tags: ["ΔU, I, R"]
   },
+    {
+    id: "fault_current_earth",
+    categoryId: "systems",
+    name: "Feilstrøm i sluttpunkt (TN/TT)",
+    shortName: "I_k = c · U_0 / Z_s",
+    description:
+      "Forenklet beregning av feilstrøm i enden av en kurs i TN-/TT-system basert på fasespenning, spenningsfaktor og feilsløyfe-impedans.",
+    baseExpression: "I_k = c * U_0 / Z_s",
+    variables: [
+      {
+        id: "I_k",
+        symbol: "I_k",
+        name: "Feilstrøm",
+        unit: "A",
+        role: "output",
+        description: "Prospektiv feilstrøm i sluttpunktet."
+      },
+      {
+        id: "c",
+        symbol: "c",
+        name: "Spenningsfaktor",
+        role: "input",
+        description:
+          "Spenningsfaktor for min. nettspenning (typisk 0,8 i henhold til NEK 400)."
+      },
+      {
+        id: "U_0",
+        symbol: "U_0",
+        name: "Fasespenning mot jord",
+        unit: "V",
+        role: "input",
+        description: "Nominell fasespenning mot jord i aktuell installasjon."
+      },
+      {
+        id: "Z_s",
+        symbol: "Z_s",
+        name: "Feilsløyfe-impedans",
+        unit: "Ω",
+        role: "input",
+        description:
+          "Total impedans i feilsløyfen (fase–PE/PE+N tilbake til trafo)."
+      }
+    ],
+    variants: [
+      {
+        id: "fault_current_earth-I_k",
+        label: "Løs for I_k",
+        solveFor: "I_k",
+        expression: "I_k = c * U_0 / Z_s"
+      },
+      {
+        id: "fault_current_earth-Z_s",
+        label: "Løs for Z_s",
+        solveFor: "Z_s",
+        expression: "Z_s = c * U_0 / I_k"
+      },
+      {
+        id: "fault_current_earth-U_0",
+        label: "Løs for U_0",
+        solveFor: "U_0",
+        expression: "U_0 = I_k * Z_s / c"
+      }
+    ],
+    tags: ["I_k, U_0, Z_s, c, TN, TT"]
+  },
+  {
+    id: "max_fault_loop_impedance",
+    categoryId: "systems",
+    name: "Maksimal feilsløyfe-impedans",
+    shortName: "Z_s,max = c · U_0 / I_a",
+    description:
+      "Sammenheng mellom maksimal tillatt feilsløyfe-impedans, fasespenning, spenningsfaktor og frakoblingsstrøm for vernet. Brukes ved kontroll mot NEK 400-krav til automatisk utkobling.",
+    baseExpression: "Z_s_max = c * U_0 / I_a",
+    variables: [
+      {
+        id: "Z_s_max",
+        symbol: "Z_s,max",
+        name: "Maksimal feilsløyfe-impedans",
+        unit: "Ω",
+        role: "output",
+        description:
+          "Største tillatte feilsløyfe-impedans for å sikre automatisk utkobling."
+      },
+      {
+        id: "c",
+        symbol: "c",
+        name: "Spenningsfaktor",
+        role: "input",
+        description:
+          "Spenningsfaktor for min. nettspenning (typisk 0,8 i henhold til NEK 400)."
+      },
+      {
+        id: "U_0",
+        symbol: "U_0",
+        name: "Fasespenning mot jord",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "I_a",
+        symbol: "I_a",
+        name: "Frakoblingsstrøm",
+        unit: "A",
+        role: "input",
+        description:
+          "Strømmen som sikring/vern er garantert å koble ut ved innen nødvendig tid."
+      }
+    ],
+    variants: [
+      {
+        id: "max_fault_loop_impedance-Z_s_max",
+        label: "Løs for Z_s,max",
+        solveFor: "Z_s_max",
+        expression: "Z_s_max = c * U_0 / I_a"
+      },
+      {
+        id: "max_fault_loop_impedance-I_a",
+        label: "Løs for I_a",
+        solveFor: "I_a",
+        expression: "I_a = c * U_0 / Z_s_max"
+      },
+      {
+        id: "max_fault_loop_impedance-U_0",
+        label: "Løs for U_0",
+        solveFor: "U_0",
+        expression: "U_0 = Z_s_max * I_a / c"
+      }
+    ],
+    tags: ["Z_s,max, U_0, I_a, c, NEK400"]
+  },
+  {
+    id: "short_circuit_3ph_impedance",
+    categoryId: "systems",
+    name: "Trefase kortslutningsstrøm fra impedans",
+    shortName: "I_k3 = c · U_n / (√3 · Z_k)",
+    description:
+      "Forenklet beregning av symmetrisk trefase kortslutningsstrøm i et punkt, basert på nominell spenning, spenningsfaktor og total kortslutningsimpedans.",
+    baseExpression: "I_k3 = c * U_n / (1.732 * Z_k)",
+    variables: [
+      {
+        id: "I_k3",
+        symbol: "I_k3",
+        name: "Trefase kortslutningsstrøm",
+        unit: "A",
+        role: "output",
+        description:
+          "Prospektiv trefase kortslutningsstrøm i beregningspunktet."
+      },
+      {
+        id: "c",
+        symbol: "c",
+        name: "Spenningsfaktor",
+        role: "input",
+        description:
+          "Spenningsfaktor for min. nettspenning (typisk 0,95–1,1 avhengig av metode)."
+      },
+      {
+        id: "U_n",
+        symbol: "U_n",
+        name: "Nominell linjespenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "Z_k",
+        symbol: "Z_k",
+        name: "Kortslutningsimpedans",
+        unit: "Ω",
+        role: "input",
+        description:
+          "Total positiv-sekvens-impedans i kortslutningssløyfen frem til beregningspunktet."
+      }
+    ],
+    variants: [
+      {
+        id: "short_circuit_3ph_impedance-I_k3",
+        label: "Løs for I_k3",
+        solveFor: "I_k3",
+        expression: "I_k3 = c * U_n / (1.732 * Z_k)"
+      },
+      {
+        id: "short_circuit_3ph_impedance-Z_k",
+        label: "Løs for Z_k",
+        solveFor: "Z_k",
+        expression: "Z_k = c * U_n / (1.732 * I_k3)"
+      },
+      {
+        id: "short_circuit_3ph_impedance-U_n",
+        label: "Løs for U_n",
+        solveFor: "U_n",
+        expression: "U_n = 1.732 * I_k3 * Z_k / c"
+      }
+    ],
+    tags: ["I_k3, U_n, Z_k, kortslutning, trefase"]
+  },
 
   /* =======================================================================
    * MOTORER OG GENERATORER
