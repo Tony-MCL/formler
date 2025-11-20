@@ -1,3 +1,5 @@
+// lib/formulas.ts
+
 import type {
   Formula,
   FormulaCategory,
