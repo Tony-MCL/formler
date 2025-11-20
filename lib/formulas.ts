@@ -1709,106 +1709,175 @@ export const formulas: Formula[] = [
     ],
     tags: ["selektivitet", "I_1, I_2, k_sel", "vern"]
   },
+   {
+    id: "overload_protection_basic",
+    categoryId: "protection",
+    name: "Overbelastningsvern – grunnregel",
+    description:
+      "Kravet for vern av kabel mot overbelastning. Må oppfylle NEK 400-4-43.",
+    baseExpression: "I_b ≤ I_n ≤ I_z",
+    variables: [
+      {
+        id: "I_b",
+        symbol: "I_b",
+        name: "Belastningsstrøm",
+        unit: "A",
+        description: "Forventet maksimal strøm i kursen."
+      },
+      {
+        id: "I_n",
+        symbol: "I_n",
+        name: "Vernets merkestrøm",
+        unit: "A",
+        description: "Vernets merkestrøm eller innstilling."
+      },
+      {
+        id: "I_z",
+        symbol: "I_z",
+        name: "Tillatt strømføringsevne",
+        unit: "A",
+        description:
+          "Kabelens strømføringsevne etter tabell og korreksjonsfaktorer."
+      }
+    ],
+    tags: ["I_b, I_n, I_z"]
+  },
+
   {
-  id: "overload_protection_basic",
-  category: "protection",
-  name: "Overbelastningsvern – grunnregel",
-  familyId: null,
-  modeLabel: null,
-  description:
-    "Kravet for vern av kabel mot overbelastning. Må oppfylle NEK 400-4-43.",
-  baseExpression: "I_b ≤ I_n ≤ I_z",
-  variables: [
-    { id: "ib", symbol: "I_b", name: "Belastningsstrøm", unit: "A",
-      description: "Forventet maksimal strøm i kursen" },
-    { id: "in", symbol: "I_n", name: "Vernets merkestrøm", unit: "A",
-      description: "Vernetsinnstilling eller merkestrøm" },
-    { id: "iz", symbol: "I_z", name: "Tillatt strømføringsevne", unit: "A",
-      description: "Kabelens strømføringsevne etter tabell med korreksjonsfaktorer" }
-  ],
-  variants: []
-},
-{
-  id: "fault_disconnection_loop_impedance",
-  category: "protection",
-  name: "Utkobling ved feil – sløyfeimpedans",
-  familyId: null,
-  modeLabel: null,
-  description:
-    "Maksimalt tillatt sløyfeimpedans for å sikre automatisk utkobling innenfor kravene i NEK 400-4-41.",
-  baseExpression: "Z_s ≤ U_0 / I_a",
-  variables: [
-    { id: "zs", symbol: "Z_s", name: "Sløyfeimpedans", unit: "Ω",
-      description: "Samlet impedans i fase + PE/PN leder" },
-    { id: "u0", symbol: "U_0", name: "Fasespenning", unit: "V",
-      description: "Normalt 230 V i norske IT/TN-anlegg" },
-    { id: "ia", symbol: "I_a", name: "Utløsningsstrøm", unit: "A",
-      description: "Strøm som utløser vernet innenfor tillatt tid" }
-  ],
-  variants: [
-    {
-      id: "solve_for_zs",
-      label: "Løs for Z_s",
-      expression: "Z_s = U_0 / I_a"
-    },
-    {
-      id: "solve_for_ia",
-      label: "Løs for I_a",
-      expression: "I_a = U_0 / Z_s"
-    }
-  ]
-},
-{
-  id: "selectivity_time",
-  category: "protection",
-  name: "Tidsselektivitet",
-  familyId: null,
-  modeLabel: null,
-  description:
-    "Selektivitet basert på tidsforskjeller mellom upstream- og downstream-vern.",
-  baseExpression: "t_1 < t_2",
-  variables: [
-    { id: "t1", symbol: "t_1", name: "Utløsningstid nedstrøms", unit: "s",
-      description: "Tiden kurset nærmest feilen bruker på å løse ut" },
-    { id: "t2", symbol: "t_2", name: "Utløsningstid oppstrøms", unit: "s",
-      description: "Må være lenger enn t_1 for å unngå at begge løser" }
-  ],
-  variants: []
-},
-{
-  id: "selectivity_current",
-  category: "protection",
-  name: "Strømselektivitet",
-  familyId: null,
-  modeLabel: null,
-  description:
-    "Selektivitet basert på at upstream-vernet har høyere kortslutningsgrenser eller innstillinger enn vern nedstrøms.",
-  baseExpression: "I_{2, oppstrøms} > I_{2, nedstrøms}",
-  variables: [
-    { id: "i2up", symbol: "I_{2, oppstrøms}", name: "Utløsningsstrøm oppstrøms", unit: "A",
-      description: "Vernets utløsestrøm i kortslutningsområdet" },
-    { id: "i2down", symbol: "I_{2, nedstrøms}", name: "Utløsningsstrøm nedstrøms", unit: "A",
-      description: "Utløsningsstrøm for vernet nærmest feilen" }
-  ],
-  variants: []
-},
-{
-  id: "selectivity_energy",
-  category: "protection",
-  name: "Energi-selektivitet (I²t)",
-  familyId: null,
-  modeLabel: null,
-  description:
-    "Selektivitet basert på at energien som slipper gjennom vernet er lavere nedstrøms enn oppstrøms.",
-  baseExpression: "I_1^2 · t_1 < I_2^2 · t_2",
-  variables: [
-    { id: "i1", symbol: "I_1", name: "Strøm nedstrøms", unit: "A" },
-    { id: "t1", symbol: "t_1", name: "Utløsningstid nedstrøms", unit: "s" },
-    { id: "i2", symbol: "I_2", name: "Strøm oppstrøms", unit: "A" },
-    { id: "t2", symbol: "t_2", name: "Utløsningstid oppstrøms", unit: "s" }
-  ],
-  variants: []
-},
+    id: "fault_disconnection_loop_impedance",
+    categoryId: "protection",
+    name: "Utkobling ved feil – sløyfeimpedans",
+    description:
+      "Maksimalt tillatt sløyfeimpedans for å sikre automatisk utkobling innenfor kravene i NEK 400-4-41.",
+    baseExpression: "Z_s ≤ U_0 / I_a",
+    variables: [
+      {
+        id: "Z_s",
+        symbol: "Z_s",
+        name: "Sløyfeimpedans",
+        unit: "Ω",
+        description: "Samlet impedans i fase- og beskyttelsesleder."
+      },
+      {
+        id: "U_0",
+        symbol: "U_0",
+        name: "Fasespenning",
+        unit: "V",
+        description: "Normalt 230 V i norske IT-/TN-anlegg."
+      },
+      {
+        id: "I_a",
+        symbol: "I_a",
+        name: "Utløsningsstrøm",
+        unit: "A",
+        description: "Strøm som utløser vernet innenfor tillatt tid."
+      }
+    ],
+    variants: [
+      {
+        id: "fault_disconnection_zs",
+        label: "Løs for Z_s",
+        solveFor: "Z_s",
+        expression: "Z_s = U_0 / I_a"
+      },
+      {
+        id: "fault_disconnection_Ia",
+        label: "Løs for I_a",
+        solveFor: "I_a",
+        expression: "I_a = U_0 / Z_s"
+      }
+    ],
+    tags: ["Z_s, U_0, I_a"]
+  },
+
+  {
+    id: "selectivity_time",
+    categoryId: "protection",
+    name: "Tidsselektivitet",
+    description:
+      "Selektivitet basert på tidsforskjeller mellom oppstrøms- og nedstrømsvern.",
+    baseExpression: "t_1 < t_2",
+    variables: [
+      {
+        id: "t_1",
+        symbol: "t_1",
+        name: "Utløsningstid nedstrøms",
+        unit: "s",
+        description: "Tiden vernet nærmest feilen bruker på å løse ut."
+      },
+      {
+        id: "t_2",
+        symbol: "t_2",
+        name: "Utløsningstid oppstrøms",
+        unit: "s",
+        description:
+          "Må være lengre enn t_1 for å unngå at begge vern løser samtidig."
+      }
+    ],
+    tags: ["t_1, t_2"]
+  },
+
+  {
+    id: "selectivity_current",
+    categoryId: "protection",
+    name: "Strømselektivitet",
+    description:
+      "Selektivitet basert på at oppstrøms vern har høyere utløsestrømmer enn vern nedstrøms.",
+    baseExpression: "I_{2, oppstrøms} > I_{2, nedstrøms}",
+    variables: [
+      {
+        id: "I2_up",
+        symbol: "I_{2, oppstrøms}",
+        name: "Utløsningsstrøm oppstrøms",
+        unit: "A",
+        description: "Utløsningsstrøm i kortslutningsområdet for oppstrøms vern."
+      },
+      {
+        id: "I2_down",
+        symbol: "I_{2, nedstrøms}",
+        name: "Utløsningsstrøm nedstrøms",
+        unit: "A",
+        description: "Utløsningsstrøm for vernet nærmest feilen."
+      }
+    ],
+    tags: ["I_{2, oppstrøms}, I_{2, nedstrøms}"]
+  },
+
+  {
+    id: "selectivity_energy",
+    categoryId: "protection",
+    name: "Energi-selektivitet (I²t)",
+    description:
+      "Selektivitet basert på at energien som slipper gjennom vernet (I²t) er lavere nedstrøms enn oppstrøms.",
+    baseExpression: "I_1^2 · t_1 < I_2^2 · t_2",
+    variables: [
+      {
+        id: "I_1",
+        symbol: "I_1",
+        name: "Strøm nedstrøms",
+        unit: "A"
+      },
+      {
+        id: "t_1",
+        symbol: "t_1",
+        name: "Utløsningstid nedstrøms",
+        unit: "s"
+      },
+      {
+        id: "I_2",
+        symbol: "I_2",
+        name: "Strøm oppstrøms",
+        unit: "A"
+      },
+      {
+        id: "t_2",
+        symbol: "t_2",
+        name: "Utløsningstid oppstrøms",
+        unit: "s"
+      }
+    ],
+    tags: ["I_1, t_1, I_2, t_2"]
+  },
   /* =======================================================================
    * SPENNINGSFALL
    * ======================================================================= */
