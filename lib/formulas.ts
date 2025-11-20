@@ -386,7 +386,7 @@ export const formulas: Formula[] = [
   },
     {
     id: "fault_current_earth",
-    categoryId: "shortcircuit"
+    categoryId: "shortcircuit",
     name: "Feilstrøm i sluttpunkt (TN/TT)",
     shortName: "I_k = c · U_0 / Z_s",
     description:
@@ -451,7 +451,7 @@ export const formulas: Formula[] = [
   },
   {
     id: "max_fault_loop_impedance",
-    categoryId: "shortcircuit"
+    categoryId: "shortcircuit",
     name: "Maksimal feilsløyfe-impedans",
     shortName: "Z_s,max = c · U_0 / I_a",
     description:
@@ -516,7 +516,7 @@ export const formulas: Formula[] = [
   },
   {
     id: "short_circuit_3ph_impedance",
-    categoryId: "shortcircuit"
+    categoryId: "shortcircuit",
     name: "Trefase kortslutningsstrøm fra impedans",
     shortName: "I_k3 = c · U_n / (√3 · Z_k)",
     description:
