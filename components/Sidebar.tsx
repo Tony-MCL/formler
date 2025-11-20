@@ -296,7 +296,7 @@ export default function Sidebar({
                               background: "transparent",
                               cursor: "pointer",
                               fontSize: "0.9rem",
-                              lineHeight: 1
+                              lineHeight: 1,
                               color: isFavorite ? "gold" : "var(--mcl-muted)"
                             }}
                           >
