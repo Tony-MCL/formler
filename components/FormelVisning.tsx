@@ -23,7 +23,8 @@ export default function FormelVisning({
   const [isMobile, setIsMobile] = useState(false);
 
   // Aktiv formel – kan skifte mellom familiemedlemmer (1-fase / 3-fase osv.)
-  const [activeFormulaId, setActiveFormulaId] = useState<FormulaId>(formulaId);
+  const [activeFormulaId, setActiveFormulaId] =
+    useState<FormulaId>(formulaId);
 
   // Reset aktiv formel når bruker velger ny i menyen
   useEffect(() => {
@@ -252,7 +253,9 @@ export default function FormelVisning({
         {/* Varianter */}
         {formula.variants && formula.variants.length > 0 && (
           <section>
-            <h3 style={{ margin: "0 0 0.4rem" }}>Varianter (løs for …)</h3>
+            <h3 style={{ margin: "0 0 0.4rem" }}>
+              Varianter (løs for …
+            </h3>
             <ul
               style={{
                 margin: 0,
@@ -375,7 +378,7 @@ export default function FormelVisning({
             {formula.variants && formula.variants.length > 0 && (
               <section>
                 <h4 style={{ margin: "0 0 0.4rem" }}>
-                  Varianter (løs for …)
+                  Varianter (løs for …
                 </h4>
                 <ul
                   style={{
