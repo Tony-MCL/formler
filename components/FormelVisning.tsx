@@ -240,6 +240,7 @@ export default function FormelVisning({
               cursor: "pointer",
               fontSize: "1.1rem",
               lineHeight: 1
+              color: isFavorite ? "gold" : "var(--mcl-muted)"
             }}
           >
             {isFavorite ? "★" : "☆"}
