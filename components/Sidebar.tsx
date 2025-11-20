@@ -297,6 +297,7 @@ export default function Sidebar({
                               cursor: "pointer",
                               fontSize: "0.9rem",
                               lineHeight: 1
+                              color: isFavorite ? "gold" : "var(--mcl-muted)"
                             }}
                           >
                             {isFavorite ? "★" : "☆"}
