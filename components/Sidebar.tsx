@@ -27,7 +27,6 @@ type SidebarGroupView = {
 const FAVORITES_GROUP_ID = "__favorites__";
 // Samme nøkkel som FormelVisning bruker
 const DEFAULT_FAVORITES_KEY = "mcl_formula_favorites_v1";
-
 // Felles event-navn for sync med FormelVisning
 const FAVORITES_EVENT_NAME = "mcl:favorites-updated";
 
@@ -77,7 +76,20 @@ export default function Sidebar({
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // Last inn favoritter fra localStorage (prøver å gjenbruke eksisterende nøkkel om mulig)
+  // Hjelper: les favoritter fra localStorage for gitt nøkkel
+  const loadFavoritesFromStorage = (key: string): FormulaId[] => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as FormulaId[]) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  // Første init: finn nøkkel og last favoritter
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -90,15 +102,12 @@ export default function Sidebar({
 
       setFavoritesStorageKey(candidateKey);
 
-      const raw = window.localStorage.getItem(candidateKey);
-      if (!raw) return;
-
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        setFavorites(parsed as FormulaId[]);
+      const favs = loadFavoritesFromStorage(candidateKey);
+      if (favs.length > 0) {
+        setFavorites(favs);
       }
     } catch {
-      // Ignorer parsing-feil – vi starter bare uten favoritter
+      // Ignorer feil – start uten favoritter
     }
   }, []);
 
@@ -116,6 +125,21 @@ export default function Sidebar({
       // Ignorer lagringsfeil (f.eks. quota)
     }
   }, [favorites, favoritesStorageKey]);
+
+  // 🔁 Hold Sidebar i sync når FormelVisning endrer favoritter
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleUpdate = () => {
+      const favs = loadFavoritesFromStorage(favoritesStorageKey);
+      setFavorites(favs);
+    };
+
+    window.addEventListener(FAVORITES_EVENT_NAME, handleUpdate);
+    return () => {
+      window.removeEventListener(FAVORITES_EVENT_NAME, handleUpdate);
+    };
+  }, [favoritesStorageKey]);
 
   // === Vanlig logikk (ingen hooks under her) ===
 
