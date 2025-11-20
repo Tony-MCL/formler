@@ -44,8 +44,8 @@ export default function FormelVisning({
   const [activeFormulaId, setActiveFormulaId] =
     useState<FormulaId>(formulaId);
 
-  // Favoritter
-  const [favorites, setFavorites] = useState<FormulaId[]>([]);
+  // Kun "er denne formelen favoritt?" – ikke hele lista
+  const [isFavorite, setIsFavorite] = useState(false);
 
   // Reset aktiv formel når bruker velger ny i menyen
   useEffect(() => {
@@ -68,35 +68,27 @@ export default function FormelVisning({
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // Les favoritter + lytt på oppdatering
+  // Oppdater isFavorite når aktiv formel endres
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const favorites = loadFavoritesFromStorage();
+    setIsFavorite(favorites.includes(activeFormulaId));
+  }, [activeFormulaId]);
+
+  // Hold isFavorite i sync hvis Sidebar oppdaterer favoritter
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    setFavorites(loadFavoritesFromStorage());
-
     const handleUpdate = () => {
-      setFavorites(loadFavoritesFromStorage());
+      const favorites = loadFavoritesFromStorage();
+      setIsFavorite(favorites.includes(activeFormulaId));
     };
 
     window.addEventListener("mcl:favorites-updated", handleUpdate);
     return () => {
       window.removeEventListener("mcl:favorites-updated", handleUpdate);
     };
-  }, []);
-
-  // Skriv favoritter ved endring
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem(
-        FAVORITES_STORAGE_KEY,
-        JSON.stringify(favorites)
-      );
-      broadcastFavoritesUpdated();
-    } catch {
-      // ignorer
-    }
-  }, [favorites]);
+  }, [activeFormulaId]);
 
   // Finn alle familiemedlemmer (enfase/trefase osv.)
   const familyMembers = useMemo(() => {
@@ -122,15 +114,25 @@ export default function FormelVisning({
     activeFormulaId === "power" ||
     activeFormulaId === "single_phase_apparent";
 
-  const isFavorite = favorites.includes(activeFormulaId);
-
   const toggleFavorite = () => {
-    setFavorites((prev) => {
-      if (prev.includes(activeFormulaId)) {
-        return prev.filter((x) => x !== activeFormulaId);
-      }
-      return [...prev, activeFormulaId];
-    });
+    if (typeof window === "undefined") return;
+
+    const current = loadFavoritesFromStorage();
+    const exists = current.includes(activeFormulaId);
+    const next = exists
+      ? current.filter((x) => x !== activeFormulaId)
+      : [...current, activeFormulaId];
+
+    try {
+      window.localStorage.setItem(
+        FAVORITES_STORAGE_KEY,
+        JSON.stringify(next)
+      );
+      setIsFavorite(!exists);
+      broadcastFavoritesUpdated();
+    } catch {
+      // ignorer lagringsfeil
+    }
   };
 
   if (!formula) {
