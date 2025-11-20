@@ -1721,13 +1721,67 @@ export const formulas: Formula[] = [
     "Standardformel for spenningsfall i enfaset kabel. Basert på ledermotstand og induktans pr. meter etter NEK 400.",
   baseExpression: "ΔU = 2 · I · (R·cosφ + X·sinφ) · L",
   variables: [
-    { id: "dU", symbol: "ΔU", name: "Spenningsfall", unit: "V", role: "output" },
-    { id: "I", symbol: "I", name: "Strøm", unit: "A", role: "input" },
-    { id: "R", symbol: "R", name: "Resistans per meter", unit: "Ω/m", role: "input" },
-    { id: "X", symbol: "X", name: "Reaktans per meter", unit: "Ω/m", role: "input" },
-    { id: "cosphi", symbol: "cos φ", name: "Effektfaktor", unit: "–", role: "input" },
-    { id: "sinphi", symbol: "sin φ", name: "Sinus til effektvinkel", unit: "–", role: "input" },
-    { id: "L", symbol: "L", name: "Lengde kabel", unit: "m", role: "input" }
+    {
+      id: "dU",
+      symbol: "ΔU",
+      name: "Spenningsfall",
+      unit: "V",
+      role: "output",
+      description: "Beregnet spenningsfall i volt mellom kilde og last."
+    },
+    {
+      id: "I",
+      symbol: "I",
+      name: "Strøm",
+      unit: "A",
+      role: "input",
+      description: "Laststrøm i kabelen (beregnet eller dimensjonerende strøm)."
+    },
+    {
+      id: "R",
+      symbol: "R",
+      name: "Resistans per meter",
+      unit: "Ω/m",
+      role: "input",
+      description:
+        "Lederresistans pr. meter. Hentes fra kabeltabell (Ω/km) for valgt tverrsnitt og materiale og deles på 1000. Bruk verdier for aktuell driftstemperatur (NEK 400 kabeltabeller)."
+    },
+    {
+      id: "X",
+      symbol: "X",
+      name: "Reaktans per meter",
+      unit: "Ω/m",
+      role: "input",
+      description:
+        "Induktiv reaktans pr. meter. Hentes fra kabeltabell (Ω/km) og deles på 1000. For vanlige 1 kV-kabler er X som regel liten, men bør tas med ved lange strekk eller høye strømmer."
+    },
+    {
+      id: "cosphi",
+      symbol: "cosφ",
+      name: "Effektfaktor",
+      unit: "–",
+      role: "input",
+      description:
+        "Effektfaktor for lasten (0–1). Typisk 0,8–0,95 for motorlaster. Bruk dimensjonerende cosφ i henhold til prosjekt/NEK 400."
+    },
+    {
+      id: "sinphi",
+      symbol: "sinφ",
+      name: "Sinus til effektvinkel",
+      unit: "–",
+      role: "input",
+      description:
+        "sinφ tilhørende valgt cosφ. Kan beregnes som sinφ = √(1 − cos²φ) dersom den ikke er oppgitt direkte."
+    },
+    {
+      id: "L",
+      symbol: "L",
+      name: "Lengde kabel",
+      unit: "m",
+      role: "input",
+      description:
+        "Enkeltkabelens én-veislengde i meter. For 1-fase regnes det allerede med tur/retur i faktoren 2 i formelen."
+    }
   ],
   variants: [
     {
@@ -1748,13 +1802,69 @@ export const formulas: Formula[] = [
     "Standardformel for spenningsfall i trefaset kabel. Basert på ledermotstand og induktans pr. meter etter NEK 400.",
   baseExpression: "ΔU = √3 · I · (R·cosφ + X·sinφ) · L",
   variables: [
-    { id: "dU", symbol: "ΔU", name: "Spenningsfall", unit: "V", role: "output" },
-    { id: "I", symbol: "I", name: "Strøm", unit: "A", role: "input" },
-    { id: "R", symbol: "R", name: "Resistans per meter", unit: "Ω/m", role: "input" },
-    { id: "X", symbol: "X", name: "Reaktans per meter", unit: "Ω/m", role: "input" },
-    { id: "cosphi", symbol: "cos φ", name: "Effektfaktor", unit: "–", role: "input" },
-    { id: "sinphi", symbol: "sin φ", name: "Sinus til effektvinkel", unit: "–", role: "input" },
-    { id: "L", symbol: "L", name: "Lengde kabel", unit: "m", role: "input" }
+    {
+      id: "dU",
+      symbol: "ΔU",
+      name: "Spenningsfall",
+      unit: "V",
+      role: "output",
+      description:
+        "Beregnet spenningsfall i volt mellom transformator/forsyning og last i trefasesystemet."
+    },
+    {
+      id: "I",
+      symbol: "I",
+      name: "Strøm",
+      unit: "A",
+      role: "input",
+      description:
+        "Fase-/linjestrøm i kabelen (dimensjonerende belastningsstrøm)."
+    },
+    {
+      id: "R",
+      symbol: "R",
+      name: "Resistans per meter",
+      unit: "Ω/m",
+      role: "input",
+      description:
+        "Lederresistans pr. meter. Hentes fra kabeltabell (Ω/km) for valgt tverrsnitt/materiale og deles på 1000. Bruk verdier for aktuell driftstemperatur (NEK 400 kabeltabeller)."
+    },
+    {
+      id: "X",
+      symbol: "X",
+      name: "Reaktans per meter",
+      unit: "Ω/m",
+      role: "input",
+      description:
+        "Induktiv reaktans pr. meter. Hentes fra kabeltabell (Ω/km) og deles på 1000. For vanlige 3-fase 1 kV-kabler ligger X ofte rundt noen 0,0x Ω/km – slå opp korrekt verdi for valgt kabeltype."
+    },
+    {
+      id: "cosphi",
+      symbol: "cosφ",
+      name: "Effektfaktor",
+      unit: "–",
+      role: "input",
+      description:
+        "Effektfaktor for lasten (0–1). Bruk dimensjonerende cosφ for aktuell lasttype (f.eks. motor, omformer)."
+    },
+    {
+      id: "sinphi",
+      symbol: "sinφ",
+      name: "Sinus til effektvinkel",
+      unit: "–",
+      role: "input",
+      description:
+        "sinφ tilhørende valgt cosφ. Kan beregnes som sinφ = √(1 − cos²φ) dersom verdien ikke er oppgitt."
+    },
+    {
+      id: "L",
+      symbol: "L",
+      name: "Lengde kabel",
+      unit: "m",
+      role: "input",
+      description:
+        "Én-veislengde i meter fra kilde til last (ikke tur/retur). √3-faktoren i formelen håndterer systemgeometrien for trefase."
+    }
   ],
   variants: [
     {
@@ -1766,6 +1876,7 @@ export const formulas: Formula[] = [
   ],
   tags: ["spenningsfall", "kabel", "3-fase", "NEK400"]
 },
+
 ];
 
 /**
