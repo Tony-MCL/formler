@@ -8,6 +8,24 @@ import Kalkulator from "./Kalkulator";
 import PDFExport from "./PDFExport";
 import { useI18n } from "../lib/i18n";
 
+const FAVORITES_STORAGE_KEY = "mcl_formula_favorites_v1";
+
+function loadFavoritesFromStorage(): FormulaId[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(FAVORITES_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? (parsed as FormulaId[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function broadcastFavoritesUpdated() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event("mcl:favorites-updated"));
+}
+
 type FormelVisningProps = {
   formulaId: FormulaId;
   onGoHome?: () => void;
@@ -25,6 +43,9 @@ export default function FormelVisning({
   // Aktiv formel – kan skifte mellom familiemedlemmer (1-fase / 3-fase osv.)
   const [activeFormulaId, setActiveFormulaId] =
     useState<FormulaId>(formulaId);
+
+  // Favoritter
+  const [favorites, setFavorites] = useState<FormulaId[]>([]);
 
   // Reset aktiv formel når bruker velger ny i menyen
   useEffect(() => {
@@ -46,6 +67,36 @@ export default function FormelVisning({
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  // Les favoritter + lytt på oppdatering
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    setFavorites(loadFavoritesFromStorage());
+
+    const handleUpdate = () => {
+      setFavorites(loadFavoritesFromStorage());
+    };
+
+    window.addEventListener("mcl:favorites-updated", handleUpdate);
+    return () => {
+      window.removeEventListener("mcl:favorites-updated", handleUpdate);
+    };
+  }, []);
+
+  // Skriv favoritter ved endring
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        FAVORITES_STORAGE_KEY,
+        JSON.stringify(favorites)
+      );
+      broadcastFavoritesUpdated();
+    } catch {
+      // ignorer
+    }
+  }, [favorites]);
 
   // Finn alle familiemedlemmer (enfase/trefase osv.)
   const familyMembers = useMemo(() => {
@@ -70,6 +121,17 @@ export default function FormelVisning({
   const isSinglePhase =
     activeFormulaId === "power" ||
     activeFormulaId === "single_phase_apparent";
+
+  const isFavorite = favorites.includes(activeFormulaId);
+
+  const toggleFavorite = () => {
+    setFavorites((prev) => {
+      if (prev.includes(activeFormulaId)) {
+        return prev.filter((x) => x !== activeFormulaId);
+      }
+      return [...prev, activeFormulaId];
+    });
+  };
 
   if (!formula) {
     return (
@@ -117,7 +179,7 @@ export default function FormelVisning({
         <PDFExport />
       </div>
 
-      {/* Tittel + fase-toggle i samme linje */}
+      {/* Tittel + fase-toggle + favoritt-stjerne i samme linje */}
       <div
         className="no-print"
         style={{
@@ -132,28 +194,57 @@ export default function FormelVisning({
           {formula.name}
         </h2>
 
-        {hasFamilyToggle && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem"
+          }}
+        >
+          {hasFamilyToggle && (
+            <button
+              type="button"
+              className="button"
+              onClick={handleToggleFamilyMember}
+              aria-label={`Bytt fase-modus (nå: ${phaseLabel})`}
+              style={{
+                fontSize: "0.8rem",
+                paddingInline: "0.65rem",
+                paddingBlock: "0.2rem",
+                borderRadius: 999,
+                border: "1px solid var(--mcl-outline)",
+                background: isSinglePhase
+                  ? "var(--mcl-header, #e5c3a5)" // 1-fase: header-farge
+                  : "var(--mcl-brand)", // 3-fase: MCL-brand
+                color: isSinglePhase ? "#000" : "#fff",
+                fontWeight: 600
+              }}
+            >
+              {isSinglePhase ? "1-fase" : "3-fase"}
+            </button>
+          )}
+
           <button
             type="button"
-            className="button"
-            onClick={handleToggleFamilyMember}
-            aria-label={`Bytt fase-modus (nå: ${phaseLabel})`}
+            onClick={toggleFavorite}
+            aria-pressed={isFavorite}
+            aria-label={
+              isFavorite
+                ? "Fjern formel fra favoritter"
+                : "Legg formel til i favoritter"
+            }
             style={{
-              fontSize: "0.8rem",
-              paddingInline: "0.65rem",
-              paddingBlock: "0.2rem",
-              borderRadius: 999,
-              border: "1px solid var(--mcl-outline)",
-              background: isSinglePhase
-                ? "var(--mcl-header, #e5c3a5)" // 1-fase: header-farge
-                : "var(--mcl-brand)", // 3-fase: MCL-brand
-              color: isSinglePhase ? "#000" : "#fff",
-              fontWeight: 600
+              padding: "0 0.35rem",
+              border: "none",
+              background: "transparent",
+              cursor: "pointer",
+              fontSize: "1.1rem",
+              lineHeight: 1
             }}
           >
-            {isSinglePhase ? "1-fase" : "3-fase"}
+            {isFavorite ? "★" : "☆"}
           </button>
-        )}
+        </div>
       </div>
 
       {formula.description && (
