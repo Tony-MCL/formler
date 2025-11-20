@@ -56,6 +56,13 @@ export const formulaCategories: FormulaCategory[] = [
     "Formler for startstrøm, spenningsfall ved start, Y/D start, mykstarter og frekvensomformer.",
   order: 7
 },
+{
+  id: "power_quality",
+  title: "Spenningskvalitet",
+  description:
+    "Formler knyttet til spenningsavvik, spenningsubalanse og harmonisk forvrengning (THD).",
+  order: 8
+},
 ];
 
 // Formler som skal være tilgjengelige i motoren, men IKKE vises som egne linjer i sidebaren
@@ -2177,6 +2184,236 @@ export const formulas: Formula[] = [
     }
   ],
   tags: ["spenningsfall", "kabel", "3-fase", "NEK400"]
+},
+/* =======================================================================
+   * SSPENNINGSKVALITET
+   * ======================================================================= */
+ {
+  id: "voltage_deviation_percent",
+  categoryId: "power_quality",
+  name: "Spenningsavvik i prosent",
+  shortName: "ΔU_% = (U − U_n) / U_n · 100",
+  description:
+    "Spenningsavvik i prosent i forhold til merkespenning. Brukes bl.a. mot krav i EN 50160/NEK 400.",
+  baseExpression: "ΔU_% = (U - U_n) / U_n * 100",
+  variables: [
+    {
+      id: "U",
+      symbol: "U",
+      name: "Målt spenning",
+      unit: "V",
+      role: "input"
+    },
+    {
+      id: "U_n",
+      symbol: "U_n",
+      name: "Merkespenning",
+      unit: "V",
+      role: "input"
+    },
+    {
+      id: "dU_percent",
+      symbol: "ΔU_%",
+      name: "Spenningsavvik i prosent",
+      unit: "%",
+      role: "output",
+      description:
+        "Positiv verdi betyr høyere spenning enn nominell, negativ betyr lavere."
+    }
+  ],
+  variants: [
+    {
+      id: "voltage_deviation_percent-dU_percent",
+      label: "Løs for ΔU_%",
+      solveFor: "dU_percent",
+      expression: "dU_percent = (U - U_n) / U_n * 100"
+    },
+    {
+      id: "voltage_deviation_percent-U",
+      label: "Løs for U",
+      solveFor: "U",
+      expression: "U = U_n * (1 + dU_percent / 100)"
+    },
+    {
+      id: "voltage_deviation_percent-U_n",
+      label: "Løs for U_n",
+      solveFor: "U_n",
+      expression: "U_n = U / (1 + dU_percent / 100)"
+    }
+  ],
+  tags: ["spenningsavvik, EN 50160, NEK 400"]
+},
+ {
+  id: "voltage_unbalance_percent",
+  categoryId: "power_quality",
+  name: "Spenningsubalanse i trefasesystem",
+  shortName: "k_U = (U_max − U_min) / U_avg · 100",
+  description:
+    "Enkel ubalansefaktor i prosent basert på største forskjell mellom fase- og gjennomsnittsspenning.",
+  baseExpression: "k_U = (U_max - U_min) / U_avg * 100",
+  variables: [
+    {
+      id: "U_max",
+      symbol: "U_max",
+      name: "Høyeste fasespenning",
+      unit: "V",
+      role: "input"
+    },
+    {
+      id: "U_min",
+      symbol: "U_min",
+      name: "Laveste fasespenning",
+      unit: "V",
+      role: "input"
+    },
+    {
+      id: "U_avg",
+      symbol: "U_avg",
+      name: "Gjennomsnittlig fasespenning",
+      unit: "V",
+      role: "input",
+      description: "Typisk (U_R + U_S + U_T) / 3."
+    },
+    {
+      id: "k_U",
+      symbol: "k_U",
+      name: "Spenningsubalanse",
+      unit: "%",
+      role: "output",
+      description:
+        "Spenningsubalanse i prosent. Små verdier (få prosent) er normalt akseptable."
+    }
+  ],
+  variants: [
+    {
+      id: "voltage_unbalance_percent-k_U",
+      label: "Løs for k_U",
+      solveFor: "k_U",
+      expression: "k_U = (U_max - U_min) / U_avg * 100"
+    },
+    {
+      id: "voltage_unbalance_percent-U_max",
+      label: "Løs for U_max",
+      solveFor: "U_max",
+      expression: "U_max = k_U * U_avg / 100 + U_min"
+    },
+    {
+      id: "voltage_unbalance_percent-U_min",
+      label: "Løs for U_min",
+      solveFor: "U_min",
+      expression: "U_min = U_max - k_U * U_avg / 100"
+    }
+  ],
+  tags: ["ubalanse, trefase, spenningskvalitet"]
+},
+{
+  id: "current_thd_percent",
+  categoryId: "power_quality",
+  name: "Total harmonisk forvrengning – strøm (THD_I)",
+  shortName: "THD_I = I_h / I_1 · 100",
+  description:
+    "Total harmonisk forvrengning i strøm. I_h er RMS-sum av alle harmoniske komponenter utenom grunnkomponenten.",
+  baseExpression: "THD_I = I_h / I_1 * 100",
+  variables: [
+    {
+      id: "I_h",
+      symbol: "I_h",
+      name: "Harmonisk strøm (RMS)",
+      unit: "A",
+      role: "input",
+      description:
+        "RMS-sum av harmoniske komponenter (2., 3., 5., …), utenom grunnkomponenten."
+    },
+    {
+      id: "I_1",
+      symbol: "I_1",
+      name: "Grunnkomponent strøm",
+      unit: "A",
+      role: "input"
+    },
+    {
+      id: "THD_I",
+      symbol: "THD_I",
+      name: "Total harmonisk forvrengning (strøm)",
+      unit: "%",
+      role: "output",
+      description: "THD_I i prosent av grunnkomponenten."
+    }
+  ],
+  variants: [
+    {
+      id: "current_thd_percent-THD_I",
+      label: "Løs for THD_I",
+      solveFor: "THD_I",
+      expression: "THD_I = I_h / I_1 * 100"
+    },
+    {
+      id: "current_thd_percent-I_h",
+      label: "Løs for I_h",
+      solveFor: "I_h",
+      expression: "I_h = THD_I * I_1 / 100"
+    },
+    {
+      id: "current_thd_percent-I_1",
+      label: "Løs for I_1",
+      solveFor: "I_1",
+      expression: "I_1 = I_h * 100 / THD_I"
+    }
+  ],
+  tags: ["THD, harmoniske, strøm"]
+},
+{
+  id: "voltage_thd_percent",
+  categoryId: "power_quality",
+  name: "Total harmonisk forvrengning – spenning (THD_U)",
+  shortName: "THD_U = U_h / U_1 · 100",
+  description:
+    "Total harmonisk forvrengning i spenning. U_h er RMS-sum av alle harmoniske komponenter utenom grunnkomponenten.",
+  baseExpression: "THD_U = U_h / U_1 * 100",
+  variables: [
+    {
+      id: "U_h",
+      symbol: "U_h",
+      name: "Harmonisk spenning (RMS)",
+      unit: "V",
+      role: "input"
+    },
+    {
+      id: "U_1",
+      symbol: "U_1",
+      name: "Grunnkomponent spenning",
+      unit: "V",
+      role: "input"
+    },
+    {
+      id: "THD_U",
+      symbol: "THD_U",
+      name: "Total harmonisk forvrengning (spenning)",
+      unit: "%",
+      role: "output"
+    }
+  ],
+  variants: [
+    {
+      id: "voltage_thd_percent-THD_U",
+      label: "Løs for THD_U",
+      solveFor: "THD_U",
+      expression: "THD_U = U_h / U_1 * 100"
+    },
+    {
+      id: "voltage_thd_percent-U_h",
+      label: "Løs for U_h",
+      solveFor: "U_h",
+      expression: "U_h = THD_U * U_1 / 100"
+    },
+    {
+      id: "voltage_thd_percent-U_1",
+      label: "Løs for U_1",
+      solveFor: "U_1",
+      expression: "U_1 = U_h * 100 / THD_U"
+    }
+  ],
+  tags: ["THD, harmoniske, spenning"]
 },
 
 ];
