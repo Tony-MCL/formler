@@ -107,10 +107,6 @@ export const formulas: Formula[] = [
     shortName: "P = U · I · cosφ",
     description:
       "Aktiv effekt i vekselstrømskrets (en- eller trefase) med faseforskyvning (cosφ).",
-    // Familie: aktiv effekt AC – 1-fase
-    familyId: "active_power_ac",
-    modeLabel: "1-fase",
-    isPrimaryInFamily: true,
     baseExpression: "P = U * I * cosphi",
     variables: [
       {
@@ -163,7 +159,10 @@ export const formulas: Formula[] = [
         expression: "U = P / (I * cosphi)"
       }
     ],
-    tags: ["P, U, I, cosφ"]
+    tags: ["P, U, I, cosφ"],
+    familyId: "active_power",
+    modeLabel: "1-fase",
+    isPrimaryInFamily: true
   },
   {
     id: "energy",
@@ -503,10 +502,6 @@ export const formulas: Formula[] = [
     shortName: "S = √3 · U_L · I_L",
     description:
       "Tilsynelatende effekt i et symmetrisk trefasesystem basert på linjespenning og linjestrøm.",
-    // Familie: tilsynelatende effekt AC – 3-fase
-    familyId: "apparent_power_ac",
-    modeLabel: "3-fase",
-    isPrimaryInFamily: false,
     baseExpression: "S = √3 · U_L · I_L",
     variables: [
       {
@@ -552,7 +547,10 @@ export const formulas: Formula[] = [
         expression: "I_L = S / (1.732 * U_L)"
       }
     ],
-    tags: ["S, U_L, I_L"]
+    tags: ["S, U_L, I_L"],
+    familyId: "apparent_power",
+    modeLabel: "3-fase",
+    isPrimaryInFamily: false
   },
   {
     id: "three_phase_active",
@@ -561,10 +559,6 @@ export const formulas: Formula[] = [
     shortName: "P = √3 · U_L · I_L · cosφ",
     description:
       "Aktiv effekt i et symmetrisk trefasesystem basert på linjespenning, linjestrøm og effektfaktor.",
-    // Familie: aktiv effekt AC – 3-fase
-    familyId: "active_power_ac",
-    modeLabel: "3-fase",
-    isPrimaryInFamily: false,
     baseExpression: "P = √3 · U_L · I_L · cosφ",
     variables: [
       {
@@ -622,7 +616,10 @@ export const formulas: Formula[] = [
         expression: "cosphi = P / (1.732 * U_L * I_L)"
       }
     ],
-    tags: ["P, U_L, I_L, cosφ"]
+    tags: ["P, U_L, I_L, cosφ"],
+    familyId: "active_power",
+    modeLabel: "3-fase",
+    isPrimaryInFamily: false
   },
   {
     id: "power_factor",
@@ -684,10 +681,6 @@ export const formulas: Formula[] = [
     shortName: "S = U · I",
     description:
       "Tilsynelatende effekt basert på spenning og strøm (en- eller trefasesystem).",
-    // Familie: tilsynelatende effekt AC – 1-fase
-    familyId: "apparent_power_ac",
-    modeLabel: "1-fase",
-    isPrimaryInFamily: true,
     baseExpression: "S = U * I",
     variables: [
       {
@@ -732,7 +725,10 @@ export const formulas: Formula[] = [
         expression: "I = S / U"
       }
     ],
-    tags: ["S, U, I"]
+    tags: ["S, U, I"],
+    familyId: "apparent_power",
+    modeLabel: "1-fase",
+    isPrimaryInFamily: true
   },
   {
     id: "efficiency",
@@ -787,7 +783,6 @@ export const formulas: Formula[] = [
     ],
     tags: ["η, P_ut, P_inn"]
   },
-
   {
     id: "slip",
     categoryId: "machines",
