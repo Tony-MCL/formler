@@ -596,6 +596,7 @@ export const formulas: Formula[] = [
   variables: [
     { id: "un", symbol: "U_n", name: "Merkespenning", unit: "V" },
     { id: "zs", symbol: "Z_s", name: "Sløyfeimpedans", unit: "Ω" }
+    }
   ],
   variants: [
     {
