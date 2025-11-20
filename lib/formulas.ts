@@ -585,6 +585,148 @@ export const formulas: Formula[] = [
     ],
     tags: ["I_k3, U_n, Z_k, kortslutning, trefase"]
   },
+  {
+  id: "ik_min_80",
+  familyId: "ik_min",
+  categoryId: "shortcircuit",
+  modeLabel: "Ik,min",
+  name: "Minste kortslutningsstrøm – 0,8 · U_n",
+  description: "Minste prospektive kortslutningsstrøm med sikkerhetsfaktor 0,8 på driftsspenning.",
+  baseExpression: "I_k,min = 0.8 · U_n / Z_s",
+  variables: [
+    { id: "un", symbol: "U_n", name: "Merkespenning", unit: "V" },
+    { id: "zs", symbol: "Z_s", name: "Sløyfeimpedans", unit: "Ω" }
+  ],
+  variants: [
+    {
+      id: "solve_ikmin",
+      label: "Løs for minste I_k",
+      expression: "I_k_min = 0.8 * U_n / Z_s"
+    }
+  ]
+},
+  {
+  id: "ik1_tn",
+  familyId: "ik1_tn",
+  categoryId: "shortcircuit",
+  modeLabel: "Ik1 TN",
+  name: "Enfase kortslutningsstrøm – TN-system",
+  description: "Enfase kortslutningsstrøm i TN-systemer. Bruker spenning fase–nøytral og Zs.",
+  baseExpression: "I_k1 = U_0 / Z_s",
+  variables: [
+    { id: "u0", symbol: "U_0", name: "Fasespenning", unit: "V" },
+    { id: "zs", symbol: "Z_s", name: "Total sløyfeimpedans", unit: "Ω" }
+  ],
+  variants: [
+    {
+      id: "solve_ik1",
+      label: "Løs for I_k1",
+      expression: "I_k1 = U_0 / Z_s"
+    }
+  ]
+},
+  {
+  id: "ik3_min",
+  familyId: "ik3_min",
+  categoryId: "shortcircuit",
+  modeLabel: "Min. Ik3",
+  name: "Minste 3-fase kortslutningsstrøm",
+  description: "NEK 400-korrekt minimum Ik3 i enden av kurs med 0,95 · U_n og total impedans.",
+  baseExpression: "I_k3,min = 0.95 · U_n / (√3 · Z_total)",
+  variables: [
+    { id: "un", symbol: "U_n", name: "Merkespenning", unit: "V" },
+    { id: "zt", symbol: "Z_total", name: "Total impedans", unit: "Ω", description: "Impedans fra trafo til kursende" }
+  ],
+  variants: [
+    {
+      id: "solve_ik3min",
+      label: "Løs for I_k3,min",
+      expression: "I_k3_min = (0.95 * U_n) / (sqrt(3) * Z_total)"
+    }
+  ]
+},
+  {
+  id: "ik1_pe",
+  familyId: "ik1_tn",
+  categoryId: "shortcircuit",
+  modeLabel: "Ik1 F–PE",
+  name: "Enfase kortslutning fase–PE",
+  description: "Typisk brukt for automatisk utkobling i TN. Basert på Zs og 0,95 · U_0.",
+  baseExpression: "I_k1,min = 0.95 · U_0 / Z_s",
+  variables: [
+    { id: "u0", symbol: "U_0", name: "Fasespenning", unit: "V" },
+    { id: "zs", symbol: "Z_s", name: "Total sløyfeimpedans", unit: "Ω" }
+  ],
+  variants: [
+    {
+      id: "solve_ik1min",
+      label: "Løs for minste Ik1",
+      expression: "I_k1_min = (0.95 * U_0) / Z_s"
+    }
+  ]
+},
+  {
+  id: "ik2",
+  familyId: "ik2",
+  categoryId: "shortcircuit",
+  modeLabel: "Ik2",
+  name: "Tofase kortslutningsstrøm",
+  description: "Fase–fase kortslutningsstrøm uten nøytral.",
+  baseExpression: "I_k2 = U_n / (√3 · Z_12)",
+  variables: [
+    { id: "un", symbol: "U_n", name: "Merkespenning", unit: "V" },
+    { id: "z12", symbol: "Z_12", name: "Impedans fase–fase", unit: "Ω" }
+  ],
+  variants: [
+    {
+      id: "solve_ik2",
+      label: "Løs for I_k2",
+      expression: "I_k2 = U_n / (sqrt(3) * Z_12)"
+    }
+  ]
+},
+  {
+  id: "ik_dynamisk",
+  familyId: "ik_dynamisk",
+  categoryId: "shortcircuit",
+  modeLabel: "Ikd",
+  name: "Dynamisk kortslutningsstrøm",
+  description: "Dynamisk kortslutningsstrøm basert på Ip og c = 2,5 (typisk).",
+  baseExpression: "I_kd = c · I_k3",
+  variables: [
+    { id: "ik3", symbol: "I_k3", name: "3-fase kortslutningsstrøm", unit: "A" },
+    { id: "c", symbol: "c", name: "Dynamisk faktor", unit: "–", description: "Typisk 2,0–2,5" }
+  ],
+  variants: [
+    {
+      id: "solve_ikd",
+      label: "Løs for I_kd",
+      expression: "I_kd = c * I_k3"
+    }
+  ]
+},
+  {
+  id: "ik3_transformer",
+  familyId: "ik3_transformer",
+  categoryId: "shortcircuit",
+  modeLabel: "Trafo – Ik3",
+  name: "3-fase kortslutningsstrøm fra transformator",
+  description: "Prospektiv 3-fase kortslutningsstrøm basert på Sn og uk%. Standardmetode i norske anlegg.",
+  baseExpression: "I_k3 = (100 · S_n) / (√3 · U_n · u_k%)",
+  variables: [
+    { id: "sn", symbol: "S_n", name: "Merkeytelse", unit: "VA", description: "Transformatorens merkekapasitet" },
+    { id: "un", symbol: "U_n", name: "Merkespenning", unit: "V", description: "Nominell spenning" },
+    { id: "uk", symbol: "u_k%", name: "Kortslutningsspenning", unit: "%", description: "Transformatorens uk-verdi" }
+  ],
+  variants: [
+    {
+      id: "solve_ik3",
+      label: "Løs for I_k3",
+      expression: "I_k3 = (100 * S_n) / (sqrt(3) * U_n * u_k)"
+    }
+  ]
+},
+
 
   /* =======================================================================
    * MOTORER OG GENERATORER
