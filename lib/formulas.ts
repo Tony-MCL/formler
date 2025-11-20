@@ -49,7 +49,13 @@ export const formulaCategories: FormulaCategory[] = [
     "Standardformler for spenningsfall i kabler etter NEK 400.",
   order:6
 },
-
+{
+  id: "motorstart",
+  title: "Motorstart",
+  description:
+    "Formler for startstrøm, spenningsfall ved start, Y/D start, mykstarter og frekvensomformer.",
+  order: 7
+},
 ];
 
 // Formler som skal være tilgjengelige i motoren, men IKKE vises som egne linjer i sidebaren
@@ -1216,6 +1222,133 @@ export const formulas: Formula[] = [
     ],
     tags: ["motorstart", "spenningsfall", "I_start, I_k3, ΔU"]
   },
+  /* =======================================================================
+   * MOTORSTART
+   * ======================================================================= */
+  {
+  id: "motor_start_current",
+  categoryId: "motorstart",
+  name: "Startstrøm – direkte start (DOL)",
+  description:
+    "Startstrøm ved direkte start (DOL) av asynkronmotor. Forholdstallet k varierer typisk mellom 4 og 8.",
+  baseExpression: "I_{start} = k · I_n",
+  variables: [
+    {
+      id: "k",
+      symbol: "k",
+      name: "Startstrømsfaktor",
+      unit: "",
+      description: "Typisk 4–8 for asynkronmotorer."
+    },
+    {
+      id: "I_n",
+      symbol: "I_n",
+      name: "Merkestrøm",
+      unit: "A"
+    },
+    {
+      id: "I_start",
+      symbol: "I_{start}",
+      name: "Startstrøm",
+      unit: "A"
+    }
+  ],
+  variants: [
+    {
+      id: "motor_startcalc_In",
+      label: "Løs for I_n",
+      solveFor: "I_n",
+      expression: "I_n = I_{start} / k"
+    },
+    {
+      id: "motor_startcalc_k",
+      label: "Løs for k",
+      solveFor: "k",
+      expression: "k = I_{start} / I_n"
+    }
+  ],
+  tags: ["motor, startstrøm, DOL"]
+},
+{
+  id: "motor_start_yd",
+  categoryId: "motorstart",
+  name: "Startstrøm – Y/D-start",
+  description:
+    "Startstrøm ved stjerne/trekant-start. Strømmen reduseres til 1/√3 av direkte start.",
+  baseExpression: "I_{start,YD} = I_{start,DOL} / √3",
+  variables: [
+    {
+      id: "I_start_dol",
+      symbol: "I_{start,DOL}",
+      name: "Startstrøm direkte start",
+      unit: "A"
+    },
+    {
+      id: "I_start_yd",
+      symbol: "I_{start,YD}",
+      name: "Startstrøm Y/D",
+      unit: "A"
+    }
+  ],
+  variants: [
+    {
+      id: "motor_start_yd_solve_dol",
+      label: "Løs for I_{start,DOL}",
+      solveFor: "I_start_dol",
+      expression: "I_{start,DOL} = I_{start,YD} · √3"
+    }
+  ],
+  tags: ["motor, y/d, stjerne/trekant"]
+},
+{
+  id: "motor_voltage_drop_single",
+  categoryId: "motorstart",
+  name: "Spenningsfall ved motorstart (1-fase)",
+  description:
+    "Spenningsfall under motorstart i enfase kurs. Bruker startstrøm og kabelens R/X.",
+  baseExpression: "ΔU = 2 · I_{start} · (R · cosφ + X · sinφ)",
+  variables: [
+    { id: "I_start", symbol: "I_{start}", name: "Startstrøm", unit: "A" },
+    { id: "R", symbol: "R", name: "Resistans", unit: "Ω" },
+    { id: "X", symbol: "X", name: "Reaktans", unit: "Ω" },
+    { id: "cosphi", symbol: "cos φ", name: "Effektfaktor", unit: "" },
+    { id: "sphi", symbol: "sin φ", name: "Reaktiv faktor", unit: "" },
+    { id: "dU", symbol: "ΔU", name: "Spenningsfall", unit: "V" }
+  ],
+  tags: ["spenningsfall, motorstart, enfase"]
+},
+{
+  id: "motor_voltage_drop_three",
+  categoryId: "motorstart",
+  name: "Spenningsfall ved motorstart (3-fase)",
+  description:
+    "Spenningsfall under motorstart i trefase kurs. Bruker startstrøm og kabelens R/X.",
+  baseExpression: "ΔU = √3 · I_{start} · (R · cosφ + X · sinφ)",
+  variables: [
+    { id: "I_start", symbol: "I_{start}", name: "Startstrøm", unit: "A" },
+    { id: "R", symbol: "R", name: "Resistans", unit: "Ω" },
+    { id: "X", symbol: "X", name: "Reaktans", unit: "Ω" },
+    { id: "cosphi", symbol: "cos φ", name: "Effektfaktor", unit: "" },
+    { id: "sphi", symbol: "sin φ", name: "Reaktiv faktor", unit: "" },
+    { id: "dU", symbol: "ΔU", name: "Spenningsfall", unit: "V" }
+  ],
+  tags: ["spenningsfall, motorstart, trefase"]
+},
+{
+  id: "motor_vfd_start_current",
+  categoryId: "motorstart",
+  name: "Startstrøm – frekvensomformer",
+  description:
+    "Typisk startstrøm ved bruk av frekvensomformer. Ligger vanligvis rundt 1.1–1.3 · I_n.",
+  baseExpression: "I_{start} = k · I_n",
+  variables: [
+    { id: "k", symbol: "k", name: "Startstrømsfaktor", unit: "", description: "Typisk 1.1–1.3." },
+    { id: "I_n", symbol: "I_n", name: "Merkestrøm", unit: "A" },
+    { id: "I_start", symbol: "I_{start}", name: "Startstrøm", unit: "A" }
+  ],
+  tags: ["motor, frekvensomformer, start"]
+},
+
   /* =======================================================================
    * KORTSLUTNING OG FEILSTRØM
    * (enkle NEK 400-nære uttrykk – c_min/c_max brukes som faktorer)
