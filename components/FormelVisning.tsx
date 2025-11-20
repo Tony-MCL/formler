@@ -1,3 +1,4 @@
+// components/FormelVisning.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -110,9 +111,11 @@ export default function FormelVisning({
   };
 
   const phaseLabel = formula?.modeLabel ?? formula?.name ?? "";
-  const isSinglePhase =
-    activeFormulaId === "power" ||
-    activeFormulaId === "single_phase_apparent";
+
+  // Datadrevet fargevalg basert på modeLabel (ikke hardkodet på id)
+  const isSinglePhaseMode = (formula?.modeLabel ?? "")
+    .toLowerCase()
+    .includes("1");
 
   const toggleFavorite = () => {
     if (typeof window === "undefined") return;
@@ -215,14 +218,14 @@ export default function FormelVisning({
                 paddingBlock: "0.2rem",
                 borderRadius: 999,
                 border: "1px solid var(--mcl-outline)",
-                background: isSinglePhase
-                  ? "var(--mcl-header, #e5c3a5)" // 1-fase: header-farge
-                  : "var(--mcl-brand)", // 3-fase: MCL-brand
-                color: isSinglePhase ? "#000" : "#fff",
+                background: isSinglePhaseMode
+                  ? "var(--mcl-header, #e5c3a5)" // modus merket som "1-fase"
+                  : "var(--mcl-brand)", // f.eks. "3-fase" eller andre
+                color: isSinglePhaseMode ? "#000" : "#fff",
                 fontWeight: 600
               }}
             >
-              {isSinglePhase ? "1-fase" : "3-fase"}
+              {formula.modeLabel ?? "Modus"}
             </button>
           )}
 
