@@ -250,6 +250,7 @@ a {
   margin-top: 0.25rem;
 }
 
+/* ⬇️ Viktig del: label + stjerne på samme linje og riktig farge */
 .sidebar-link {
   width: 100%;
   text-align: left;
@@ -259,9 +260,12 @@ a {
   border-radius: 8px;
   cursor: pointer;
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+  flex-direction: row;          /* RAD, ikke kolonne */
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
   transition: background 0.15s ease, color 0.15s ease;
+  color: var(--mcl-text);       /* Følg palett (lys/mørk) */
 }
 
 .sidebar-link:hover {
@@ -271,6 +275,7 @@ a {
 
 .sidebar-item-label {
   font-size: 0.9rem;
+  color: inherit;
 }
 
 .sidebar-item-hint {
@@ -704,15 +709,6 @@ a {
   }
 
   .calc-print-result-box {
-    margin-top: 0.8rem;
-    padding-top: 0.6rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.18);
-    font-size: 0.95rem;
-  }
 
-  .calc-print-raw {
-    margin-top: 0.15rem;
-    font-size: 0.85rem;
-    color: rgba(0, 0, 0, 0.65);
-  }
-}
+
+::contentReference[oaicite:0]{index=0}
