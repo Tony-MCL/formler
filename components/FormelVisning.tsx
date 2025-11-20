@@ -89,7 +89,7 @@ export default function FormelVisning({
         alt=""
         className="print-watermark"
       />
-      )
+      
       {/* Topp-rad: Hjem + PDF-knapp */}
       <div
         style={{
@@ -151,7 +151,7 @@ export default function FormelVisning({
                 : "var(--mcl-brand)",            // mørk MCL-brand for 3-fase
               color: isSinglePhase ? "#000" : "#fff",
               fontWeight: 600
-            }}
+            )}
       </div>
 
       {formula.description && (
