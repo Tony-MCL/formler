@@ -69,6 +69,12 @@ export const formulaCategories: FormulaCategory[] = [
   description: "Korreksjonsfaktorer og strømføringsevne i henhold til NEK 400.",
   order: 9
 },
+{
+  id: "earthing",
+  title: "Jording og beskyttelsesleder",
+  description: "Sløyfeimpedans, berøringsspenning og dimensjonering av PE/FE.",
+  order: 10
+},
 ];
 
 // Formler som skal være tilgjengelige i motoren, men IKKE vises som egne linjer i sidebaren
@@ -2536,8 +2542,191 @@ export const formulas: Formula[] = [
   ],
   tags: ["kabel", "strømføringsevne", "NEK 400", "korreksjonsfaktorer"]
 },
+/* =======================================================================
+   * NY KATEGORI
+   * ======================================================================= */
+{
+  id: "fault_loop_impedance",
+  categoryId: "earthing",
+  name: "Sløyfeimpedans – krav til utløsning",
+  shortName: "Z_s ≤ U_0 / I_a",
+  description:
+    "Kontroll av at automatisk utkobling skjer tidsnok (NEK 400-4-41): sløyfeimpedansen må være lav nok til å gi utløsningsstrøm I_a.",
+  baseExpression: "Z_s = U_0 / I_a",
+  variables: [
+    {
+      id: "Zs",
+      symbol: "Z_s",
+      name: "Sløyfeimpedans",
+      unit: "Ω",
+      role: "output",
+      description: "Total impedans i feilsløyfen fase–beskyttelsesleder."
+    },
+    {
+      id: "U0",
+      symbol: "U_0",
+      name: "Merkespenning mot jord",
+      unit: "V",
+      role: "input"
+    },
+    {
+      id: "Ia",
+      symbol: "I_a",
+      name: "Utløsningsstrøm for vern",
+      unit: "A",
+      role: "input",
+      description: "Strøm som sikring/vern må nå for å koble ut innen krav."
+    }
+  ],
+  variants: [
+    {
+      id: "fault_loop_impedance-Zs",
+      label: "Løs for Z_s",
+      solveFor: "Zs",
+      expression: "Zs = U0 / Ia"
+    },
+    {
+      id: "fault_loop_impedance-U0",
+      label: "Løs for U_0",
+      solveFor: "U0",
+      expression: "U0 = Zs * Ia"
+    },
+    {
+      id: "fault_loop_impedance-Ia",
+      label: "Løs for I_a",
+      solveFor: "Ia",
+      expression: "Ia = U0 / Zs"
+    }
+  ],
+  tags: ["Z_s", "U_0", "I_a", "sløyfeimpedans", "utkobling", "NEK 400"]
+},
+{
+  id: "touch_voltage",
+  categoryId: "earthing",
+  name: "Berøringsspenning ved jordfeil",
+  shortName: "U_c = I_d · R_A",
+  description:
+    "Enkel vurdering av berøringsspenning ved jordfeil. Brukes sammen med grenseverdier i NEK 400-4-41.",
+  baseExpression: "U_c = I_d * R_A",
+  variables: [
+    {
+      id: "Uc",
+      symbol: "U_c",
+      name: "Berøringsspenning",
+      unit: "V",
+      role: "output",
+      description: "Spenning som kan opptre mellom utsatt del og jord."
+    },
+    {
+      id: "Id",
+      symbol: "I_d",
+      name: "Feilstrøm mot jord",
+      unit: "A",
+      role: "input",
+      description: "Strøm ved jordfeil (avhenger av systemtype og impedanser)."
+    },
+    {
+      id: "RA",
+      symbol: "R_A",
+      name: "Jordmotstand",
+      unit: "Ω",
+      role: "input",
+      description: "Sum av jordelektrode og beskyttelsesleder frem til utsatt del."
+    }
+  ],
+  variants: [
+    {
+      id: "touch_voltage-Uc",
+      label: "Løs for U_c",
+      solveFor: "Uc",
+      expression: "Uc = Id * RA"
+    },
+    {
+      id: "touch_voltage-Id",
+      label: "Løs for I_d",
+      solveFor: "Id",
+      expression: "Id = Uc / RA"
+    },
+    {
+      id: "touch_voltage-RA",
+      label: "Løs for R_A",
+      solveFor: "RA",
+      expression: "RA = Uc / Id"
+    }
+  ],
+  tags: ["U_c", "I_d", "R_A", "berøringsspenning", "jordfeil"]
+},
+{
+  id: "protective_conductor_sizing",
+  categoryId: "earthing",
+  name: "Dimensjonering av beskyttelsesleder",
+  shortName: "S = I · √t / k",
+  description:
+    "Adiabatisk formel for minste tverrsnitt på PE/FE basert på feilstrøm, utkoblingstid og materialkonstant k (NEK 400-5-54).",
+  baseExpression: "S = I * √t / k",
+  variables: [
+    {
+      id: "S",
+      symbol: "S",
+      name: "Tverrsnitt beskyttelsesleder",
+      unit: "mm²",
+      role: "output",
+      description: "Minste nødvendige tverrsnitt for PE/FE."
+    },
+    {
+      id: "I",
+      symbol: "I",
+      name: "Feilstrøm",
+      unit: "A",
+      role: "input",
+      description: "Forventet feilstrøm gjennom lederen."
+    },
+    {
+      id: "t",
+      symbol: "t",
+      name: "Utkoblingstid",
+      unit: "s",
+      role: "input"
+    },
+    {
+      id: "k",
+      symbol: "k",
+      name: "Materialkonstant k",
+      unit: "A·s^0.5/mm²",
+      role: "input",
+      description: "Avhenger av materiale og isolasjon (se NEK 400-5-54 tabeller)."
+    }
+  ],
+  variants: [
+    {
+      id: "protective_conductor_sizing-S",
+      label: "Løs for S",
+      solveFor: "S",
+      expression: "S = I * (t ** 0.5) / k"
+    },
+    {
+      id: "protective_conductor_sizing-I",
+      label: "Løs for I",
+      solveFor: "I",
+      expression: "I = S * k / (t ** 0.5)"
+    },
+    {
+      id: "protective_conductor_sizing-t",
+      label: "Løs for t",
+      solveFor: "t",
+      expression: "t = (S * k / I) ** 2"
+    },
+    {
+      id: "protective_conductor_sizing-k",
+      label: "Løs for k",
+      solveFor: "k",
+      expression: "k = I * (t ** 0.5) / S"
+    }
+  ],
+  tags: ["PE", "FE", "kabeltverrsnitt", "adiabatisk", "NEK 400-5-54"]
+},
 
-
+  
   /* =======================================================================
    * NY KATEGORI
    * ======================================================================= */
