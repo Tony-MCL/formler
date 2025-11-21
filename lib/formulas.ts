@@ -75,6 +75,13 @@ export const formulaCategories: FormulaCategory[] = [
   description: "Sløyfeimpedans, berøringsspenning og dimensjonering av PE/FE.",
   order: 10
 },
+{
+  id: "transformers",
+  title: "Transformatorer",
+  description: "Grunnleggende transformatorberegninger, kortslutning og tapsvurderinger.",
+  order: 11
+},
+
 ];
 
 // Formler som skal være tilgjengelige i motoren, men IKKE vises som egne linjer i sidebaren
@@ -2725,8 +2732,74 @@ export const formulas: Formula[] = [
   ],
   tags: ["PE", "FE", "kabeltverrsnitt", "adiabatisk", "NEK 400-5-54"]
 },
+/* =======================================================================
+   * TRANSFORMATORER
+   * ======================================================================= */
+  {
+  id: "trafo_short_circuit_current",
+  categoryId: "transformers",
+  name: "Kortslutningsstrøm fra transformator",
+  shortName: "Iₖ₃ = 100·Sₙ / (√3·Uₙ·uₖ%)",
+  description:
+    "Prospektiv 3-fase kortslutningsstrøm på transformatorens sekundærside basert på ytelse Sₙ, spenningsnivå Uₙ og kortslutningsspenning uₖ%.",
+  baseExpression: "I_k3 = (100 * S_n) / (√3 * U_n * u_k_pct)",
+  variables: [
+    { id: "Ik3", symbol: "I_k3", name: "3-fase kortslutningsstrøm", unit: "A", role: "output" },
+    { id: "Sn", symbol: "S_n", name: "Merkeytelse", unit: "VA", role: "input" },
+    { id: "Un", symbol: "U_n", name: "Merkespenning", unit: "V", role: "input" },
+    { id: "ukpct", symbol: "u_k%", name: "Kortslutningsspenning", unit: "%", role: "input" }
+  ],
+  variants: [
+    { id: "trafo_sc-Ik3", label: "Løs for I_k3", solveFor: "Ik3", expression: "Ik3 = (100 * Sn) / (1.732 * Un * ukpct)" },
+    { id: "trafo_sc-Sn", label: "Løs for S_n", solveFor: "Sn", expression: "Sn = (Ik3 * 1.732 * Un * ukpct) / 100" },
+    { id: "trafo_sc-Un", label: "Løs for U_n", solveFor: "Un", expression: "Un = (100 * Sn) / (1.732 * Ik3 * ukpct)" },
+    { id: "trafo_sc-ukpct", label: "Løs for u_k%", solveFor: "ukpct", expression: "ukpct = (100 * Sn) / (1.732 * Un * Ik3)" }
+  ],
+  tags: ["Ik", "kortslutning", "trafo", "u_k%", "NEK"]
+},
+{
+  id: "trafo_no_load_loss",
+  categoryId: "transformers",
+  name: "Tomgangstap i transformator",
+  shortName: "P₀ = Uₙ · I₀ · cosφ₀",
+  description:
+    "Tomgangstap beregnes vanligvis ved merkespenningsprøve og er i hovedsak avhengig av jernkvalitet og magnetisering.",
+  baseExpression: "P_0 = U_n * I_0 * cosphi_0",
+  variables: [
+    { id: "P0", symbol: "P_0", name: "Tomgangstap", unit: "W", role: "output" },
+    { id: "Un", symbol: "U_n", name: "Spenning", unit: "V", role: "input" },
+    { id: "I0", symbol: "I_0", name: "Tomgangsstrøm", unit: "A", role: "input" },
+    { id: "cosphi0", symbol: "cosφ_0", name: "Tomgang cos φ", unit: undefined, role: "input" }
+  ],
+  variants: [
+    { id: "trafo_nl-P0", label: "Løs for P₀", solveFor: "P0", expression: "P0 = Un * I0 * cosphi0" },
+    { id: "trafo_nl-Un", label: "Løs for Uₙ", solveFor: "Un", expression: "Un = P0 / (I0 * cosphi0)" },
+    { id: "trafo_nl-I0", label: "Løs for I₀", solveFor: "I0", expression: "I0 = P0 / (Un * cosphi0)" },
+    { id: "trafo_nl-cosphi0", label: "Løs for cosφ₀", solveFor: "cosphi0", expression: "cosphi0 = P0 / (Un * I0)" }
+  ],
+  tags: ["trafo", "tomgangstap", "jern", "effekt"]
+},
+{
+  id: "trafo_load_loss",
+  categoryId: "transformers",
+  name: "Lasttap i transformator",
+  shortName: "Pₖ = Iₙ² · Rₜ",
+  description:
+    "Lasttap (kobbertap) som oppstår i viklingene ved merkestrøm. Verdiene refererer normalt til 75°C viklingstemperatur.",
+  baseExpression: "P_k = I_n^2 * R_t",
+  variables: [
+    { id: "Pk", symbol: "P_k", name: "Lasttap", unit: "W", role: "output" },
+    { id: "In", symbol: "I_n", name: "Merkestrøm", unit: "A", role: "input" },
+    { id: "Rt", symbol: "R_t", name: "Total viklingsresistans", unit: "Ω", role: "input" }
+  ],
+  variants: [
+    { id: "trafo_ll-Pk", label: "Løs for Pₖ", solveFor: "Pk", expression: "Pk = In ** 2 * Rt" },
+    { id: "trafo_ll-In", label: "Løs for Iₙ", solveFor: "In", expression: "In = (Pk / Rt) ** 0.5" },
+    { id: "trafo_ll-Rt", label: "Løs for Rₜ", solveFor: "Rt", expression: "Rt = Pk / (In ** 2)" }
+  ],
+  tags: ["trafo", "kobbertap", "lasttap", "effekt"]
+},
 
-  
   /* =======================================================================
    * NY KATEGORI
    * ======================================================================= */
