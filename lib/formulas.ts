@@ -81,6 +81,62 @@ export const formulaCategories: FormulaCategory[] = [
   description: "Grunnleggende transformatorberegninger, kortslutning og tapsvurderinger.",
   order: 11
 },
+  {
+    id: "solar_pv",
+    title: "Solceller (PV)",
+    description:
+      "Formler for dimensjonering og vurdering av solcelleanlegg (PV).",
+    order: 12
+  },
+  {
+    id: "batteries",
+    title: "Batterisystemer",
+    description:
+      "Energiinnhold, C-rate, utlading og autonomitid for batterisystemer.",
+    order: 13
+  },
+  {
+    id: "ups_backup",
+    title: "UPS og reservekraft",
+    description:
+      "Autonomitid, batteridimensjonering og generatorstrømmer for reservekraft.",
+    order: 14
+  },
+  {
+    id: "emc",
+    title: "EMC",
+    description:
+      "Enkle formler for skjerming, koblingsfaktorer og støyreduksjon.",
+    order: 15
+  },
+  {
+    id: "sound_level",
+    title: "Lydnivå / decibel",
+    description:
+      "Sammenhenger for lydnivå i dB, effektnivå og summering av støykilder.",
+    order: 16
+  },
+  {
+    id: "thermal",
+    title: "Termiske beregninger",
+    description:
+      "Varmeutvikling, temperaturøkning og termisk dimensjonering.",
+    order: 17
+  },
+  {
+    id: "efficiency_losses",
+    title: "Virkningsgrad og tap",
+    description:
+      "Utvidede sammenhenger for virkningsgrad, tap og energiforbruk.",
+    order: 18
+  },
+  {
+    id: "windpower",
+    title: "Vindkraft",
+    description:
+      "Grunnleggende formler for vindenergi, tipphastighetsforhold og kapasitetsfaktor.",
+    order: 19
+  },
 
 ];
 
@@ -2799,6 +2855,1435 @@ export const formulas: Formula[] = [
   ],
   tags: ["trafo", "kobbertap", "lasttap", "effekt"]
 },
+  /* =======================================================================
+   * SOLCELLER (PV)
+   * ======================================================================= */
+  {
+    id: "pv_dc_power",
+    categoryId: "solar_pv",
+    name: "DC-effekt fra solcellefelt",
+    shortName: "P_DC = U_DC · I_DC",
+    description:
+      "Øyeblikkelig DC-effekt fra et solcellefelt basert på DC-spenning og DC-strøm.",
+    baseExpression: "P_DC = U_DC * I_DC",
+    variables: [
+      {
+        id: "P_DC",
+        symbol: "P_DC",
+        name: "DC-effekt",
+        unit: "W",
+        role: "output",
+        description: "Levert DC-effekt fra solcellefeltet."
+      },
+      {
+        id: "U_DC",
+        symbol: "U_DC",
+        name: "DC-spenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "I_DC",
+        symbol: "I_DC",
+        name: "DC-strøm",
+        unit: "A",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "pv_dc_power-P",
+        label: "Løs for P_DC",
+        solveFor: "P_DC",
+        expression: "P_DC = U_DC * I_DC"
+      },
+      {
+        id: "pv_dc_power-U",
+        label: "Løs for U_DC",
+        solveFor: "U_DC",
+        expression: "U_DC = P_DC / I_DC"
+      },
+      {
+        id: "pv_dc_power-I",
+        label: "Løs for I_DC",
+        solveFor: "I_DC",
+        expression: "I_DC = P_DC / U_DC"
+      }
+    ],
+    tags: ["solcelle", "PV", "DC-effekt"]
+  },
+  {
+    id: "pv_string_voltage",
+    categoryId: "solar_pv",
+    name: "Strengspenning for solceller",
+    shortName: "U_string ≈ n_mod · U_mpp",
+    description:
+      "Tilnærmet strengspenning ved MPP basert på antall moduler i serie og modulens MPP-spenning.",
+    baseExpression: "U_string = n_mod * U_mpp",
+    variables: [
+      {
+        id: "U_string",
+        symbol: "U_string",
+        name: "Strengspenning",
+        unit: "V",
+        role: "output"
+      },
+      {
+        id: "n_mod",
+        symbol: "n_mod",
+        name: "Antall moduler i serie",
+        unit: "–",
+        role: "input"
+      },
+      {
+        id: "U_mpp",
+        symbol: "U_mpp",
+        name: "MPP-spenning per modul",
+        unit: "V",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "pv_string_voltage-Ustring",
+        label: "Løs for U_string",
+        solveFor: "U_string",
+        expression: "U_string = n_mod * U_mpp"
+      },
+      {
+        id: "pv_string_voltage-nmod",
+        label: "Løs for n_mod",
+        solveFor: "n_mod",
+        expression: "n_mod = U_string / U_mpp"
+      },
+      {
+        id: "pv_string_voltage-Umpp",
+        label: "Løs for U_mpp",
+        solveFor: "U_mpp",
+        expression: "U_mpp = U_string / n_mod"
+      }
+    ],
+    tags: ["streng", "U_string", "U_mpp"]
+  },
+  {
+    id: "pv_specific_yield",
+    categoryId: "solar_pv",
+    name: "Spesifikt utbytte for PV-anlegg",
+    shortName: "Y_f = E_år / P_inst",
+    description:
+      "Spesifikt energiproduksjon (kWh/kWp) per år. Nyttig for å sammenligne ulike anlegg og lokasjoner.",
+    baseExpression: "Y_f = E_year / P_inst",
+    variables: [
+      {
+        id: "Y_f",
+        symbol: "Y_f",
+        name: "Spesifikt utbytte",
+        unit: "kWh/kWp",
+        role: "output"
+      },
+      {
+        id: "E_year",
+        symbol: "E_år",
+        name: "Årsproduksjon",
+        unit: "kWh",
+        role: "input"
+      },
+      {
+        id: "P_inst",
+        symbol: "P_inst",
+        name: "Installert effekt (STC)",
+        unit: "kWp",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "pv_specific_yield-Yf",
+        label: "Løs for Y_f",
+        solveFor: "Y_f",
+        expression: "Y_f = E_year / P_inst"
+      },
+      {
+        id: "pv_specific_yield-Eyear",
+        label: "Løs for E_år",
+        solveFor: "E_year",
+        expression: "E_year = Y_f * P_inst"
+      },
+      {
+        id: "pv_specific_yield-Pinst",
+        label: "Løs for P_inst",
+        solveFor: "P_inst",
+        expression: "P_inst = E_year / Y_f"
+      }
+    ],
+    tags: ["Y_f", "kWh/kWp", "PV"]
+  },
+  {
+    id: "pv_performance_ratio",
+    categoryId: "solar_pv",
+    name: "Performance Ratio (PR) for PV-anlegg",
+    shortName: "PR = Y_f / Y_ref",
+    description:
+      "Performance Ratio (PR) som uttrykk for systemets samlede tap og effektivitet sammenlignet med referanseproduksjon.",
+    baseExpression: "PR = Y_f / Y_ref",
+    variables: [
+      {
+        id: "PR",
+        symbol: "PR",
+        name: "Performance Ratio",
+        unit: "–",
+        role: "output"
+      },
+      {
+        id: "Y_f",
+        symbol: "Y_f",
+        name: "Spesifikt utbytte",
+        unit: "kWh/kWp",
+        role: "input"
+      },
+      {
+        id: "Y_ref",
+        symbol: "Y_ref",
+        name: "Referanseutbytte",
+        unit: "kWh/kWp",
+        role: "input",
+        description:
+          "Teoretisk eller modellert energiproduksjon for gitt lokasjon."
+      }
+    ],
+    variants: [
+      {
+        id: "pv_pr-PR",
+        label: "Løs for PR",
+        solveFor: "PR",
+        expression: "PR = Y_f / Y_ref"
+      },
+      {
+        id: "pv_pr-Yf",
+        label: "Løs for Y_f",
+        solveFor: "Y_f",
+        expression: "Y_f = PR * Y_ref"
+      },
+      {
+        id: "pv_pr-Yref",
+        label: "Løs for Y_ref",
+        solveFor: "Y_ref",
+        expression: "Y_ref = Y_f / PR"
+      }
+    ],
+    tags: ["PR", "performance ratio", "PV"]
+  },
+
+  /* =======================================================================
+   * BATTERISYSTEMER
+   * ======================================================================= */
+  {
+    id: "battery_energy_kwh",
+    categoryId: "batteries",
+    name: "Energiinnhold i batteri",
+    shortName: "E_kWh = U_n · C_Ah / 1000",
+    description:
+      "Tilnærmet energiinnhold i et batteri basert på merkesspenning og kapasitet i Ah.",
+    baseExpression: "E_kWh = U_n * C_Ah / 1000",
+    variables: [
+      {
+        id: "E_kWh",
+        symbol: "E_kWh",
+        name: "Energiinnhold",
+        unit: "kWh",
+        role: "output"
+      },
+      {
+        id: "U_n",
+        symbol: "U_n",
+        name: "Merkespenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "C_Ah",
+        symbol: "C_Ah",
+        name: "Kapasitet",
+        unit: "Ah",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "battery_energy-E",
+        label: "Løs for E_kWh",
+        solveFor: "E_kWh",
+        expression: "E_kWh = U_n * C_Ah / 1000"
+      },
+      {
+        id: "battery_energy-Un",
+        label: "Løs for U_n",
+        solveFor: "U_n",
+        expression: "U_n = (E_kWh * 1000) / C_Ah"
+      },
+      {
+        id: "battery_energy-C",
+        label: "Løs for C_Ah",
+        solveFor: "C_Ah",
+        expression: "C_Ah = (E_kWh * 1000) / U_n"
+      }
+    ],
+    tags: ["batteri", "energi", "kWh"]
+  },
+  {
+    id: "battery_runtime_hours",
+    categoryId: "batteries",
+    name: "Autonomitid fra batteribank",
+    shortName: "t = E_kWh · η / P_last",
+    description:
+      "Omtrentlig autonomitid for et batterisystem basert på tilgjengelig energi, virkningsgrad og last.",
+    baseExpression: "t_h = E_kWh * eta / P_load",
+    variables: [
+      {
+        id: "t_h",
+        symbol: "t",
+        name: "Autonomitid",
+        unit: "h",
+        role: "output"
+      },
+      {
+        id: "E_kWh",
+        symbol: "E_kWh",
+        name: "Tilgjengelig energi",
+        unit: "kWh",
+        role: "input"
+      },
+      {
+        id: "P_load",
+        symbol: "P_last",
+        name: "Last",
+        unit: "kW",
+        role: "input"
+      },
+      {
+        id: "eta",
+        symbol: "η",
+        name: "Virkningsgrad",
+        unit: "–",
+        role: "input",
+        description: "Samlet virkningsgrad for omformer/batteri (0–1)."
+      }
+    ],
+    variants: [
+      {
+        id: "battery_runtime-th",
+        label: "Løs for t",
+        solveFor: "t_h",
+        expression: "t_h = E_kWh * eta / P_load"
+      },
+      {
+        id: "battery_runtime-E",
+        label: "Løs for E_kWh",
+        solveFor: "E_kWh",
+        expression: "E_kWh = t_h * P_load / eta"
+      },
+      {
+        id: "battery_runtime-P",
+        label: "Løs for P_last",
+        solveFor: "P_load",
+        expression: "P_load = E_kWh * eta / t_h"
+      }
+    ],
+    tags: ["autonomitid", "batteri", "UPS"]
+  },
+  {
+    id: "battery_c_rate",
+    categoryId: "batteries",
+    name: "C-rate for batteri",
+    shortName: "C-rate = I / C_n",
+    description:
+      "C-rate som uttrykk for hvor hardt et batteri belastes i forhold til nominell kapasitet.",
+    baseExpression: "C_rate = I / C_n",
+    variables: [
+      {
+        id: "C_rate",
+        symbol: "C-rate",
+        name: "C-rate",
+        unit: "–",
+        role: "output"
+      },
+      {
+        id: "I",
+        symbol: "I",
+        name: "Strøm",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "C_n",
+        symbol: "C_n",
+        name: "Nominell kapasitet",
+        unit: "Ah",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "battery_c_rate-Crate",
+        label: "Løs for C-rate",
+        solveFor: "C_rate",
+        expression: "C_rate = I / C_n"
+      },
+      {
+        id: "battery_c_rate-I",
+        label: "Løs for I",
+        solveFor: "I",
+        expression: "I = C_rate * C_n"
+      },
+      {
+        id: "battery_c_rate-Cn",
+        label: "Løs for C_n",
+        solveFor: "C_n",
+        expression: "C_n = I / C_rate"
+      }
+    ],
+    tags: ["batteri", "C-rate"]
+  },
+  {
+    id: "battery_dod",
+    categoryId: "batteries",
+    name: "Utlading (Depth of Discharge)",
+    shortName: "DOD_% = Q_ut / Q_n · 100",
+    description:
+      "Dybde på utlading (Depth of Discharge) i prosent av nominell kapasitet.",
+    baseExpression: "DOD_percent = Q_out / Q_n * 100",
+    variables: [
+      {
+        id: "DOD_percent",
+        symbol: "DOD_%",
+        name: "Utlading (DOD)",
+        unit: "%",
+        role: "output"
+      },
+      {
+        id: "Q_out",
+        symbol: "Q_ut",
+        name: "Avgitt kapasitet",
+        unit: "Ah",
+        role: "input"
+      },
+      {
+        id: "Q_n",
+        symbol: "Q_n",
+        name: "Nominell kapasitet",
+        unit: "Ah",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "battery_dod-dod",
+        label: "Løs for DOD_%",
+        solveFor: "DOD_percent",
+        expression: "DOD_percent = Q_out * 100 / Q_n"
+      },
+      {
+        id: "battery_dod-Qout",
+        label: "Løs for Q_ut",
+        solveFor: "Q_out",
+        expression: "Q_out = DOD_percent * Q_n / 100"
+      },
+      {
+        id: "battery_dod-Qn",
+        label: "Løs for Q_n",
+        solveFor: "Q_n",
+        expression: "Q_n = Q_out * 100 / DOD_percent"
+      }
+    ],
+    tags: ["batteri", "DOD", "utlading"]
+  },
+
+  /* =======================================================================
+   * UPS OG RESERVEKRAFT
+   * ======================================================================= */
+  {
+    id: "ups_autonomy_time",
+    categoryId: "ups_backup",
+    name: "Autonomitid for UPS",
+    shortName: "t = U_n · C_Ah · η / P_last",
+    description:
+      "Omtrentlig autonomitid for en UPS basert på DC-systems­penning, batterikapasitet, virkningsgrad og last.",
+    baseExpression: "t_h = U_n * C_Ah * eta / (P_load * 1000)",
+    variables: [
+      {
+        id: "t_h",
+        symbol: "t",
+        name: "Autonomitid",
+        unit: "h",
+        role: "output"
+      },
+      {
+        id: "U_n",
+        symbol: "U_n",
+        name: "DC-systemspenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "C_Ah",
+        symbol: "C_Ah",
+        name: "Batterikapasitet",
+        unit: "Ah",
+        role: "input"
+      },
+      {
+        id: "P_load",
+        symbol: "P_last",
+        name: "Last",
+        unit: "kW",
+        role: "input"
+      },
+      {
+        id: "eta",
+        symbol: "η",
+        name: "Virkningsgrad",
+        unit: "–",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "ups_autonomy-th",
+        label: "Løs for t",
+        solveFor: "t_h",
+        expression: "t_h = (U_n * C_Ah * eta) / (P_load * 1000)"
+      },
+      {
+        id: "ups_autonomy-C",
+        label: "Løs for C_Ah",
+        solveFor: "C_Ah",
+        expression: "C_Ah = (t_h * P_load * 1000) / (U_n * eta)"
+      },
+      {
+        id: "ups_autonomy-P",
+        label: "Løs for P_last",
+        solveFor: "P_load",
+        expression: "P_load = (U_n * C_Ah * eta) / (t_h * 1000)"
+      }
+    ],
+    tags: ["UPS", "autonomitid", "batteri"]
+  },
+  {
+    id: "ups_required_capacity",
+    categoryId: "ups_backup",
+    name: "Nødvendig batterikapasitet for UPS",
+    shortName: "C_Ah = P_last · t · 1000 / (U_n · η)",
+    description:
+      "Dimensjonering av batterikapasitet for ønsket autonomitid og last.",
+    baseExpression: "C_Ah = P_load * t_h * 1000 / (U_n * eta)",
+    variables: [
+      {
+        id: "C_Ah",
+        symbol: "C_Ah",
+        name: "Kapasitet",
+        unit: "Ah",
+        role: "output"
+      },
+      {
+        id: "P_load",
+        symbol: "P_last",
+        name: "Last",
+        unit: "kW",
+        role: "input"
+      },
+      {
+        id: "t_h",
+        symbol: "t",
+        name: "Autonomitid",
+        unit: "h",
+        role: "input"
+      },
+      {
+        id: "U_n",
+        symbol: "U_n",
+        name: "DC-systemspenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "eta",
+        symbol: "η",
+        name: "Virkningsgrad",
+        unit: "–",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "ups_capacity-C",
+        label: "Løs for C_Ah",
+        solveFor: "C_Ah",
+        expression: "C_Ah = P_load * t_h * 1000 / (U_n * eta)"
+      },
+      {
+        id: "ups_capacity-P",
+        label: "Løs for P_last",
+        solveFor: "P_load",
+        expression: "P_load = C_Ah * U_n * eta / (t_h * 1000)"
+      },
+      {
+        id: "ups_capacity-t",
+        label: "Løs for t",
+        solveFor: "t_h",
+        expression: "t_h = C_Ah * U_n * eta / (P_load * 1000)"
+      }
+    ],
+    tags: ["UPS", "batteri", "dimensjonering"]
+  },
+  {
+    id: "genset_current_three_phase",
+    categoryId: "ups_backup",
+    name: "Generatorstrøm fra aktiv effekt",
+    shortName: "I = P / (√3 · U_L · cosφ)",
+    description:
+      "Trefasestrøm fra en generator basert på levert effekt, spenning og effektfaktor.",
+    baseExpression: "I = P_kW * 1000 / (1.732 * U_L * cosphi)",
+    variables: [
+      {
+        id: "I",
+        symbol: "I",
+        name: "Linjestrøm",
+        unit: "A",
+        role: "output"
+      },
+      {
+        id: "P_kW",
+        symbol: "P",
+        name: "Aktiv effekt",
+        unit: "kW",
+        role: "input"
+      },
+      {
+        id: "U_L",
+        symbol: "U_L",
+        name: "Linjespenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "cosphi",
+        symbol: "cosφ",
+        name: "Effektfaktor",
+        unit: "–",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "genset_current-I",
+        label: "Løs for I",
+        solveFor: "I",
+        expression: "I = P_kW * 1000 / (1.732 * U_L * cosphi)"
+      },
+      {
+        id: "genset_current-P",
+        label: "Løs for P",
+        solveFor: "P_kW",
+        expression: "P_kW = I * 1.732 * U_L * cosphi / 1000"
+      }
+    ],
+    tags: ["reservekraft", "generator", "trefase"]
+  },
+
+  /* =======================================================================
+   * EMC
+   * ======================================================================= */
+  {
+    id: "emc_shielding_effectiveness",
+    categoryId: "emc",
+    name: "Skjermingseffektivitet fra nivåforskjell",
+    shortName: "SE = L_før − L_etter",
+    description:
+      "Enkel skjermingseffektivitet i dB basert på forskjell i felt- eller spenningnivå før og etter skjerm.",
+    baseExpression: "SE_dB = L_before - L_after",
+    variables: [
+      {
+        id: "SE_dB",
+        symbol: "SE",
+        name: "Skjermingseffektivitet",
+        unit: "dB",
+        role: "output"
+      },
+      {
+        id: "L_before",
+        symbol: "L_før",
+        name: "Nivå før skjerm",
+        unit: "dB",
+        role: "input"
+      },
+      {
+        id: "L_after",
+        symbol: "L_etter",
+        name: "Nivå etter skjerm",
+        unit: "dB",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "emc_shield-SE",
+        label: "Løs for SE",
+        solveFor: "SE_dB",
+        expression: "SE_dB = L_before - L_after"
+      },
+      {
+        id: "emc_shield-Lbefore",
+        label: "Løs for L_før",
+        solveFor: "L_before",
+        expression: "L_before = SE_dB + L_after"
+      },
+      {
+        id: "emc_shield-Lafter",
+        label: "Løs for L_etter",
+        solveFor: "L_after",
+        expression: "L_after = L_before - SE_dB"
+      }
+    ],
+    tags: ["EMC", "skjerming", "dB"]
+  },
+  {
+    id: "emc_coupling_factor",
+    categoryId: "emc",
+    name: "Koblingsfaktor mellom kretser",
+    shortName: "k = U_ind / U_kilde",
+    description:
+      "Enkel koblingsfaktor som uttrykker hvor stor andel av kildeamplituden som kobles over til en følsom krets.",
+    baseExpression: "k = U_ind / U_src",
+    variables: [
+      {
+        id: "k",
+        symbol: "k",
+        name: "Koblingsfaktor",
+        unit: "–",
+        role: "output"
+      },
+      {
+        id: "U_ind",
+        symbol: "U_ind",
+        name: "Indusert spenning",
+        unit: "V",
+        role: "input"
+      },
+      {
+        id: "U_src",
+        symbol: "U_kilde",
+        name: "Kildespenning",
+        unit: "V",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "emc_coupling-k",
+        label: "Løs for k",
+        solveFor: "k",
+        expression: "k = U_ind / U_src"
+      },
+      {
+        id: "emc_coupling-Uind",
+        label: "Løs for U_ind",
+        solveFor: "U_ind",
+        expression: "U_ind = k * U_src"
+      },
+      {
+        id: "emc_coupling-Usrc",
+        label: "Løs for U_kilde",
+        solveFor: "U_src",
+        expression: "U_src = U_ind / k"
+      }
+    ],
+    tags: ["EMC", "kobling", "støy"]
+  },
+  {
+    id: "emc_filter_attenuation",
+    categoryId: "emc",
+    name: "Demping i EMC-filter",
+    shortName: "A = L_inn − L_ut",
+    description:
+      "Demping i dB fra et filter basert på inn- og utgangsnivå i dB. Kan være spenning-, strøm- eller effektnivå.",
+    baseExpression: "A_dB = L_in - L_out",
+    variables: [
+      {
+        id: "A_dB",
+        symbol: "A",
+        name: "Demping",
+        unit: "dB",
+        role: "output"
+      },
+      {
+        id: "L_in",
+        symbol: "L_inn",
+        name: "Nivå inn",
+        unit: "dB",
+        role: "input"
+      },
+      {
+        id: "L_out",
+        symbol: "L_ut",
+        name: "Nivå ut",
+        unit: "dB",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "emc_filter-A",
+        label: "Løs for A",
+        solveFor: "A_dB",
+        expression: "A_dB = L_in - L_out"
+      },
+      {
+        id: "emc_filter-Lin",
+        label: "Løs for L_inn",
+        solveFor: "L_in",
+        expression: "L_in = A_dB + L_out"
+      },
+      {
+        id: "emc_filter-Lout",
+        label: "Løs for L_ut",
+        solveFor: "L_out",
+        expression: "L_out = L_in - A_dB"
+      }
+    ],
+    tags: ["EMC", "filter", "demping"]
+  },
+
+  /* =======================================================================
+   * LYDNIVÅ / DECIBEL
+   * (referanseformler – uten kalkulator-støtte foreløpig)
+   * ======================================================================= */
+  {
+    id: "sound_pressure_level",
+    categoryId: "sound_level",
+    name: "Lydtrykknivå",
+    shortName: "L_p = 20 · log10(p / p₀)",
+    description:
+      "Definisjon av lydtrykknivå i dB, der p₀ = 20 µPa er referanselydtrykk i luft.",
+    baseExpression: "L_p = 20 * log10(p / p0)",
+    variables: [
+      {
+        id: "L_p",
+        symbol: "L_p",
+        name: "Lydtrykknivå",
+        unit: "dB",
+        role: "output"
+      },
+      {
+        id: "p",
+        symbol: "p",
+        name: "Lydtrykk",
+        unit: "Pa",
+        role: "input"
+      },
+      {
+        id: "p0",
+        symbol: "p₀",
+        name: "Referanselydtrykk",
+        unit: "Pa",
+        role: "input",
+        description: "Normalt 20 µPa = 2e-5 Pa i luft."
+      }
+    ],
+    tags: ["lyd", "dB", "L_p"]
+  },
+  {
+    id: "sound_power_level",
+    categoryId: "sound_level",
+    name: "Lydkraftnivå",
+    shortName: "L_W = 10 · log10(P / P₀)",
+    description:
+      "Definisjon av lydkraftnivå i dB basert på forholdet mellom effekt og referanseeffekt.",
+    baseExpression: "L_W = 10 * log10(P / P0)",
+    variables: [
+      {
+        id: "L_W",
+        symbol: "L_W",
+        name: "Lydkraftnivå",
+        unit: "dB",
+        role: "output"
+      },
+      {
+        id: "P",
+        symbol: "P",
+        name: "Effekt",
+        unit: "W",
+        role: "input"
+      },
+      {
+        id: "P0",
+        symbol: "P₀",
+        name: "Referanseeffekt",
+        unit: "W",
+        role: "input",
+        description: "Typisk 1 pW = 1e-12 W."
+      }
+    ],
+    tags: ["lyd", "dB", "L_W"]
+  },
+  {
+    id: "sound_level_sum_two_sources",
+    categoryId: "sound_level",
+    name: "Summert lydnivå – to kilder",
+    shortName: "L_tot = 10 · log10(10^{L1/10} + 10^{L2/10})",
+    description:
+      "Summert lydnivå når to uavhengige støykilder med nivå L1 og L2 virker samtidig.",
+    baseExpression: "L_tot = 10 * log10(10^(L1/10) + 10^(L2/10))",
+    variables: [
+      {
+        id: "L_tot",
+        symbol: "L_tot",
+        name: "Summert lydnivå",
+        unit: "dB",
+        role: "output"
+      },
+      {
+        id: "L1",
+        symbol: "L1",
+        name: "Lydnivå kilde 1",
+        unit: "dB",
+        role: "input"
+      },
+      {
+        id: "L2",
+        symbol: "L2",
+        name: "Lydnivå kilde 2",
+        unit: "dB",
+        role: "input"
+      }
+    ],
+    tags: ["lyd", "dB", "summering"]
+  },
+
+  /* =======================================================================
+   * TERMISKE BEREGNINGER
+   * ======================================================================= */
+  {
+    id: "thermal_power_from_resistance",
+    categoryId: "thermal",
+    name: "Effekttap i leder (termisk)",
+    shortName: "P_tap = I² · R",
+    description:
+      "Effekttap i en leder eller komponent som gir varmeutvikling, basert på strøm og resistans.",
+    baseExpression: "P_tap = I * I * R",
+    variables: [
+      {
+        id: "P_tap",
+        symbol: "P_tap",
+        name: "Effekttap",
+        unit: "W",
+        role: "output"
+      },
+      {
+        id: "I",
+        symbol: "I",
+        name: "Strøm",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "R",
+        symbol: "R",
+        name: "Resistans",
+        unit: "Ω",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "thermal_loss-P",
+        label: "Løs for P_tap",
+        solveFor: "P_tap",
+        expression: "P_tap = I * I * R"
+      },
+      {
+        id: "thermal_loss-I",
+        label: "Løs for I",
+        solveFor: "I",
+        expression: "I = (P_tap / R) ** 0.5"
+      },
+      {
+        id: "thermal_loss-R",
+        label: "Løs for R",
+        solveFor: "R",
+        expression: "R = P_tap / (I * I)"
+      }
+    ],
+    tags: ["termisk", "P_tap", "I²R"]
+  },
+  {
+    id: "thermal_temperature_rise",
+    categoryId: "thermal",
+    name: "Temperaturøkning fra effekttap",
+    shortName: "ΔT = P_tap · R_th",
+    description:
+      "Enkel modell for temperaturøkning basert på effekttap og termisk motstand (K/W).",
+    baseExpression: "dT = P_tap * R_th",
+    variables: [
+      {
+        id: "dT",
+        symbol: "ΔT",
+        name: "Temperaturøkning",
+        unit: "K",
+        role: "output"
+      },
+      {
+        id: "P_tap",
+        symbol: "P_tap",
+        name: "Effekttap",
+        unit: "W",
+        role: "input"
+      },
+      {
+        id: "R_th",
+        symbol: "R_th",
+        name: "Termisk motstand",
+        unit: "K/W",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "thermal_dT",
+        label: "Løs for ΔT",
+        solveFor: "dT",
+        expression: "dT = P_tap * R_th"
+      },
+      {
+        id: "thermal_Rth",
+        label: "Løs for R_th",
+        solveFor: "R_th",
+        expression: "R_th = dT / P_tap"
+      }
+    ],
+    tags: ["temperatur", "termisk motstand"]
+  },
+  {
+    id: "thermal_equivalent_current",
+    categoryId: "thermal",
+    name: "Termisk ekvivalentstrøm (RMS over intervaller)",
+    shortName: "I_eq = √(Σ I_i² · t_i / Σ t_i)",
+    description:
+      "Termisk ekvivalentstrøm over flere lastintervaller, nyttig for vurdering mot I²t og strømføringsevne.",
+    baseExpression: "I_eq = ((I1*I1*t1 + I2*I2*t2) / (t1 + t2)) ** 0.5",
+    variables: [
+      {
+        id: "I_eq",
+        symbol: "I_eq",
+        name: "Ekvivalentstrøm",
+        unit: "A",
+        role: "output"
+      },
+      {
+        id: "I1",
+        symbol: "I1",
+        name: "Strøm intervall 1",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "t1",
+        symbol: "t1",
+        name: "Tid intervall 1",
+        unit: "s",
+        role: "input"
+      },
+      {
+        id: "I2",
+        symbol: "I2",
+        name: "Strøm intervall 2",
+        unit: "A",
+        role: "input"
+      },
+      {
+        id: "t2",
+        symbol: "t2",
+        name: "Tid intervall 2",
+        unit: "s",
+        role: "input"
+      }
+    ],
+    tags: ["I_eq", "termisk", "RMS"]
+  },
+
+  /* =======================================================================
+   * VIRKNINGSGRAD OG TAP
+   * ======================================================================= */
+  {
+    id: "efficiency_percent",
+    categoryId: "efficiency_losses",
+    name: "Virkningsgrad i prosent",
+    shortName: "η_% = P_ut / P_inn · 100",
+    description:
+      "Virkningsgrad uttrykt i prosent, basert på inn- og uteffekt.",
+    baseExpression: "eta_percent = P_out / P_in * 100",
+    variables: [
+      {
+        id: "eta_percent",
+        symbol: "η_%",
+        name: "Virkningsgrad",
+        unit: "%",
+        role: "output"
+      },
+      {
+        id: "P_out",
+        symbol: "P_ut",
+        name: "Uteffekt",
+        unit: "W",
+        role: "input"
+      },
+      {
+        id: "P_in",
+        symbol: "P_inn",
+        name: "Inneffekt",
+        unit: "W",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "eff_percent-eta",
+        label: "Løs for η_%",
+        solveFor: "eta_percent",
+        expression: "eta_percent = P_out * 100 / P_in"
+      },
+      {
+        id: "eff_percent-Pout",
+        label: "Løs for P_ut",
+        solveFor: "P_out",
+        expression: "P_out = eta_percent * P_in / 100"
+      },
+      {
+        id: "eff_percent-Pin",
+        label: "Løs for P_inn",
+        solveFor: "P_in",
+        expression: "P_in = P_out * 100 / eta_percent"
+      }
+    ],
+    tags: ["virkningsgrad", "η", "tap"]
+  },
+  {
+    id: "loss_power_difference",
+    categoryId: "efficiency_losses",
+    name: "Effekttap som differanse",
+    shortName: "P_tap = P_inn − P_ut",
+    description:
+      "Enkel sammenheng mellom inn-effekt, ut-effekt og effekttap i et system.",
+    baseExpression: "P_tap = P_in - P_out",
+    variables: [
+      {
+        id: "P_tap",
+        symbol: "P_tap",
+        name: "Effekttap",
+        unit: "W",
+        role: "output"
+      },
+      {
+        id: "P_in",
+        symbol: "P_inn",
+        name: "Inneffekt",
+        unit: "W",
+        role: "input"
+      },
+      {
+        id: "P_out",
+        symbol: "P_ut",
+        name: "Uteffekt",
+        unit: "W",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "loss_diff-Ptap",
+        label: "Løs for P_tap",
+        solveFor: "P_tap",
+        expression: "P_tap = P_in - P_out"
+      },
+      {
+        id: "loss_diff-Pin",
+        label: "Løs for P_inn",
+        solveFor: "P_in",
+        expression: "P_in = P_tap + P_out"
+      },
+      {
+        id: "loss_diff-Pout",
+        label: "Løs for P_ut",
+        solveFor: "P_out",
+        expression: "P_out = P_in - P_tap"
+      }
+    ],
+    tags: ["tap", "P_inn", "P_ut"]
+  },
+  {
+    id: "energy_loss_over_time",
+    categoryId: "efficiency_losses",
+    name: "Energimengde som går tapt",
+    shortName: "E_tap = P_tap · t",
+    description:
+      "Energitap over tid basert på konstant effekttap og varighet.",
+    baseExpression: "E_tap = P_tap * t_h",
+    variables: [
+      {
+        id: "E_tap",
+        symbol: "E_tap",
+        name: "Energimengde tapt",
+        unit: "Wh",
+        role: "output"
+      },
+      {
+        id: "P_tap",
+        symbol: "P_tap",
+        name: "Effekttap",
+        unit: "W",
+        role: "input"
+      },
+      {
+        id: "t_h",
+        symbol: "t",
+        name: "Tid",
+        unit: "h",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "energy_loss-E",
+        label: "Løs for E_tap",
+        solveFor: "E_tap",
+        expression: "E_tap = P_tap * t_h"
+      },
+      {
+        id: "energy_loss-P",
+        label: "Løs for P_tap",
+        solveFor: "P_tap",
+        expression: "P_tap = E_tap / t_h"
+      }
+    ],
+    tags: ["energitap", "P_tap", "Wh"]
+  },
+
+  /* =======================================================================
+   * VINDKRAFT
+   * ======================================================================= */
+  {
+    id: "wind_power_ideal",
+    categoryId: "windpower",
+    name: "Teoretisk vindkraft på rotor",
+    shortName: "P_vind = ½ · ρ · A · v³",
+    description:
+      "Teoretisk effekt i vindstrømmen over rotorarealet. Reell turbin vil ha virkningsgrad og Cp-faktor < 1.",
+    baseExpression: "P_vind = 0.5 * rho * A * v * v * v",
+    variables: [
+      {
+        id: "P_vind",
+        symbol: "P_vind",
+        name: "Vindkraft",
+        unit: "W",
+        role: "output"
+      },
+      {
+        id: "rho",
+        symbol: "ρ",
+        name: "Lufttetthet",
+        unit: "kg/m³",
+        role: "input",
+        description: "Typisk ca. 1,225 kg/m³ ved havnivå."
+      },
+      {
+        id: "A",
+        symbol: "A",
+        name: "Rotorareal",
+        unit: "m²",
+        role: "input"
+      },
+      {
+        id: "v",
+        symbol: "v",
+        name: "Vindhastighet",
+        unit: "m/s",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "wind_power-P",
+        label: "Løs for P_vind",
+        solveFor: "P_vind",
+        expression: "P_vind = 0.5 * rho * A * v * v * v"
+      }
+    ],
+    tags: ["vind", "P_vind", "A", "v"]
+  },
+  {
+    id: "wind_turbine_power_output",
+    categoryId: "windpower",
+    name: "Turbin-effekt med Cp og virkningsgrad",
+    shortName: "P_el = ½ · ρ · A · v³ · C_p · η",
+    description:
+      "Elektrisk uteffekt fra vindturbin med hensyn til aerodynamisk virkningsgrad (C_p) og samlet virkningsgrad η.",
+    baseExpression: "P_el = 0.5 * rho * A * v * v * v * C_p * eta",
+    variables: [
+      {
+        id: "P_el",
+        symbol: "P_el",
+        name: "Elektrisk effekt",
+        unit: "W",
+        role: "output"
+      },
+      {
+        id: "rho",
+        symbol: "ρ",
+        name: "Lufttetthet",
+        unit: "kg/m³",
+        role: "input"
+      },
+      {
+        id: "A",
+        symbol: "A",
+        name: "Rotorareal",
+        unit: "m²",
+        role: "input"
+      },
+      {
+        id: "v",
+        symbol: "v",
+        name: "Vindhastighet",
+        unit: "m/s",
+        role: "input"
+      },
+      {
+        id: "C_p",
+        symbol: "C_p",
+        name: "Effektkoeffisient",
+        unit: "–",
+        role: "input",
+        description: "Aerodynamisk koeffisient (Betz-grense ~0,59)."
+      },
+      {
+        id: "eta",
+        symbol: "η",
+        name: "Samlet virkningsgrad",
+        unit: "–",
+        role: "input",
+        description: "Mek./elektrisk virkningsgrad (gear, generator, omformer)."
+      }
+    ],
+    variants: [
+      {
+        id: "wind_turbine-Pel",
+        label: "Løs for P_el",
+        solveFor: "P_el",
+        expression: "P_el = 0.5 * rho * A * v * v * v * C_p * eta"
+      }
+    ],
+    tags: ["vindturbin", "C_p", "P_el"]
+  },
+  {
+    id: "wind_tip_speed_ratio",
+    categoryId: "windpower",
+    name: "Tipphastighetsforhold",
+    shortName: "λ = ω · R / v",
+    description:
+      "Forholdet mellom bladspisshastighet og vindhastighet. Viktig for optimal driftspunkt for turbin.",
+    baseExpression: "lambda = omega * R / v",
+    variables: [
+      {
+        id: "lambda",
+        symbol: "λ",
+        name: "Tipphastighetsforhold",
+        unit: "–",
+        role: "output"
+      },
+      {
+        id: "omega",
+        symbol: "ω",
+        name: "Vinkelhastighet",
+        unit: "rad/s",
+        role: "input"
+      },
+      {
+        id: "R",
+        symbol: "R",
+        name: "Rotorradius",
+        unit: "m",
+        role: "input"
+      },
+      {
+        id: "v",
+        symbol: "v",
+        name: "Vindhastighet",
+        unit: "m/s",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "wind_lambda-lambda",
+        label: "Løs for λ",
+        solveFor: "lambda",
+        expression: "lambda = omega * R / v"
+      },
+      {
+        id: "wind_lambda-omega",
+        label: "Løs for ω",
+        solveFor: "omega",
+        expression: "omega = lambda * v / R"
+      }
+    ],
+    tags: ["vind", "tipphastighet", "λ"]
+  },
+  {
+    id: "wind_capacity_factor",
+    categoryId: "windpower",
+    name: "Kapasitetsfaktor for vindkraftverk",
+    shortName: "CF = E_år / (P_n · 8760)",
+    description:
+      "Kapasitetsfaktor som uttrykker forholdet mellom faktisk årlig produksjon og teoretisk maksimalproduksjon.",
+    baseExpression: "CF = E_year / (P_n * 8760)",
+    variables: [
+      {
+        id: "CF",
+        symbol: "CF",
+        name: "Kapasitetsfaktor",
+        unit: "–",
+        role: "output"
+      },
+      {
+        id: "E_year",
+        symbol: "E_år",
+        name: "Årsproduksjon",
+        unit: "MWh",
+        role: "input"
+      },
+      {
+        id: "P_n",
+        symbol: "P_n",
+        name: "Installert effekt",
+        unit: "MW",
+        role: "input"
+      }
+    ],
+    variants: [
+      {
+        id: "wind_CF-CF",
+        label: "Løs for CF",
+        solveFor: "CF",
+        expression: "CF = E_year / (P_n * 8760)"
+      },
+      {
+        id: "wind_CF-E",
+        label: "Løs for E_år",
+        solveFor: "E_year",
+        expression: "E_year = CF * P_n * 8760"
+      }
+    ],
+    tags: ["vindkraft", "kapasitetsfaktor"]
+  },
 
   /* =======================================================================
    * NY KATEGORI
