@@ -63,6 +63,12 @@ export const formulaCategories: FormulaCategory[] = [
     "Formler knyttet til spenningsavvik, spenningsubalanse og harmonisk forvrengning (THD).",
   order: 8
 },
+{
+  id: "cables",
+  title: "Kabler og korreksjonsfaktorer",
+  description: "Korreksjonsfaktorer og strømføringsevne i henhold til NEK 400.",
+  order: 9
+},
 ];
 
 // Formler som skal være tilgjengelige i motoren, men IKKE vises som egne linjer i sidebaren
@@ -2415,7 +2421,126 @@ export const formulas: Formula[] = [
   ],
   tags: ["THD, harmoniske, spenning"]
 },
+/* =======================================================================
+   * KABLER
+   * ======================================================================= */
+{
+  id: "cable_temp_correction",
+  categoryId: "cables",
+  name: "Korreksjonsfaktor for omgivelsestemperatur",
+  shortName: "I_z = I_nom · k_t",
+  description:
+    "Korrigert strømføringsevne basert på omgivelsestemperatur. Verdier for k_t tas fra NEK 400 tabeller.",
+  baseExpression: "I_z = I_nom * k_t",
+  variables: [
+    { id: "I_nom", symbol: "I_nom", name: "Tabellverdi (strømføringsevne)", unit: "A", role: "input" },
+    { id: "k_t", symbol: "k_t", name: "Temperaturfaktor", unit: "", role: "input" },
+    { id: "I_z", symbol: "I_z", name: "Korrigert strømføringsevne", unit: "A", role: "output" }
+  ],
+  variants: [
+    {
+      id: "cable_temp_correction-I_z",
+      label: "Løs for I_z",
+      solveFor: "I_z",
+      expression: "I_z = I_nom * k_t"
+    },
+    {
+      id: "cable_temp_correction-I_nom",
+      label: "Løs for I_nom",
+      solveFor: "I_nom",
+      expression: "I_nom = I_z / k_t"
+    },
+    {
+      id: "cable_temp_correction-k_t",
+      label: "Løs for k_t",
+      solveFor: "k_t",
+      expression: "k_t = I_z / I_nom"
+    }
+  ],
+  tags: ["kabel", "temperatur", "NEK 400", "korreksjonsfaktor"]
+},
+{
+  id: "cable_group_correction",
+  categoryId: "cables",
+  name: "Korreksjonsfaktor for antall belastede ledere",
+  shortName: "I_z = I_nom · k_n",
+  description:
+    "Korreksjon for antall belastede ledere i flerlederkabler. k_n hentes fra NEK 400 tabeller.",
+  baseExpression: "I_z = I_nom * k_n",
+  variables: [
+    { id: "I_nom", symbol: "I_nom", name: "Tabellverdi (strømføringsevne)", unit: "A", role: "input" },
+    { id: "k_n", symbol: "k_n", name: "Faktor for belastede ledere", unit: "", role: "input" },
+    { id: "I_z", symbol: "I_z", name: "Korrigert strømføringsevne", unit: "A", role: "output" }
+  ],
+  variants: [
+    {
+      id: "cable_group_correction-I_z",
+      label: "Løs for I_z",
+      solveFor: "I_z",
+      expression: "I_z = I_nom * k_n"
+    },
+    {
+      id: "cable_group_correction-I_nom",
+      label: "Løs for I_nom",
+      solveFor: "I_nom",
+      expression: "I_nom = I_z / k_n"
+    },
+    {
+      id: "cable_group_correction-k_n",
+      label: "Løs for k_n",
+      solveFor: "k_n",
+      expression: "k_n = I_z / I_nom"
+    }
+  ],
+  tags: ["kabel", "belastede ledere", "NEK 400", "korreksjonsfaktor"]
+},
+{
+  id: "cable_total_correction",
+  categoryId: "cables",
+  name: "Total korrigert strømføringsevne",
+  shortName: "I_z = I_nom · k_t · k_n",
+  description:
+    "Kombinert korreksjon for temperatur og antall belastede ledere. Verdier hentes fra NEK 400 tabeller.",
+  baseExpression: "I_z = I_nom * k_t * k_n",
+  variables: [
+    { id: "I_nom", symbol: "I_nom", name: "Tabellverdi (strømføringsevne)", unit: "A", role: "input" },
+    { id: "k_t", symbol: "k_t", name: "Temperaturfaktor", unit: "", role: "input" },
+    { id: "k_n", symbol: "k_n", name: "Faktor belastede ledere", unit: "", role: "input" },
+    { id: "I_z", symbol: "I_z", name: "Korrigert strømføringsevne", unit: "A", role: "output" }
+  ],
+  variants: [
+    {
+      id: "cable_total_correction-I_z",
+      label: "Løs for I_z",
+      solveFor: "I_z",
+      expression: "I_z = I_nom * k_t * k_n"
+    },
+    {
+      id: "cable_total_correction-I_nom",
+      label: "Løs for I_nom",
+      solveFor: "I_nom",
+      expression: "I_nom = I_z / (k_t * k_n)"
+    },
+    {
+      id: "cable_total_correction-k_t",
+      label: "Løs for k_t",
+      solveFor: "k_t",
+      expression: "k_t = I_z / (I_nom * k_n)"
+    },
+    {
+      id: "cable_total_correction-k_n",
+      label: "Løs for k_n",
+      solveFor: "k_n",
+      expression: "k_n = I_z / (I_nom * k_t)"
+    }
+  ],
+  tags: ["kabel", "strømføringsevne", "NEK 400", "korreksjonsfaktorer"]
+},
 
+
+  /* =======================================================================
+   * NY KATEGORI
+   * ======================================================================= */
 ];
 
 /**
