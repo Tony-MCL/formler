@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useI18n } from "../lib/i18n";
 
 type LicenseModalProps = {
@@ -21,6 +21,15 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
   const [isSubscription, setIsSubscription] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Hver gang modalen åpnes på nytt:
+  // - nullstill busy og error, slik at den ikke "henger" etter en tidligere tur til Stripe
+  useEffect(() => {
+    if (open) {
+      setBusy(false);
+      setError(null);
+    }
+  }, [open]);
 
   if (!open) return null;
 
@@ -65,6 +74,9 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
         throw new Error("Mottok ingen betalingslenke fra serveren.");
       }
 
+      // Vi setter ikke busy = false her – vi forventer at brukeren forlater siden.
+      // Hvis de kommer tilbake via "Tilbake"-knappen i browseren (bfcache),
+      // vil useEffect over resette busy når modalen åpnes igjen.
       window.location.href = data.url;
     } catch (err: any) {
       console.error(err);
@@ -329,7 +341,9 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
           >
             {busy
               ? "Sender deg til betaling..."
-              : `Gå til betaling – ${planLabel(selectedPlan)} (${planPrice(selectedPlan)})`}
+              : `Gå til betaling – ${planLabel(selectedPlan)} (${planPrice(
+                  selectedPlan
+                )})`}
           </button>
         </div>
       </div>
