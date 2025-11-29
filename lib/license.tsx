@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 
 export type LicenseTier = "free" | "trial" | "pro";
 
@@ -169,7 +175,6 @@ async function fetchRemoteLicense(email: string): Promise<boolean> {
   });
 
   if (!res.ok) {
-    // Vi logger bare i konsoll – appen skal ikke knekke
     const text = await res.text().catch(() => "");
     console.error("Feil ved henting av lisens fra Firestore:", text);
     return false;
@@ -186,8 +191,6 @@ async function fetchRemoteLicense(email: string): Promise<boolean> {
   const licenseType = readStringField(fields, "licenseType");
 
   if (status === "active" && paid !== false) {
-    // Vi tolker alle aktive, betalte lisenser (single purchase / subscription)
-    // som "pro" for appen.
     console.log("Fant aktiv lisens for", email, {
       status,
       licenseType,
@@ -200,12 +203,9 @@ async function fetchRemoteLicense(email: string): Promise<boolean> {
 }
 
 /**
- * Hook som holder orden på:
- *  - gratis / trial / pro
- *  - lokal trial i localStorage
- *  - enkel sjekk mot Firestore for pro-lisens via e-post
+ * Intern hook som bygger hele LicenseState
  */
-export function useLicense(): LicenseState {
+function useLicenseInternal(): LicenseState {
   const [tier, setTier] = useState<LicenseTier>("free");
   const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
   const [trialUsed, setTrialUsed] = useState(false);
@@ -233,7 +233,6 @@ export function useLicense(): LicenseState {
     }
 
     setLoading(false);
-    // Initial sjekk mot Firestore hvis vi har e-post
     if (storedEmail) {
       setRefreshToken((x) => x + 1);
     }
@@ -258,7 +257,6 @@ export function useLicense(): LicenseState {
 
   // Hoved-heuristikk for tier
   useEffect(() => {
-    // Hvis vi allerede har pro, holder vi oss der til noe annet sier ifra
     if (tier === "pro") return;
 
     if (isTrialActive) {
@@ -314,14 +312,10 @@ export function useLicense(): LicenseState {
     setTrialUsed(true);
     setTrialEndsAt(stored.trialEndsAt);
     setTier("trial");
-
-    // Når brukeren har startet trial (og sannsynligvis senere kjøper lisens
-    // med samme e-post), kan vi trigge remote-sjekk ved behov.
   };
 
   const refresh = () => {
     if (!email) {
-      // Ingen e-post å sjekke mot – vi gjør ingen remote-kall.
       return;
     }
     setRefreshToken((x) => x + 1);
@@ -338,4 +332,32 @@ export function useLicense(): LicenseState {
     startTrial,
     refresh
   };
+}
+
+/* --------------------------------------------------------------
+   Context + Provider
+-------------------------------------------------------------- */
+
+const LicenseContext = createContext<LicenseState | undefined>(undefined);
+
+/**
+ * Provider som legges rundt appen i layout.tsx
+ */
+export function LicenseProvider({ children }: { children: React.ReactNode }) {
+  const value = useLicenseInternal();
+  return (
+    <LicenseContext.Provider value={value}>{children}</LicenseContext.Provider>
+  );
+}
+
+/**
+ * Hook som brukes i komponenter (HomePage, osv.)
+ */
+export function useLicense(): LicenseState {
+  const ctx = useContext(LicenseContext);
+  if (!ctx) {
+    // Fallback hvis noen kaller useLicense utenfor Provider
+    return useLicenseInternal();
+  }
+  return ctx;
 }
