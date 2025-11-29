@@ -10,6 +10,11 @@ type LicenseModalProps = {
 
 type Plan = "month" | "year";
 
+const workerUrl =
+  process.env.NEXT_PUBLIC_STRIPE_WORKER_URL as string | undefined;
+
+const PRODUCT_ID = "formelsamling";
+
 export default function LicenseModal({ open, onClose }: LicenseModalProps) {
   const { basePath } = useI18n();
   const [selectedPlan, setSelectedPlan] = useState<Plan>("month");
@@ -19,36 +24,55 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
 
   if (!open) return null;
 
-  const checkoutBase = process.env.NEXT_PUBLIC_STRIPE_CHECKOUT_URL;
-
-  const handleGoToCheckout = () => {
+  const handleGoToCheckout = async () => {
     setError(null);
 
-    if (!checkoutBase) {
+    if (!workerUrl) {
       setError(
-        "Betalingslenke er ikke konfigurert. Sett NEXT_PUBLIC_STRIPE_CHECKOUT_URL i .env.local."
+        "Stripe Worker URL mangler (NEXT_PUBLIC_STRIPE_WORKER_URL)."
       );
       return;
     }
 
-    // Du kan tilpasse disse query-parametrene til hvordan Cloudflare-workeren din allerede forventer dem.
-    const params = new URLSearchParams({
-      app: "formler",
-      period: selectedPlan, // "month" | "year"
-      mode: isSubscription ? "subscription" : "payment"
-    });
-
-    const url =
-      checkoutBase.includes("?") ?
-        `${checkoutBase}&${params.toString()}` :
-        `${checkoutBase}?${params.toString()}`;
-
-    setBusy(true);
     try {
-      window.location.href = url;
-    } catch (e) {
+      setBusy(true);
+
+      const response = await fetch(workerUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        // Samme kontrakt som CheckoutButton:
+        // { product, billingPeriod, autoRenew }
+        body: JSON.stringify({
+          product: PRODUCT_ID,
+          billingPeriod: selectedPlan,
+          autoRenew: isSubscription
+        })
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => "");
+        console.error("Worker error:", text);
+        throw new Error(
+          `Kunne ikke opprette Checkout-session (HTTP ${response.status}).`
+        );
+      }
+
+      const data = (await response.json()) as { url?: string };
+
+      if (!data.url) {
+        throw new Error("Mottok ingen betalingslenke fra serveren.");
+      }
+
+      window.location.href = data.url;
+    } catch (err: any) {
+      console.error(err);
+      setError(
+        err?.message ||
+          "Noe gikk galt ved opprettelse av betaling. Prøv igjen senere."
+      );
       setBusy(false);
-      setError("Kunne ikke åpne Stripe-checkout. Kontroller URL-oppsettet.");
     }
   };
 
@@ -247,8 +271,8 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
               style={{ marginTop: "0.1rem" }}
             />
             <span>
-              Gjør dette til et{" "}
-              <strong>abonnement</strong> (fornyes automatisk via Stripe).
+              Gjør dette til et <strong>abonnement</strong> (fornyes automatisk
+              via Stripe).
               <br />
               Når denne boksen ikke er krysset av, blir kjøpet behandlet som et{" "}
               <strong>enkeltkjøp</strong>.
@@ -303,8 +327,9 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
               cursor: busy ? "wait" : "pointer"
             }}
           >
-            Gå til betaling – {planLabel(selectedPlan)} (
-            {planPrice(selectedPlan)})
+            {busy
+              ? "Sender deg til betaling..."
+              : `Gå til betaling – ${planLabel(selectedPlan)} (${planPrice(selectedPlan)})`}
           </button>
         </div>
       </div>
