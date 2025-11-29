@@ -1,5 +1,3 @@
-// components/Kalkulator.tsx
-
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -8,6 +6,7 @@ import { getFormulaById } from "../lib/formulas";
 import { solveFormula, listVariants } from "../lib/engine";
 import MathText from "./MathText";
 import { formatInlineMath } from "../lib/mathFormat";
+import { useLicense } from "../lib/license";
 
 type KalkulatorProps = {
   formulaId: FormulaId;
@@ -119,6 +118,8 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
     [formulaId]
   );
 
+  const { hasFullAccess } = useLicense();
+
   // Tom streng = ingen variant valgt ennå
   const [solveFor, setSolveFor] = useState<SolveForId | "">("");
   const [inputs, setInputs] = useState<InputMap>({});
@@ -139,6 +140,21 @@ export default function Kalkulator({ formulaId }: KalkulatorProps) {
         <h3 style={{ margin: "0 0 0.4rem" }}>Kalkulator</h3>
         <p style={{ fontSize: "0.9rem", color: "var(--mcl-muted)" }}>
           Kalkulator er ikke tilgjengelig for denne formelen.
+        </p>
+      </section>
+    );
+  }
+
+  if (!hasFullAccess) {
+    return (
+      <section
+        className="no-print"
+        style={{ marginTop: "1.5rem" }}
+      >
+        <h3 style={{ margin: "0 0 0.4rem" }}>Kalkulator</h3>
+        <p style={{ fontSize: "0.9rem", color: "var(--mcl-muted)" }}>
+          Kalkulatoren er tilgjengelig i fullversjonen av appen. Gå til
+          forsiden for å starte en gratis prøveperiode eller kjøpe lisens.
         </p>
       </section>
     );
