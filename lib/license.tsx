@@ -18,6 +18,8 @@ export type LicenseState = {
   trialUsed: boolean;
   loading: boolean;
   error: string | null;
+  /** Full tilgang: enten aktiv trial eller pro-lisens */
+  hasFullAccess: boolean;
   /** Start en lokal 10-dagers prøveperiode basert på e-post */
   startTrial: (email: string) => void;
   /** Trigg ny sjekk mot Firestore (f.eks. etter Stripe-success) */
@@ -321,6 +323,9 @@ function useLicenseInternal(): LicenseState {
     setRefreshToken((x) => x + 1);
   };
 
+  const hasFullAccess =
+    tier === "pro" || (tier === "trial" && isTrialActive);
+
   return {
     tier,
     isTrialActive,
@@ -329,6 +334,7 @@ function useLicenseInternal(): LicenseState {
     trialUsed,
     loading,
     error,
+    hasFullAccess,
     startTrial,
     refresh
   };
@@ -351,7 +357,7 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Hook som brukes i komponenter (HomePage, osv.)
+ * Hook som brukes i komponenter (HomePage, FormelVisning, osv.)
  */
 export function useLicense(): LicenseState {
   const ctx = useContext(LicenseContext);
