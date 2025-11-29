@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ThemeToggle from "../components/ThemeToggle";
 import LangToggle from "../components/LangToggle";
 import FormelVisning from "../components/FormelVisning";
+import LicenseModal from "../components/LicenseModal";
 import { useI18n } from "../lib/i18n";
 import { useLicense } from "../lib/license";
 import type { FormulaId } from "../lib/types";
@@ -22,6 +23,7 @@ export default function HomePage() {
 
   const [trialEmail, setTrialEmail] = useState("");
   const [trialError, setTrialError] = useState<string | null>(null);
+  const [licenseModalOpen, setLicenseModalOpen] = useState(false);
 
   const appNameKey = "fm_app_name";
   const heroTitleKey = "fm_hero_title";
@@ -50,9 +52,6 @@ export default function HomePage() {
     setViewMode("home");
   };
 
-  const licensePortalUrl =
-    process.env.NEXT_PUBLIC_LICENSE_PORTAL_URL || "";
-
   const { tier, isTrialActive, isTrialExpired, trialEndsAt, trialUsed } =
     license;
 
@@ -73,13 +72,28 @@ export default function HomePage() {
 
     const trimmed = trialEmail.trim();
     if (!trimmed) {
-      setTrialError("Skriv inn e-postadressen din for å starte prøveperioden.");
+      setTrialError(
+        "Skriv inn e-postadressen din for å starte prøveperioden."
+      );
       return;
     }
 
     setTrialError(null);
     license.startTrial(trimmed);
   };
+
+  const handleOpenLicenseModal = () => {
+    setLicenseModalOpen(true);
+  };
+
+  // Åpne modalen automatisk hvis vi lander på /#license eller /#lisens
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash.toLowerCase();
+    if (hash === "#license" || hash === "#lisens") {
+      setLicenseModalOpen(true);
+    }
+  }, []);
 
   return (
     <div className="page-root">
@@ -195,8 +209,8 @@ export default function HomePage() {
               <section className="card">
                 <h2 style={{ marginTop: 0 }}>Lisens og prøveperiode</h2>
                 <p style={{ fontSize: "0.9rem" }}>
-                  Appen kan brukes gratis uten innlogging. I gratisversjonen
-                  er kalkulatoren slått av, og utskrifter har vannmerke.
+                  Appen kan brukes gratis uten innlogging. I gratisversjonen er
+                  kalkulatoren slått av, og utskrifter har vannmerke.
                 </p>
 
                 {tier === "pro" && (
@@ -219,8 +233,8 @@ export default function HomePage() {
                   <p style={{ fontSize: "0.9rem", fontWeight: 500 }}>
                     Din 10-dagers prøveperiode er over. Du kan fortsatt bruke
                     formelsamlingen gratis, men kalkulatoren er slått av og
-                    utskrifter har vannmerke. Kjøp lisens for å få full
-                    tilgang igjen.
+                    utskrifter har vannmerke. Kjøp lisens for å få full tilgang
+                    igjen.
                   </p>
                 )}
 
@@ -314,37 +328,31 @@ export default function HomePage() {
                     alignItems: "center"
                   }}
                 >
-                  {licensePortalUrl && (
-                    <a
-                      href={licensePortalUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="button"
-                      style={{
-                        background: "var(--mcl-brand)",
-                        color: "#fff",
-                        borderRadius: 999,
-                        paddingInline: "0.9rem",
-                        textDecoration: "none",
-                        fontSize: "0.9rem"
-                      }}
-                    >
-                      Kjøp lisens
-                    </a>
-                  )}
-
-                  {!licensePortalUrl && (
-                    <p
-                      style={{
-                        fontSize: "0.8rem",
-                        color: "var(--mcl-muted)"
-                      }}
-                    >
-                      (Sett miljøvariabelen{" "}
-                      <code>NEXT_PUBLIC_LICENSE_PORTAL_URL</code> for å aktivere
-                      kjøpslenken.)
-                    </p>
-                  )}
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={handleOpenLicenseModal}
+                    style={{
+                      background: "var(--mcl-brand)",
+                      color: "#fff",
+                      borderRadius: 999,
+                      paddingInline: "0.9rem",
+                      textDecoration: "none",
+                      fontSize: "0.9rem"
+                    }}
+                  >
+                    Kjøp lisens
+                  </button>
+                  <p
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "var(--mcl-muted)",
+                      margin: 0
+                    }}
+                  >
+                    Du kan også åpne lisensdialogen direkte med{" "}
+                    <code>#license</code> i adressen.
+                  </p>
                 </div>
               </section>
             </>
@@ -358,6 +366,11 @@ export default function HomePage() {
           )}
         </main>
       </div>
+
+      <LicenseModal
+        open={licenseModalOpen}
+        onClose={() => setLicenseModalOpen(false)}
+      />
     </div>
   );
 }
