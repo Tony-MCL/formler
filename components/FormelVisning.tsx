@@ -1,4 +1,3 @@
-// components/FormelVisning.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -8,6 +7,7 @@ import MathText from "./MathText";
 import Kalkulator from "./Kalkulator";
 import PDFExport from "./PDFExport";
 import { useI18n } from "../lib/i18n";
+import { useLicense } from "../lib/license";
 
 const FAVORITES_STORAGE_KEY = "mcl_formula_favorites_v1";
 
@@ -37,6 +37,7 @@ export default function FormelVisning({
   onGoHome
 }: FormelVisningProps) {
   const { basePath } = useI18n();
+  const { hasFullAccess } = useLicense();
 
   const [showInfo, setShowInfo] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -147,14 +148,18 @@ export default function FormelVisning({
     );
   }
 
+  const showWatermark = !hasFullAccess;
+
   return (
     <section className="card">
-      {/* Vannmerke – kun for print */}
-      <img
-        src={`${basePath}/images/mcl-watermark.png`}
-        alt=""
-        className="print-watermark"
-      />
+      {/* Vannmerke – kun for print, og kun for gratis/utløpt lisens */}
+      {showWatermark && (
+        <img
+          src={`${basePath}/images/mcl-watermark.png`}
+          alt=""
+          className="print-watermark"
+        />
+      )}
 
       {/* Topp-rad: Hjem + PDF-knapp */}
       <div
