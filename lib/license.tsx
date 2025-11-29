@@ -273,10 +273,14 @@ function useLicenseInternal(): LicenseState {
     if (!email) return;
     let cancelled = false;
 
-    async function run() {
+    // Viktig: lag en lokal kopi som er garantert string
+    const emailLocal = email;
+    if (!emailLocal) return;
+
+    async function run(e: string) {
       setError(null);
       try {
-        const hasLicense = await fetchRemoteLicense(email);
+        const hasLicense = await fetchRemoteLicense(e);
         if (cancelled) return;
         if (hasLicense) {
           setTier("pro");
@@ -288,7 +292,7 @@ function useLicenseInternal(): LicenseState {
       }
     }
 
-    run();
+    run(emailLocal);
 
     return () => {
       cancelled = true;
