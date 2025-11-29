@@ -86,7 +86,7 @@ export default function HomePage() {
     setLicenseModalOpen(true);
   };
 
-  // Åpne modalen automatisk hvis vi lander på /#license eller /#lisens
+  // Åpne lisensmodal automatisk ved #license / #lisens
   useEffect(() => {
     if (typeof window === "undefined") return;
     const hash = window.location.hash.toLowerCase();
@@ -206,155 +206,205 @@ export default function HomePage() {
                 </p>
               </section>
 
-              <section className="card">
-                <h2 style={{ marginTop: 0 }}>Lisens og prøveperiode</h2>
-                <p style={{ fontSize: "0.9rem" }}>
-                  Appen kan brukes gratis uten innlogging. I gratisversjonen er
-                  kalkulatoren slått av, og utskrifter har vannmerke.
-                </p>
-
-                {tier === "pro" && (
-                  <p style={{ fontSize: "0.9rem", fontWeight: 500 }}>
-                    Du har en <strong>aktiv lisens</strong> for fullversjonen
-                    av appen.
+              {tier === "pro" ? (
+                // -------------------------------------------------
+                // Kort ved AKTIV lisens (fullversjon)
+                // -------------------------------------------------
+                <section className="card">
+                  <h2 style={{ marginTop: 0 }}>Fullversjon aktiv</h2>
+                  <p style={{ fontSize: "0.95rem", marginBottom: "0.4rem" }}>
+                    Hei!
                   </p>
-                )}
-
-                {tier === "trial" && isTrialActive && (
-                  <p style={{ fontSize: "0.9rem", fontWeight: 500 }}>
-                    Du har en <strong>aktiv prøveperiode</strong> som varer til{" "}
-                    <strong>{formatDateNO(trialEndsAt)}</strong>. I denne
-                    perioden har du full tilgang til kalkulatoren og utskrift
-                    uten vannmerke.
+                  <p style={{ fontSize: "0.9rem", marginBottom: "0.75rem" }}>
+                    Du har <strong>fullversjon</strong> av Digital
+                    Formelsamling. Kalkulatoren er åpen for alle formler, og
+                    utskrifter genereres uten vannmerke.
                   </p>
-                )}
-
-                {tier === "free" && isTrialExpired && (
-                  <p style={{ fontSize: "0.9rem", fontWeight: 500 }}>
-                    Din 10-dagers prøveperiode er over. Du kan fortsatt bruke
-                    formelsamlingen gratis, men kalkulatoren er slått av og
-                    utskrifter har vannmerke. Kjøp lisens for å få full tilgang
-                    igjen.
+                  <p style={{ fontSize: "0.9rem", marginBottom: "0.9rem" }}>
+                    Takk for at du støtter videre utvikling av appen – nye
+                    formler og forbedringer vil bli rullet ut fortløpende.
                   </p>
-                )}
 
-                {tier === "free" && !isTrialExpired && !trialUsed && (
-                  <>
-                    <p style={{ fontSize: "0.9rem" }}>
-                      Ønsker du å teste fullversjonen? Start en{" "}
-                      <strong>gratis 10-dagers prøveperiode</strong> med
-                      e-postadressen din.
-                    </p>
-                    <div
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "0.5rem",
+                      alignItems: "center"
+                    }}
+                  >
+                    <a
+                      href="https://tony-mcl.github.io/website/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="button"
                       style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "minmax(0, 2fr) minmax(0, 1fr)",
-                        gap: "0.5rem",
-                        maxWidth: "500px",
-                        marginTop: "0.5rem"
+                        borderRadius: 999,
+                        paddingInline: "0.9rem",
+                        fontSize: "0.9rem",
+                        textDecoration: "none"
                       }}
                     >
-                      <label
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          fontSize: "0.85rem",
-                          gap: "0.2rem"
-                        }}
-                      >
-                        <span>E-postadresse</span>
-                        <input
-                          type="email"
-                          value={trialEmail}
-                          onChange={(e) => setTrialEmail(e.target.value)}
-                          placeholder="navn@firma.no"
-                          style={{
-                            padding: "0.4rem 0.6rem",
-                            borderRadius: 8,
-                            border: "1px solid var(--mcl-outline)",
-                            fontSize: "0.9rem"
-                          }}
-                        />
-                      </label>
+                      Besøk nettsiden vår
+                    </a>
+                    <p
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--mcl-muted)",
+                        margin: 0
+                      }}
+                    >
+                      Utforsk våre andre apper og prosjekter.
+                    </p>
+                  </div>
+                </section>
+              ) : (
+                // -------------------------------------------------
+                // Kort for GRATIS / PRØVEPERIODE / KJØP LISENS
+                // -------------------------------------------------
+                <section className="card">
+                  <h2 style={{ marginTop: 0 }}>Lisens og prøveperiode</h2>
+                  <p style={{ fontSize: "0.9rem" }}>
+                    Appen kan brukes gratis uten innlogging. I gratisversjonen
+                    er kalkulatoren slått av, og utskrifter har vannmerke.
+                  </p>
 
+                  {tier === "trial" && isTrialActive && (
+                    <p style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+                      Du har en <strong>aktiv prøveperiode</strong> som varer
+                      til <strong>{formatDateNO(trialEndsAt)}</strong>. I denne
+                      perioden har du full tilgang til kalkulatoren og utskrift
+                      uten vannmerke.
+                    </p>
+                  )}
+
+                  {tier === "free" && isTrialExpired && (
+                    <p style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+                      Din 10-dagers prøveperiode er over. Du kan fortsatt bruke
+                      formelsamlingen gratis, men kalkulatoren er slått av og
+                      utskrifter har vannmerke. Kjøp lisens for å få full
+                      tilgang igjen.
+                    </p>
+                  )}
+
+                  {tier === "free" && !isTrialExpired && !trialUsed && (
+                    <>
+                      <p style={{ fontSize: "0.9rem" }}>
+                        Ønsker du å teste fullversjonen? Start en{" "}
+                        <strong>gratis 10-dagers prøveperiode</strong> med
+                        e-postadressen din.
+                      </p>
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "flex-end",
-                          justifyContent: "flex-start"
+                          display: "grid",
+                          gridTemplateColumns:
+                            "minmax(0, 2fr) minmax(0, 1fr)",
+                          gap: "0.5rem",
+                          maxWidth: "500px",
+                          marginTop: "0.5rem"
                         }}
                       >
-                        <button
-                          type="button"
-                          className="button"
-                          onClick={handleStartTrial}
-                          disabled={!canStartTrial}
+                        <label
                           style={{
-                            background: "var(--mcl-brand)",
-                            color: "#fff",
-                            borderRadius: 999,
-                            padding: "0.45rem 0.9rem",
-                            opacity: canStartTrial ? 1 : 0.6,
-                            cursor: canStartTrial
-                              ? "pointer"
-                              : "not-allowed"
+                            display: "flex",
+                            flexDirection: "column",
+                            fontSize: "0.85rem",
+                            gap: "0.2rem"
                           }}
                         >
-                          Start gratis prøveperiode
-                        </button>
-                      </div>
-                    </div>
-                    {trialError && (
-                      <p
-                        style={{
-                          marginTop: "0.3rem",
-                          fontSize: "0.85rem",
-                          color: "var(--mcl-error, #b91c1c)"
-                        }}
-                      >
-                        {trialError}
-                      </p>
-                    )}
-                  </>
-                )}
+                          <span>E-postadresse</span>
+                          <input
+                            type="email"
+                            value={trialEmail}
+                            onChange={(e) => setTrialEmail(e.target.value)}
+                            placeholder="navn@firma.no"
+                            style={{
+                              padding: "0.4rem 0.6rem",
+                              borderRadius: 8,
+                              border: "1px solid var(--mcl-outline)",
+                              fontSize: "0.9rem"
+                            }}
+                          />
+                        </label>
 
-                <div
-                  style={{
-                    marginTop: "0.9rem",
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "0.5rem",
-                    alignItems: "center"
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="button"
-                    onClick={handleOpenLicenseModal}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-end",
+                            justifyContent: "flex-start"
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className="button"
+                            onClick={handleStartTrial}
+                            disabled={!canStartTrial}
+                            style={{
+                              background: "var(--mcl-brand)",
+                              color: "#fff",
+                              borderRadius: 999,
+                              padding: "0.45rem 0.9rem",
+                              opacity: canStartTrial ? 1 : 0.6,
+                              cursor: canStartTrial
+                                ? "pointer"
+                                : "not-allowed"
+                            }}
+                          >
+                            Start gratis prøveperiode
+                          </button>
+                        </div>
+                      </div>
+                      {trialError && (
+                        <p
+                          style={{
+                            marginTop: "0.3rem",
+                            fontSize: "0.85rem",
+                            color: "var(--mcl-error, #b91c1c)"
+                          }}
+                        >
+                          {trialError}
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  <div
                     style={{
-                      background: "var(--mcl-brand)",
-                      color: "#fff",
-                      borderRadius: 999,
-                      paddingInline: "0.9rem",
-                      textDecoration: "none",
-                      fontSize: "0.9rem"
+                      marginTop: "0.9rem",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "0.5rem",
+                      alignItems: "center"
                     }}
                   >
-                    Kjøp lisens
-                  </button>
-                  <p
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "var(--mcl-muted)",
-                      margin: 0
-                    }}
-                  >
-                    Du kan også åpne lisensdialogen direkte med{" "}
-                    <code>#license</code> i adressen.
-                  </p>
-                </div>
-              </section>
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={handleOpenLicenseModal}
+                      style={{
+                        background: "var(--mcl-brand)",
+                        color: "#fff",
+                        borderRadius: 999,
+                        paddingInline: "0.9rem",
+                        textDecoration: "none",
+                        fontSize: "0.9rem"
+                      }}
+                    >
+                      Kjøp lisens
+                    </button>
+                    <p
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--mcl-muted)",
+                        margin: 0
+                      }}
+                    >
+                      Du kan også åpne lisensdialogen direkte med{" "}
+                      <code>#license</code> i adressen.
+                    </p>
+                  </div>
+                </section>
+              )}
             </>
           )}
 
