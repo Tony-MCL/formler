@@ -1,332 +1,341 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState
-} from "react";
-import {
-  collection,
-  onSnapshot,
-  query,
-  where,
-  Timestamp
-} from "firebase/firestore";
-import { getDb } from "./firebase";
+import { useEffect, useMemo, useState } from "react";
 
-type LicenseTier = "free" | "trial" | "pro";
+export type LicenseTier = "free" | "trial" | "pro";
 
-type LicenseState = {
+export type LicenseState = {
   tier: LicenseTier;
-  email?: string;
-  trialEndsAt?: string;
-  trialUsed: boolean;
   isTrialActive: boolean;
   isTrialExpired: boolean;
+  trialEndsAt: string | null;
+  trialUsed: boolean;
   loading: boolean;
-  /** Når vi har funnet en PRO-lisens i Firestore, lagrer vi utløpsdato (om den finnes) her kun som info. */
-  proValidTo?: string;
-};
-
-type LicenseContextValue = LicenseState & {
-  /** Start lokal 10-dagers prøveperiode */
+  error: string | null;
+  /** Start en lokal 10-dagers prøveperiode basert på e-post */
   startTrial: (email: string) => void;
-  /**
-   * Aktiver PRO lokalt (kan brukes for manuell testing eller dersom du
-   * vil sette PRO direkte etter en vellykket Stripe-redirect i appen).
-   */
-  activatePro: (opts: { email?: string; proValidTo?: string }) => void;
-  /** Tilbake til begrenset gratis-versjon (brukes sjelden) */
-  resetToFree: () => void;
-  /**
-   * Sett e-post som skal brukes til lisensoppslag i Firestore uten
-   * å starte prøveperiode. Kan brukes dersom bruker allerede har kjøpt
-   * lisens via nettsiden.
-   */
-  setLookupEmail: (email: string) => void;
-  /** True når bruker skal ha fullversjons-opplevelse i appen */
-  hasFullAccess: boolean;
+  /** Trigg ny sjekk mot Firestore (f.eks. etter Stripe-success) */
+  refresh: () => void;
 };
 
-const STORAGE_KEY = "mcl_formler_license_v1";
+const TRIAL_STORAGE_KEY = "mcl_formler_trial";
+const EMAIL_STORAGE_KEY = "mcl_formler_email";
 
-type StoredLicenseV1 = {
-  version: 1;
-  tier: LicenseTier;
-  email?: string;
-  trialStartedAt?: string;
-  trialEndsAt?: string;
-  trialUsed?: boolean;
-  proValidTo?: string;
+type StoredTrial = {
+  email: string;
+  trialEndsAt: string; // ISO
+  startedAt: string; // ISO
 };
 
-const LicenseCtx = createContext<LicenseContextValue | null>(null);
+type FirestoreValue =
+  | { stringValue: string }
+  | { booleanValue: boolean }
+  | { timestampValue: string | undefined | null }
+  | { nullValue: null };
 
-function loadStoredLicense(): StoredLicenseV1 | null {
+type FirestoreDocument = {
+  name?: string;
+  fields?: Record<string, FirestoreValue>;
+};
+
+const FIRESTORE_PROJECT_ID =
+  process.env.NEXT_PUBLIC_FIRESTORE_PROJECT_ID || "";
+const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "";
+
+/** Hjelper for å lese felter trygt */
+function readStringField(
+  fields: Record<string, FirestoreValue> | undefined,
+  key: string
+): string | null {
+  const v = fields?.[key];
+  if (!v) return null;
+  if ("stringValue" in v) return v.stringValue;
+  return null;
+}
+
+function readBoolField(
+  fields: Record<string, FirestoreValue> | undefined,
+  key: string
+): boolean | null {
+  const v = fields?.[key];
+  if (!v) return null;
+  if ("booleanValue" in v) return v.booleanValue;
+  return null;
+}
+
+/**
+ * Leser evt. lagret trial-info fra localStorage
+ */
+function loadStoredTrial(): StoredTrial | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(TRIAL_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredLicenseV1;
-    if (!parsed || typeof parsed !== "object") return null;
+    const parsed = JSON.parse(raw) as StoredTrial;
+    if (!parsed || !parsed.trialEndsAt) return null;
     return parsed;
   } catch {
     return null;
   }
 }
 
-function computeStateFromStored(stored: StoredLicenseV1 | null): LicenseState {
-  if (!stored) {
-    return {
-      tier: "free",
-      email: undefined,
-      trialEndsAt: undefined,
-      trialUsed: false,
-      isTrialActive: false,
-      isTrialExpired: false,
-      loading: false,
-      proValidTo: undefined
-    };
+function saveStoredTrial(value: StoredTrial | null) {
+  if (typeof window === "undefined") return;
+  if (!value) {
+    window.localStorage.removeItem(TRIAL_STORAGE_KEY);
+    return;
   }
-
-  const now = Date.now();
-  let tier: LicenseTier = stored.tier ?? "free";
-  let trialUsed = stored.trialUsed ?? false;
-  const trialEndsAt = stored.trialEndsAt;
-  let isTrialActive = false;
-  let isTrialExpired = false;
-
-  if (trialEndsAt) {
-    const endTs = Date.parse(trialEndsAt);
-    if (!Number.isNaN(endTs)) {
-      trialUsed = true;
-      if (now < endTs && tier === "trial") {
-        isTrialActive = true;
-        isTrialExpired = false;
-      } else if (now >= endTs) {
-        isTrialActive = false;
-        isTrialExpired = true;
-        if (tier === "trial") {
-          tier = "free";
-        }
-      }
-    }
-  }
-
-  return {
-    tier,
-    email: stored.email,
-    trialEndsAt,
-    trialUsed,
-    isTrialActive,
-    isTrialExpired,
-    loading: false,
-    proValidTo: stored.proValidTo
-  };
+  window.localStorage.setItem(TRIAL_STORAGE_KEY, JSON.stringify(value));
 }
 
-export function LicenseProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<LicenseState>({
-    tier: "free",
-    email: undefined,
-    trialEndsAt: undefined,
-    trialUsed: false,
-    isTrialActive: false,
-    isTrialExpired: false,
-    loading: true,
-    proValidTo: undefined
+function loadStoredEmail(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.localStorage.getItem(EMAIL_STORAGE_KEY);
+    return v || null;
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredEmail(email: string | null) {
+  if (typeof window === "undefined") return;
+  if (!email) {
+    window.localStorage.removeItem(EMAIL_STORAGE_KEY);
+  } else {
+    window.localStorage.setItem(EMAIL_STORAGE_KEY, email);
+  }
+}
+
+/**
+ * Sjekker Firestore om det finnes en aktiv lisens for
+ * gitt e-postadresse og produkt "formelsamling".
+ */
+async function fetchRemoteLicense(email: string): Promise<boolean> {
+  if (!FIRESTORE_PROJECT_ID || !FIREBASE_API_KEY) {
+    // Hvis ikke konfigurert, antar vi bare ingen fjern-lisens
+    return false;
+  }
+
+  const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents:runQuery?key=${FIREBASE_API_KEY}`;
+
+  const body = {
+    structuredQuery: {
+      from: [{ collectionId: "licenses" }],
+      where: {
+        compositeFilter: {
+          op: "AND",
+          filters: [
+            {
+              fieldFilter: {
+                field: { fieldPath: "product" },
+                op: "EQUAL",
+                value: { stringValue: "formelsamling" }
+              }
+            },
+            {
+              fieldFilter: {
+                field: { fieldPath: "status" },
+                op: "EQUAL",
+                value: { stringValue: "active" }
+              }
+            },
+            {
+              fieldFilter: {
+                field: { fieldPath: "customerEmail" },
+                op: "EQUAL",
+                value: { stringValue: email }
+              }
+            }
+          ]
+        }
+      },
+      orderBy: [
+        {
+          field: { fieldPath: "createdAt" },
+          direction: "DESCENDING"
+        }
+      ],
+      limit: 1
+    }
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
   });
 
-  // Last inn lagret lisens fra localStorage
+  if (!res.ok) {
+    // Vi logger bare i konsoll – appen skal ikke knekke
+    const text = await res.text().catch(() => "");
+    console.error("Feil ved henting av lisens fra Firestore:", text);
+    return false;
+  }
+
+  const rows = (await res.json()) as Array<{ document?: FirestoreDocument }>;
+
+  const doc = rows.find((r) => r.document && r.document.fields)?.document;
+  if (!doc || !doc.fields) return false;
+
+  const fields = doc.fields;
+  const paid = readBoolField(fields, "paid");
+  const status = readStringField(fields, "status");
+  const licenseType = readStringField(fields, "licenseType");
+
+  if (status === "active" && paid !== false) {
+    // Vi tolker alle aktive, betalte lisenser (single purchase / subscription)
+    // som "pro" for appen.
+    console.log("Fant aktiv lisens for", email, {
+      status,
+      licenseType,
+      paid
+    });
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Hook som holder orden på:
+ *  - gratis / trial / pro
+ *  - lokal trial i localStorage
+ *  - enkel sjekk mot Firestore for pro-lisens via e-post
+ */
+export function useLicense(): LicenseState {
+  const [tier, setTier] = useState<LicenseTier>("free");
+  const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
+  const [trialUsed, setTrialUsed] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
+
+  // Les lokal state (trial + e-post) ved første render
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = loadStoredLicense();
-    const computed = computeStateFromStored(stored);
-    setState(computed);
+    const storedTrial = loadStoredTrial();
+    const storedEmail = loadStoredEmail();
+
+    if (storedTrial) {
+      setTrialEndsAt(storedTrial.trialEndsAt);
+      setTrialUsed(true);
+      if (!storedEmail && storedTrial.email) {
+        setEmail(storedTrial.email);
+        saveStoredEmail(storedTrial.email);
+      }
+    }
+
+    if (storedEmail) {
+      setEmail(storedEmail);
+    }
+
+    setLoading(false);
+    // Initial sjekk mot Firestore hvis vi har e-post
+    if (storedEmail) {
+      setRefreshToken((x) => x + 1);
+    }
   }, []);
 
-  // Persistér lisens til localStorage (ikke mens vi fortsatt laster)
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (state.loading) return;
-
-    const toStore: StoredLicenseV1 = {
-      version: 1,
-      tier: state.tier,
-      email: state.email,
-      trialEndsAt: state.trialEndsAt,
-      trialStartedAt: undefined,
-      trialUsed: state.trialUsed,
-      proValidTo: state.proValidTo
-    };
-
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
-    } catch {
-      // ignorer lagringsfeil
+  // Avledet trial-status
+  const { isTrialActive, isTrialExpired } = useMemo(() => {
+    if (!trialEndsAt) {
+      return { isTrialActive: false, isTrialExpired: trialUsed };
     }
-  }, [state]);
+    const now = Date.now();
+    const end = Date.parse(trialEndsAt);
+    if (Number.isNaN(end)) {
+      return { isTrialActive: false, isTrialExpired: trialUsed };
+    }
+    const active = now < end;
+    return {
+      isTrialActive: active,
+      isTrialExpired: trialUsed && !active
+    };
+  }, [trialEndsAt, trialUsed]);
 
-  const startTrial = (email: string) => {
-    setState((prev) => {
-      // Har allerede brukt prøve eller har PRO → ikke start ny
-      if (prev.trialUsed || prev.tier === "pro") {
-        return { ...prev, loading: false, email: email || prev.email };
-      }
-
-      const now = new Date();
-      const durationMs = 10 * 24 * 60 * 60 * 1000; // 10 dager
-      const end = new Date(now.getTime() + durationMs);
-
-      return {
-        ...prev,
-        tier: "trial",
-        email: email || prev.email,
-        trialEndsAt: end.toISOString(),
-        trialUsed: true,
-        isTrialActive: true,
-        isTrialExpired: false,
-        loading: false
-      };
-    });
-  };
-
-  const activatePro = (opts: { email?: string; proValidTo?: string }) => {
-    setState((prev) => ({
-      ...prev,
-      tier: "pro",
-      email: opts.email ?? prev.email,
-      isTrialActive: false,
-      isTrialExpired: false,
-      loading: false,
-      proValidTo: opts.proValidTo ?? prev.proValidTo
-    }));
-  };
-
-  const resetToFree = () => {
-    setState((prev) => ({
-      ...prev,
-      tier: "free",
-      isTrialActive: false,
-      // beholder info om at prøve er brukt/utløpt
-      isTrialExpired: prev.isTrialExpired || prev.trialUsed,
-      trialEndsAt: prev.trialEndsAt,
-      loading: false
-    }));
-  };
-
-  const setLookupEmail = (email: string) => {
-    setState((prev) => ({
-      ...prev,
-      email: email || prev.email
-    }));
-  };
-
-  // Synkroniser PRO-lisens fra Firestore basert på e-postadresse
+  // Hoved-heuristikk for tier
   useEffect(() => {
-    if (!state.email) return;
+    // Hvis vi allerede har pro, holder vi oss der til noe annet sier ifra
+    if (tier === "pro") return;
 
-    let unsub: (() => void) | undefined;
+    if (isTrialActive) {
+      setTier("trial");
+    } else {
+      setTier("free");
+    }
+  }, [isTrialActive, tier]);
+
+  // Hent lisens fra Firestore når refreshToken eller e-post endrer seg
+  useEffect(() => {
+    if (!email) return;
     let cancelled = false;
 
-    try {
-      const db = getDb();
-      const colRef = collection(db, "licenses");
-      // Juster feltnavn/verdier til ditt faktiske skjema:
-      //  - email: e-post brukt ved kjøp
-      //  - appId: "formler" (eller annet fast navn for denne appen)
-      //  - status: "active"
-      const q = query(
-        colRef,
-        where("email", "==", state.email.toLowerCase()),
-        where("appId", "==", "formler"),
-        where("status", "==", "active")
-      );
-
-      unsub = onSnapshot(q, (snap) => {
+    async function run() {
+      setError(null);
+      try {
+        const hasLicense = await fetchRemoteLicense(email);
         if (cancelled) return;
-
-        let hasActivePro = false;
-        let bestValidTo: Date | undefined;
-
-        snap.forEach((doc) => {
-          const data = doc.data() as {
-            validTo?: Timestamp;
-            status?: string;
-          };
-
-          // Hvis du bruker andre feltnavn enn validTo/status, juster her.
-          if (data.status !== "active") {
-            return;
-          }
-
-          const validTo = data.validTo?.toDate?.();
-          if (!validTo) {
-            // Ingen sluttdato → behandler som aktiv til videre
-            hasActivePro = true;
-            return;
-          }
-
-          if (validTo.getTime() > Date.now()) {
-            hasActivePro = true;
-            if (!bestValidTo || validTo > bestValidTo) {
-              bestValidTo = validTo;
-            }
-          }
-        });
-
-        if (hasActivePro) {
-          const validToIso = bestValidTo?.toISOString();
-
-          setState((prev) => ({
-            ...prev,
-            tier: "pro",
-            isTrialActive: false,
-            isTrialExpired: prev.isTrialExpired,
-            loading: false,
-            proValidTo: validToIso ?? prev.proValidTo
-          }));
-        } else {
-          // Ingen aktiv PRO-lisens i Firestore → ikke rør tier hvis bruker har trial
-          setState((prev) => ({
-            ...prev,
-            loading: false
-          }));
+        if (hasLicense) {
+          setTier("pro");
         }
-      });
-    } catch (err) {
-      console.warn("[MCL] Kunne ikke koble til Firestore for lisensoppslag:", err);
+      } catch (err: any) {
+        if (cancelled) return;
+        console.error("Feil ved lisenskall:", err);
+        setError("Kunne ikke sjekke lisensstatus nå.");
+      }
     }
+
+    run();
 
     return () => {
       cancelled = true;
-      if (unsub) unsub();
     };
-  }, [state.email]);
+  }, [email, refreshToken]);
 
-  const hasFullAccess =
-    state.tier === "pro" ||
-    (state.tier === "trial" && state.isTrialActive);
+  const startTrial = (inputEmail: string) => {
+    const trimmed = (inputEmail || "").trim();
+    if (!trimmed) return;
 
-  const value: LicenseContextValue = {
-    ...state,
-    startTrial,
-    activatePro,
-    resetToFree,
-    setLookupEmail,
-    hasFullAccess
+    const now = new Date();
+    const ends = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
+    const stored: StoredTrial = {
+      email: trimmed,
+      startedAt: now.toISOString(),
+      trialEndsAt: ends.toISOString()
+    };
+
+    saveStoredTrial(stored);
+    saveStoredEmail(trimmed);
+
+    setEmail(trimmed);
+    setTrialUsed(true);
+    setTrialEndsAt(stored.trialEndsAt);
+    setTier("trial");
+
+    // Når brukeren har startet trial (og sannsynligvis senere kjøper lisens
+    // med samme e-post), kan vi trigge remote-sjekk ved behov.
   };
 
-  return (
-    <LicenseCtx.Provider value={value}>{children}</LicenseCtx.Provider>
-  );
-}
+  const refresh = () => {
+    if (!email) {
+      // Ingen e-post å sjekke mot – vi gjør ingen remote-kall.
+      return;
+    }
+    setRefreshToken((x) => x + 1);
+  };
 
-export function useLicense(): LicenseContextValue {
-  const ctx = useContext(LicenseCtx);
-  if (!ctx) {
-    throw new Error("LicenseProvider is missing in component tree");
-  }
-  return ctx;
+  return {
+    tier,
+    isTrialActive,
+    isTrialExpired,
+    trialEndsAt,
+    trialUsed,
+    loading,
+    error,
+    startTrial,
+    refresh
+  };
 }
