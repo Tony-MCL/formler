@@ -95,6 +95,19 @@ export default function HomePage() {
     }
   }, []);
 
+  // Hvis vi kommer tilbake fra Stripe med ?status=success,
+  // trigges en ny lisens-sjekk mot Firestore
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const status = url.searchParams.get("status");
+    if (status === "success") {
+      license.refresh();
+      url.searchParams.delete("status");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
+
   return (
     <div className="page-root">
       <header className="header">
@@ -207,9 +220,7 @@ export default function HomePage() {
               </section>
 
               {tier === "pro" ? (
-                // -------------------------------------------------
                 // Kort ved AKTIV lisens (fullversjon)
-                // -------------------------------------------------
                 <section className="card">
                   <h2 style={{ marginTop: 0 }}>Fullversjon aktiv</h2>
                   <p style={{ fontSize: "0.95rem", marginBottom: "0.4rem" }}>
@@ -259,9 +270,7 @@ export default function HomePage() {
                   </div>
                 </section>
               ) : (
-                // -------------------------------------------------
                 // Kort for GRATIS / PRØVEPERIODE / KJØP LISENS
-                // -------------------------------------------------
                 <section className="card">
                   <h2 style={{ marginTop: 0 }}>Lisens og prøveperiode</h2>
                   <p style={{ fontSize: "0.9rem" }}>
