@@ -18,7 +18,8 @@ const PRODUCT_ID = "formelsamling";
 export default function LicenseModal({ open, onClose }: LicenseModalProps) {
   const { basePath } = useI18n();
   const [selectedPlan, setSelectedPlan] = useState<Plan>("month");
-  const [isSubscription, setIsSubscription] = useState<boolean>(true);
+  // IKKE abonnement som default – bruker må selv krysse av
+  const [isSubscription, setIsSubscription] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -27,6 +28,9 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
     if (open) {
       setBusy(false);
       setError(null);
+      // Vi lar valgt plan bli stående, men sørger for at brukeren
+      // alltid aktivt må skru på abonnement på nytt.
+      setIsSubscription(false);
     }
   }, [open]);
 
@@ -50,7 +54,7 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
         headers: {
           "Content-Type": "application/json"
         },
-        // Viktig: Vi sender origin: "app"
+        // Viktig: Vi sender origin: "app" for å få riktig success/cancel-url
         body: JSON.stringify({
           product: PRODUCT_ID,
           billingPeriod: selectedPlan,
