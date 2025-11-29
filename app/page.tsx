@@ -6,16 +6,22 @@ import ThemeToggle from "../components/ThemeToggle";
 import LangToggle from "../components/LangToggle";
 import FormelVisning from "../components/FormelVisning";
 import { useI18n } from "../lib/i18n";
+import { useLicense } from "../lib/license";
 import type { FormulaId } from "../lib/types";
 
 type ViewMode = "home" | "formula";
 
 export default function HomePage() {
   const { t, basePath } = useI18n();
+  const license = useLicense();
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedFormulaId, setSelectedFormulaId] =
     useState<FormulaId>("ohm");
   const [viewMode, setViewMode] = useState<ViewMode>("home");
+
+  const [trialEmail, setTrialEmail] = useState("");
+  const [trialError, setTrialError] = useState<string | null>(null);
 
   const appNameKey = "fm_app_name";
   const heroTitleKey = "fm_hero_title";
@@ -44,6 +50,37 @@ export default function HomePage() {
     setViewMode("home");
   };
 
+  const licensePortalUrl =
+    process.env.NEXT_PUBLIC_LICENSE_PORTAL_URL || "";
+
+  const { tier, isTrialActive, isTrialExpired, trialEndsAt, trialUsed } =
+    license;
+
+  const canStartTrial = tier === "free" && !trialUsed;
+
+  const formatDateNO = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}`;
+  };
+
+  const handleStartTrial = () => {
+    if (!canStartTrial) return;
+
+    const trimmed = trialEmail.trim();
+    if (!trimmed) {
+      setTrialError("Skriv inn e-postadressen din for å starte prøveperioden.");
+      return;
+    }
+
+    setTrialError(null);
+    license.startTrial(trimmed);
+  };
+
   return (
     <div className="page-root">
       <header className="header">
@@ -56,6 +93,15 @@ export default function HomePage() {
               aria-label="Toggle sidebar"
             >
               ☰
+            </button>
+
+            <button
+              className="button"
+              onClick={handleGoHome}
+              aria-label="Gå til forside"
+              style={{ paddingInline: "0.5rem" }}
+            >
+              ⌂
             </button>
 
             <img
@@ -95,6 +141,15 @@ export default function HomePage() {
                 ☰
               </button>
 
+              <button
+                className="button"
+                onClick={handleGoHome}
+                aria-label="Gå til forside"
+                style={{ paddingInline: "0.5rem" }}
+              >
+                ⌂
+              </button>
+
               <span className="brand-title">{appName}</span>
             </div>
 
@@ -116,22 +171,183 @@ export default function HomePage() {
 
         <main className="app-main">
           {viewMode === "home" && (
-            <section className="card main-hero" style={{ marginBottom: "1rem" }}>
-              <h1 className="main-hero-title">{heroTitle}</h1>
-              <p className="main-hero-sub">{heroSub}</p>
-              <ul className="main-hero-list">
-                <li>
-                  Fokus på elkraft, motorer og generatorer i første versjon.
-                </li>
-                <li>Formler med pen visning og innebygd kalkulator.</li>
-                <li>
-                  Klar for PDF-eksport og flere fagområder i senere versjoner.
-                </li>
-              </ul>
-              <p className="main-hero-footnote">
-                Velg en formel i menyen til venstre for å starte.
-              </p>
-            </section>
+            <>
+              <section
+                className="card main-hero"
+                style={{ marginBottom: "1rem" }}
+              >
+                <h1 className="main-hero-title">{heroTitle}</h1>
+                <p className="main-hero-sub">{heroSub}</p>
+                <ul className="main-hero-list">
+                  <li>
+                    Fokus på elkraft, motorer og generatorer i første versjon.
+                  </li>
+                  <li>Formler med pen visning og innebygd kalkulator.</li>
+                  <li>
+                    Klar for PDF-eksport og flere fagområder i senere versjoner.
+                  </li>
+                </ul>
+                <p className="main-hero-footnote">
+                  Velg en formel i menyen til venstre for å starte.
+                </p>
+              </section>
+
+              <section className="card">
+                <h2 style={{ marginTop: 0 }}>Lisens og prøveperiode</h2>
+                <p style={{ fontSize: "0.9rem" }}>
+                  Appen kan brukes gratis uten innlogging. I gratisversjonen
+                  er kalkulatoren slått av, og utskrifter har vannmerke.
+                </p>
+
+                {tier === "pro" && (
+                  <p style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+                    Du har en <strong>aktiv lisens</strong> for fullversjonen
+                    av appen.
+                  </p>
+                )}
+
+                {tier === "trial" && isTrialActive && (
+                  <p style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+                    Du har en <strong>aktiv prøveperiode</strong> som varer til{" "}
+                    <strong>{formatDateNO(trialEndsAt)}</strong>. I denne
+                    perioden har du full tilgang til kalkulatoren og utskrift
+                    uten vannmerke.
+                  </p>
+                )}
+
+                {tier === "free" && isTrialExpired && (
+                  <p style={{ fontSize: "0.9rem", fontWeight: 500 }}>
+                    Din 10-dagers prøveperiode er over. Du kan fortsatt bruke
+                    formelsamlingen gratis, men kalkulatoren er slått av og
+                    utskrifter har vannmerke. Kjøp lisens for å få full
+                    tilgang igjen.
+                  </p>
+                )}
+
+                {tier === "free" && !isTrialExpired && !trialUsed && (
+                  <>
+                    <p style={{ fontSize: "0.9rem" }}>
+                      Ønsker du å teste fullversjonen? Start en{" "}
+                      <strong>gratis 10-dagers prøveperiode</strong> med
+                      e-postadressen din.
+                    </p>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "minmax(0, 2fr) minmax(0, 1fr)",
+                        gap: "0.5rem",
+                        maxWidth: "500px",
+                        marginTop: "0.5rem"
+                      }}
+                    >
+                      <label
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          fontSize: "0.85rem",
+                          gap: "0.2rem"
+                        }}
+                      >
+                        <span>E-postadresse</span>
+                        <input
+                          type="email"
+                          value={trialEmail}
+                          onChange={(e) => setTrialEmail(e.target.value)}
+                          placeholder="navn@firma.no"
+                          style={{
+                            padding: "0.4rem 0.6rem",
+                            borderRadius: 8,
+                            border: "1px solid var(--mcl-outline)",
+                            fontSize: "0.9rem"
+                          }}
+                        />
+                      </label>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-end",
+                          justifyContent: "flex-start"
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="button"
+                          onClick={handleStartTrial}
+                          disabled={!canStartTrial}
+                          style={{
+                            background: "var(--mcl-brand)",
+                            color: "#fff",
+                            borderRadius: 999,
+                            padding: "0.45rem 0.9rem",
+                            opacity: canStartTrial ? 1 : 0.6,
+                            cursor: canStartTrial
+                              ? "pointer"
+                              : "not-allowed"
+                          }}
+                        >
+                          Start gratis prøveperiode
+                        </button>
+                      </div>
+                    </div>
+                    {trialError && (
+                      <p
+                        style={{
+                          marginTop: "0.3rem",
+                          fontSize: "0.85rem",
+                          color: "var(--mcl-error, #b91c1c)"
+                        }}
+                      >
+                        {trialError}
+                      </p>
+                    )}
+                  </>
+                )}
+
+                <div
+                  style={{
+                    marginTop: "0.9rem",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "0.5rem",
+                    alignItems: "center"
+                  }}
+                >
+                  {licensePortalUrl && (
+                    <a
+                      href={licensePortalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="button"
+                      style={{
+                        background: "var(--mcl-brand)",
+                        color: "#fff",
+                        borderRadius: 999,
+                        paddingInline: "0.9rem",
+                        textDecoration: "none",
+                        fontSize: "0.9rem"
+                      }}
+                    >
+                      Kjøp lisens
+                    </a>
+                  )}
+
+                  {!licensePortalUrl && (
+                    <p
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--mcl-muted)"
+                      }}
+                    >
+                      (Sett miljøvariabelen{" "}
+                      <code>NEXT_PUBLIC_LICENSE_PORTAL_URL</code> for å aktivere
+                      kjøpslenken.)
+                    </p>
+                  )}
+                </div>
+              </section>
+            </>
           )}
 
           {viewMode === "formula" && (
