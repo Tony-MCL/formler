@@ -18,13 +18,9 @@ export type LicenseState = {
   trialUsed: boolean;
   loading: boolean;
   error: string | null;
-  /** Full tilgang: enten aktiv trial eller pro-lisens */
   hasFullAccess: boolean;
-  /** Start en lokal 10-dagers prøveperiode basert på e-post */
   startTrial: (email: string) => void;
-  /** Manuelt knytte e-post til lisens-søk (brukes ved "Aktiver lisens") */
   linkEmail: (email: string) => void;
-  /** Trigg ny sjekk mot Firestore (f.eks. etter Stripe-success) */
   refresh: () => void;
 };
 
@@ -40,7 +36,7 @@ type StoredTrial = {
 type FirestoreValue =
   | { stringValue: string }
   | { booleanValue: boolean }
-  | { timestampValue: string | undefined | null }
+  | { timestampValue: string }
   | { nullValue: null };
 
 type FirestoreDocument = {
@@ -48,12 +44,21 @@ type FirestoreDocument = {
   fields?: Record<string, FirestoreValue>;
 };
 
+/**
+ * Viktig: bruk samme prosjekt-id som Firebase-konfigen.
+ * Du har NEXT_PUBLIC_FIREBASE_PROJECT_ID i .env,
+ * så vi støtter både FIRESTORE og FIREBASE-varianten.
+ */
 const FIRESTORE_PROJECT_ID =
   process.env.NEXT_PUBLIC_FIRESTORE_PROJECT_ID ||
-  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "";
+  process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+  "";
 const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "";
 
-/** Hjelper for å lese felter trygt */
+/* ------------------------------------------------------------------ */
+/*  HJELPERE FOR FIRESTORE-FELTER                                     */
+/* ------------------------------------------------------------------ */
+
 function readStringField(
   fields: Record<string, FirestoreValue> | undefined,
   key: string
@@ -64,19 +69,20 @@ function readStringField(
   return null;
 }
 
-function readBoolField(
+function readBooleanField(
   fields: Record<string, FirestoreValue> | undefined,
   key: string
-): boolean | null {
+): boolean {
   const v = fields?.[key];
-  if (!v) return null;
-  if ("booleanValue" in v) return v.booleanValue;
-  return null;
+  if (!v) return false;
+  if ("booleanValue" in v) return !!v.booleanValue;
+  return false;
 }
 
-/**
- * Leser evt. lagret trial-info fra localStorage
- */
+/* ------------------------------------------------------------------ */
+/*  LOCALSTORAGE – TRIAL OG E-POST                                    */
+/* ------------------------------------------------------------------ */
+
 function loadStoredTrial(): StoredTrial | null {
   if (typeof window === "undefined") return null;
   try {
@@ -118,15 +124,21 @@ function saveStoredEmail(email: string | null) {
   }
 }
 
-/**
- * Sjekker Firestore om det finnes en aktiv lisens for
- * gitt e-postadresse og produkt "formelsamling".
- */
-async function fetchRemoteLicense(email: string): Promise<boolean> {
+/* ------------------------------------------------------------------ */
+/*  FIRESTORE-LISENSSJEKK                                             */
+/* ------------------------------------------------------------------ */
+
+async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
   if (!FIRESTORE_PROJECT_ID || !FIREBASE_API_KEY) {
-    // Hvis ikke konfigurert, antar vi bare ingen fjern-lisens
+    // Ikke konfigurert → vi antar ingen fjern-lisens
+    console.warn(
+      "Lisens: Firestore ikke konfigurert (mangler prosjekt-id eller api-key)."
+    );
     return false;
   }
+
+  const email = (emailRaw || "").trim().toLowerCase();
+  if (!email) return false;
 
   const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents:runQuery?key=${FIREBASE_API_KEY}`;
 
@@ -139,9 +151,9 @@ async function fetchRemoteLicense(email: string): Promise<boolean> {
           filters: [
             {
               fieldFilter: {
-                field: { fieldPath: "product" },
+                field: { fieldPath: "customerEmail" },
                 op: "EQUAL",
-                value: { stringValue: "formelsamling" }
+                value: { stringValue: email }
               }
             },
             {
@@ -153,9 +165,9 @@ async function fetchRemoteLicense(email: string): Promise<boolean> {
             },
             {
               fieldFilter: {
-                field: { fieldPath: "customerEmail" },
+                field: { fieldPath: "product" },
                 op: "EQUAL",
-                value: { stringValue: email }
+                value: { stringValue: "formelsamling" }
               }
             }
           ]
@@ -186,30 +198,23 @@ async function fetchRemoteLicense(email: string): Promise<boolean> {
   }
 
   const rows = (await res.json()) as Array<{ document?: FirestoreDocument }>;
-
   const doc = rows.find((r) => r.document && r.document.fields)?.document;
   if (!doc || !doc.fields) return false;
 
   const fields = doc.fields;
-  const paid = readBoolField(fields, "paid");
   const status = readStringField(fields, "status");
-  const licenseType = readStringField(fields, "licenseType");
+  const paid = readBooleanField(fields, "paid");
 
-  if (status === "active" && paid !== false) {
-    console.log("Fant aktiv lisens for", email, {
-      status,
-      licenseType,
-      paid
-    });
-    return true;
-  }
+  if (status !== "active") return false;
+  if (!paid) return false;
 
-  return false;
+  return true;
 }
 
-/**
- * Intern hook som bygger hele LicenseState
- */
+/* ------------------------------------------------------------------ */
+/*  HOOK: INTERN LISENSLOGIKK                                        */
+/* ------------------------------------------------------------------ */
+
 function useLicenseInternal(): LicenseState {
   const [tier, setTier] = useState<LicenseTier>("free");
   const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
@@ -219,7 +224,7 @@ function useLicenseInternal(): LicenseState {
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
-  // Les lokal state (trial + e-post) ved første render
+  // Init: les trial-info + e-post fra localStorage
   useEffect(() => {
     const storedTrial = loadStoredTrial();
     const storedEmail = loadStoredEmail();
@@ -227,63 +232,30 @@ function useLicenseInternal(): LicenseState {
     if (storedTrial) {
       setTrialEndsAt(storedTrial.trialEndsAt);
       setTrialUsed(true);
-      if (!storedEmail && storedTrial.email) {
-        setEmail(storedTrial.email);
-        saveStoredEmail(storedTrial.email);
+      const now = new Date();
+      const ends = new Date(storedTrial.trialEndsAt);
+      if (now < ends) {
+        setTier("trial");
       }
     }
 
     if (storedEmail) {
-      setEmail(storedEmail);
+      setEmail(storedEmail.toLowerCase());
     }
 
     setLoading(false);
-    if (storedEmail) {
-      setRefreshToken((x) => x + 1);
-    }
   }, []);
 
-  // Avledet trial-status
-  const { isTrialActive, isTrialExpired } = useMemo(() => {
-    if (!trialEndsAt) {
-      return { isTrialActive: false, isTrialExpired: trialUsed };
-    }
-    const now = Date.now();
-    const end = Date.parse(trialEndsAt);
-    if (Number.isNaN(end)) {
-      return { isTrialActive: false, isTrialExpired: trialUsed };
-    }
-    const active = now < end;
-    return {
-      isTrialActive: active,
-      isTrialExpired: trialUsed && !active
-    };
-  }, [trialEndsAt, trialUsed]);
-
-  // Hoved-heuristikk for tier
-  useEffect(() => {
-    if (tier === "pro") return;
-
-    if (isTrialActive) {
-      setTier("trial");
-    } else {
-      setTier("free");
-    }
-  }, [isTrialActive, tier]);
-
-  // Hent lisens fra Firestore når refreshToken eller e-post endrer seg
+  // Sjekk lisens i Firestore når vi har e-post eller refreshToken endres
   useEffect(() => {
     if (!email) return;
     let cancelled = false;
 
-    // Viktig: lag en lokal kopi som er garantert string
-    const emailLocal = email;
-    if (!emailLocal) return;
-
-    async function run(e: string) {
+    async function run(emailLocal: string) {
+      setLoading(true);
       setError(null);
       try {
-        const hasLicense = await fetchRemoteLicense(e);
+        const hasLicense = await fetchRemoteLicense(emailLocal);
         if (cancelled) return;
         if (hasLicense) {
           setTier("pro");
@@ -292,10 +264,12 @@ function useLicenseInternal(): LicenseState {
         if (cancelled) return;
         console.error("Feil ved lisenskall:", err);
         setError("Kunne ikke sjekke lisensstatus nå.");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
 
-    run(emailLocal);
+    run(email);
 
     return () => {
       cancelled = true;
@@ -329,16 +303,28 @@ function useLicenseInternal(): LicenseState {
 
     saveStoredEmail(trimmed);
     setEmail(trimmed);
-    // Ikke rør trial-data, vi bare knytter e-posten til lisens-søk
+    // Tving ny sjekk mot Firestore
     setRefreshToken((x) => x + 1);
   };
 
   const refresh = () => {
-    if (!email) {
-      return;
-    }
+    if (!email) return;
     setRefreshToken((x) => x + 1);
   };
+
+  const isTrialActive = useMemo(() => {
+    if (!trialEndsAt) return false;
+    const now = new Date();
+    const ends = new Date(trialEndsAt);
+    return now < ends;
+  }, [trialEndsAt]);
+
+  const isTrialExpired = useMemo(() => {
+    if (!trialEndsAt) return false;
+    const now = new Date();
+    const ends = new Date(trialEndsAt);
+    return now >= ends;
+  }, [trialEndsAt]);
 
   const hasFullAccess =
     tier === "pro" || (tier === "trial" && isTrialActive);
@@ -358,15 +344,12 @@ function useLicenseInternal(): LicenseState {
   };
 }
 
-/* --------------------------------------------------------------
-   Context + Provider
--------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/*  CONTEXT + PROVIDER + HOOK                                         */
+/* ------------------------------------------------------------------ */
 
-const LicenseContext = createContext<LicenseState | undefined>(undefined);
+const LicenseContext = createContext<LicenseState | null>(null);
 
-/**
- * Provider som legges rundt appen i layout.tsx
- */
 export function LicenseProvider({ children }: { children: React.ReactNode }) {
   const value = useLicenseInternal();
   return (
