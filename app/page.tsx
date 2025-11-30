@@ -97,18 +97,21 @@ export default function HomePage() {
   };
 
   const handleActivateLicense = () => {
-    const trimmed = activationEmail.trim();
-    if (!trimmed) {
-      setActivationError("Skriv inn e-postadressen du brukte ved kjøp.");
-      setActivationInfo(null);
-      return;
-    }
-    setActivationError(null);
-    setActivationInfo(
-      "Sjekker etter lisens på denne adressen. Hvis du har kjøpt lisens med denne e-posten, blir fullversjon aktivert."
-    );
-    license.linkEmail(trimmed);
-  };
+  const trimmed = activationEmail.trim();
+  if (!trimmed) {
+    setActivationError("Skriv inn e-postadressen du brukte ved kjøp.");
+    setActivationInfo(null);
+    return;
+  }
+  setActivationError(null);
+  setActivationInfo(
+    "Sjekker etter lisens på denne adressen. Hvis du har kjøpt lisens med denne e-posten, blir fullversjon aktivert."
+  );
+  // Knytt e-post til lisenssystemet
+  license.linkEmail(trimmed);
+  // Trigg faktisk sjekk mot Firestore
+  license.refresh();
+};
 
   // Åpne lisensmodal automatisk ved #license / #lisens
   useEffect(() => {
