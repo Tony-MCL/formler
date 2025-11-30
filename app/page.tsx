@@ -23,6 +23,11 @@ export default function HomePage() {
 
   const [trialEmail, setTrialEmail] = useState("");
   const [trialError, setTrialError] = useState<string | null>(null);
+
+  const [activationEmail, setActivationEmail] = useState("");
+  const [activationError, setActivationError] = useState<string | null>(null);
+  const [activationInfo, setActivationInfo] = useState<string | null>(null);
+
   const [licenseModalOpen, setLicenseModalOpen] = useState(false);
 
   const appNameKey = "fm_app_name";
@@ -52,8 +57,13 @@ export default function HomePage() {
     setViewMode("home");
   };
 
-  const { tier, isTrialActive, isTrialExpired, trialEndsAt, trialUsed } =
-    license;
+  const {
+    tier,
+    isTrialActive,
+    isTrialExpired,
+    trialEndsAt,
+    trialUsed
+  } = license;
 
   const canStartTrial = tier === "free" && !trialUsed;
 
@@ -86,6 +96,20 @@ export default function HomePage() {
     setLicenseModalOpen(true);
   };
 
+  const handleActivateLicense = () => {
+    const trimmed = activationEmail.trim();
+    if (!trimmed) {
+      setActivationError("Skriv inn e-postadressen du brukte ved kjøp.");
+      setActivationInfo(null);
+      return;
+    }
+    setActivationError(null);
+    setActivationInfo(
+      "Sjekker etter lisens på denne adressen. Hvis du har kjøpt lisens med denne e-posten, blir fullversjon aktivert."
+    );
+    license.linkEmail(trimmed);
+  };
+
   // Åpne lisensmodal automatisk ved #license / #lisens
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -106,7 +130,7 @@ export default function HomePage() {
       url.searchParams.delete("status");
       window.history.replaceState({}, "", url.toString());
     }
-  }, []);
+  }, [license]);
 
   return (
     <div className="page-root">
@@ -411,6 +435,108 @@ export default function HomePage() {
                       Du kan også åpne lisensdialogen direkte med{" "}
                       <code>#license</code> i adressen.
                     </p>
+                  </div>
+
+                  {/* Har du allerede kjøpt lisens? */}
+                  <div
+                    style={{
+                      marginTop: "1.1rem",
+                      paddingTop: "0.75rem",
+                      borderTop: "1px solid var(--mcl-outline-soft, #e5e7eb)"
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: "0.9rem",
+                        marginBottom: "0.4rem",
+                        fontWeight: 500
+                      }}
+                    >
+                      Har du allerede kjøpt lisens?
+                    </p>
+                    <p
+                      style={{
+                        fontSize: "0.85rem",
+                        marginBottom: "0.5rem"
+                      }}
+                    >
+                      Skriv inn e-postadressen du brukte ved kjøp, så prøver vi
+                      å aktivere fullversjon i appen.
+                    </p>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "minmax(0, 2fr) minmax(0, 1fr)",
+                        gap: "0.5rem",
+                        maxWidth: "500px"
+                      }}
+                    >
+                      <label
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          fontSize: "0.85rem",
+                          gap: "0.2rem"
+                        }}
+                      >
+                        <span>E-post brukt ved kjøp</span>
+                        <input
+                          type="email"
+                          value={activationEmail}
+                          onChange={(e) => setActivationEmail(e.target.value)}
+                          placeholder="samme e-post som i Stripe"
+                          style={{
+                            padding: "0.4rem 0.6rem",
+                            borderRadius: 8,
+                            border: "1px solid var(--mcl-outline)",
+                            fontSize: "0.9rem"
+                          }}
+                        />
+                      </label>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-end",
+                          justifyContent: "flex-start"
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="button"
+                          onClick={handleActivateLicense}
+                          style={{
+                            borderRadius: 999,
+                            padding: "0.45rem 0.9rem",
+                            fontSize: "0.9rem"
+                          }}
+                        >
+                          Aktiver lisens
+                        </button>
+                      </div>
+                    </div>
+                    {activationError && (
+                      <p
+                        style={{
+                          marginTop: "0.3rem",
+                          fontSize: "0.85rem",
+                          color: "var(--mcl-error, #b91c1c)"
+                        }}
+                      >
+                        {activationError}
+                      </p>
+                    )}
+                    {activationInfo && (
+                      <p
+                        style={{
+                          marginTop: "0.3rem",
+                          fontSize: "0.8rem",
+                          color: "var(--mcl-muted)"
+                        }}
+                      >
+                        {activationInfo}
+                      </p>
+                    )}
                   </div>
                 </section>
               )}
