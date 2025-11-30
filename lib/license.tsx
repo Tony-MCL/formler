@@ -22,6 +22,8 @@ export type LicenseState = {
   hasFullAccess: boolean;
   /** Start en lokal 10-dagers prøveperiode basert på e-post */
   startTrial: (email: string) => void;
+  /** Manuelt knytte e-post til lisens-søk (brukes ved "Aktiver lisens") */
+  linkEmail: (email: string) => void;
   /** Trigg ny sjekk mot Firestore (f.eks. etter Stripe-success) */
   refresh: () => void;
 };
@@ -300,7 +302,7 @@ function useLicenseInternal(): LicenseState {
   }, [email, refreshToken]);
 
   const startTrial = (inputEmail: string) => {
-    const trimmed = (inputEmail || "").trim();
+    const trimmed = (inputEmail || "").trim().toLowerCase();
     if (!trimmed) return;
 
     const now = new Date();
@@ -318,6 +320,16 @@ function useLicenseInternal(): LicenseState {
     setTrialUsed(true);
     setTrialEndsAt(stored.trialEndsAt);
     setTier("trial");
+  };
+
+  const linkEmail = (inputEmail: string) => {
+    const trimmed = (inputEmail || "").trim().toLowerCase();
+    if (!trimmed) return;
+
+    saveStoredEmail(trimmed);
+    setEmail(trimmed);
+    // Ikke rør trial-data, vi bare knytter e-posten til lisens-søk
+    setRefreshToken((x) => x + 1);
   };
 
   const refresh = () => {
@@ -340,6 +352,7 @@ function useLicenseInternal(): LicenseState {
     error,
     hasFullAccess,
     startTrial,
+    linkEmail,
     refresh
   };
 }
