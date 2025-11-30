@@ -18,7 +18,7 @@ const workerUrl =
 const PRODUCT_ID = "formelsamling";
 
 // TODO: Sett korrekt navn og org.nr før produksjon
-const SELLER_NAME = "Morning Coffee Labs";
+const SELLER_NAME = "Mathisens Morning Coffee Labs";
 const SELLER_ORG_NR = "Org.nr 000 000 000";
 
 type CustomerInfo = {
