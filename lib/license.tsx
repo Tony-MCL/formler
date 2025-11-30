@@ -45,9 +45,9 @@ type FirestoreDocument = {
 };
 
 /**
- * Viktig: bruk samme prosjekt-id som Firebase-konfigen.
- * Du har NEXT_PUBLIC_FIREBASE_PROJECT_ID i .env,
- * så vi støtter både FIRESTORE og FIREBASE-varianten.
+ * Viktig:
+ *  - .env har NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ *  - vi støtter også NEXT_PUBLIC_FIRESTORE_PROJECT_ID hvis du vil ha det senere
  */
 const FIRESTORE_PROJECT_ID =
   process.env.NEXT_PUBLIC_FIRESTORE_PROJECT_ID ||
@@ -130,7 +130,6 @@ function saveStoredEmail(email: string | null) {
 
 async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
   if (!FIRESTORE_PROJECT_ID || !FIREBASE_API_KEY) {
-    // Ikke konfigurert → vi antar ingen fjern-lisens
     console.warn(
       "Lisens: Firestore ikke konfigurert (mangler prosjekt-id eller api-key)."
     );
@@ -158,16 +157,16 @@ async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
             },
             {
               fieldFilter: {
-                field: { fieldPath: "status" },
+                field: { fieldPath: "product" },
                 op: "EQUAL",
-                value: { stringValue: "active" }
+                value: { stringValue: "formelsamling" }
               }
             },
             {
               fieldFilter: {
-                field: { fieldPath: "product" },
+                field: { fieldPath: "status" },
                 op: "EQUAL",
-                value: { stringValue: "formelsamling" }
+                value: { stringValue: "active" }
               }
             }
           ]
@@ -303,7 +302,7 @@ function useLicenseInternal(): LicenseState {
 
     saveStoredEmail(trimmed);
     setEmail(trimmed);
-    // Tving ny sjekk mot Firestore
+    // Tvinger en ny runde mot Firestore
     setRefreshToken((x) => x + 1);
   };
 
@@ -357,13 +356,9 @@ export function LicenseProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-/**
- * Hook som brukes i komponenter (HomePage, FormelVisning, osv.)
- */
 export function useLicense(): LicenseState {
   const ctx = useContext(LicenseContext);
   if (!ctx) {
-    // Fallback hvis noen kaller useLicense utenfor Provider
     return useLicenseInternal();
   }
   return ctx;
