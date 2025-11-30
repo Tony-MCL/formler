@@ -37,6 +37,7 @@ type FirestoreValue =
   | { stringValue: string }
   | { booleanValue: boolean }
   | { timestampValue: string }
+  | { booleanValue: boolean }
   | { nullValue: null };
 
 type FirestoreDocument = {
@@ -44,11 +45,7 @@ type FirestoreDocument = {
   fields?: Record<string, FirestoreValue>;
 };
 
-/**
- * Viktig:
- *  - .env har NEXT_PUBLIC_FIREBASE_PROJECT_ID
- *  - vi støtter også NEXT_PUBLIC_FIRESTORE_PROJECT_ID hvis du vil ha det senere
- */
+/** Bruk samme prosjekt-id som Firebase-oppsettet */
 const FIRESTORE_PROJECT_ID =
   process.env.NEXT_PUBLIC_FIRESTORE_PROJECT_ID ||
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
@@ -56,7 +53,7 @@ const FIRESTORE_PROJECT_ID =
 const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "";
 
 /* ------------------------------------------------------------------ */
-/*  HJELPERE FOR FIRESTORE-FELTER                                     */
+/*  HJELPERE                                                           */
 /* ------------------------------------------------------------------ */
 
 function readStringField(
@@ -80,7 +77,7 @@ function readBooleanField(
 }
 
 /* ------------------------------------------------------------------ */
-/*  LOCALSTORAGE – TRIAL OG E-POST                                    */
+/*  LOCALSTORAGE – TRIAL & E-POST                                     */
 /* ------------------------------------------------------------------ */
 
 function loadStoredTrial(): StoredTrial | null {
@@ -184,9 +181,7 @@ async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
 
   const res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
 
@@ -211,7 +206,7 @@ async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
 }
 
 /* ------------------------------------------------------------------ */
-/*  HOOK: INTERN LISENSLOGIKK                                        */
+/*  INTERN LISENSLOGIKK                                               */
 /* ------------------------------------------------------------------ */
 
 function useLicenseInternal(): LicenseState {
@@ -223,7 +218,7 @@ function useLicenseInternal(): LicenseState {
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
-  // Init: les trial-info + e-post fra localStorage
+  // Init fra localStorage
   useEffect(() => {
     const storedTrial = loadStoredTrial();
     const storedEmail = loadStoredEmail();
@@ -245,7 +240,7 @@ function useLicenseInternal(): LicenseState {
     setLoading(false);
   }, []);
 
-  // Sjekk lisens i Firestore når vi har e-post eller refreshToken endres
+  // Sjekk lisens i Firestore når e-post endres eller vi refresher
   useEffect(() => {
     if (!email) return;
     let cancelled = false;
@@ -281,6 +276,7 @@ function useLicenseInternal(): LicenseState {
 
     const now = new Date();
     const ends = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
+
     const stored: StoredTrial = {
       email: trimmed,
       startedAt: now.toISOString(),
@@ -302,7 +298,6 @@ function useLicenseInternal(): LicenseState {
 
     saveStoredEmail(trimmed);
     setEmail(trimmed);
-    // Tvinger en ny runde mot Firestore
     setRefreshToken((x) => x + 1);
   };
 
