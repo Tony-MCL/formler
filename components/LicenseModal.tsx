@@ -22,18 +22,14 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
 
   const [selectedPlan, setSelectedPlan] = useState<Plan>("month");
   const [email, setEmail] = useState("");
-  // IKKE abonnement som default – bruker må selv krysse av
   const [isSubscription, setIsSubscription] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Nullstill state hver gang modalen åpnes
   useEffect(() => {
     if (open) {
       setBusy(false);
       setError(null);
-      // Vi lar valgt plan bli stående, men sørger for at brukeren
-      // alltid aktivt må skru på abonnement på nytt.
       setIsSubscription(false);
     }
   }, [open]);
@@ -49,7 +45,7 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
       return;
     }
 
-    // Knytt e-posten til lisenssystemet før vi sender brukeren til Stripe
+    // Knytt e-post til lisenssystemet før Stripe
     license.linkEmail(trimmedEmail);
 
     if (!workerUrl) {
@@ -62,25 +58,26 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
     try {
       setBusy(true);
 
+      const successUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}${window.location.pathname}?status=success`
+          : undefined;
+
+      const cancelUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}${window.location.pathname}#license`
+          : undefined;
+
       const response = await fetch(workerUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        // Viktig: Vi sender origin: "app" + eksplisitte success/cancel-URLer
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           product: PRODUCT_ID,
           billingPeriod: selectedPlan,
           autoRenew: isSubscription,
           origin: "app",
-          successUrl:
-            typeof window !== "undefined"
-              ? `${window.location.origin}${window.location.pathname}?status=success`
-              : undefined,
-          cancelUrl:
-            typeof window !== "undefined"
-              ? `${window.location.origin}${window.location.pathname}#license`
-              : undefined
+          successUrl,
+          cancelUrl
         })
       });
 
@@ -93,7 +90,6 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
       }
 
       const data = (await response.json()) as { url?: string };
-
       if (!data.url) {
         throw new Error("Mottok ingen betalingslenke fra serveren.");
       }
@@ -147,7 +143,6 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close-knapp */}
         <button
           type="button"
           onClick={onClose}
@@ -167,39 +162,25 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
           ✕
         </button>
 
-        {/* Tittel + logo */}
         <div
           style={{
             display: "flex",
-            alignItems: "center",
             gap: "0.75rem",
+            alignItems: "center",
             marginBottom: "0.75rem"
           }}
         >
-          <div
+          <img
+            src={`${basePath}/images/mcl-logo-round.png`}
+            alt="Mathisens Morning Coffee Labs"
             style={{
               width: 40,
               height: 40,
               borderRadius: 12,
-              background:
-                "radial-gradient(circle at 30% 20%, #fde68a, #f97316)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
+              objectFit: "cover",
               boxShadow: "0 6px 20px rgba(0,0,0,0.35)"
             }}
-          >
-            <img
-              src={`${basePath}/images/mcl-logo-round.png`}
-              alt="Mathisens Morning Coffee Labs"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover"
-              }}
-            />
-          </div>
+          />
           <h2
             id="license-modal-title"
             style={{ margin: 0, fontSize: "1.2rem" }}
@@ -224,7 +205,7 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
           <li>Løpende oppdateringer og nye formler</li>
         </ul>
 
-        {/* E-post som lisensen knyttes til */}
+        {/* E-postfelt */}
         <div
           style={{
             marginBottom: "0.9rem",
@@ -258,8 +239,8 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
               color: "var(--mcl-muted)"
             }}
           >
-            Vi bruker denne e-posten til å finne lisensen din etter kjøp. Den
-            må være den samme som du skriver inn i Stripe-betalingen.
+            Vi bruker denne e-posten til å knytte lisensen til kontoen din og
+            finne lisensen etter kjøp. Bruk samme adresse i Stripe-betalingen.
           </p>
         </div>
 
@@ -297,10 +278,10 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
                 fontSize: "0.95rem"
               }}
             >
-              Månedslisens
+              {planLabel("month")}
             </div>
             <div style={{ fontSize: "0.85rem", marginBottom: "0.15rem" }}>
-              49,- per måned
+              {planPrice("month")}
             </div>
             <div style={{ fontSize: "0.75rem", color: "var(--mcl-muted)" }}>
               Fleksibelt – passer hvis du vil teste over tid.
@@ -332,10 +313,10 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
                 fontSize: "0.95rem"
               }}
             >
-              Årslisens
+              {planLabel("year")}
             </div>
             <div style={{ fontSize: "0.85rem", marginBottom: "0.15rem" }}>
-              490,- per år
+              {planPrice("year")}
             </div>
             <div style={{ fontSize: "0.75rem", color: "var(--mcl-muted)" }}>
               Best verdi hvis du bruker appen jevnlig.
@@ -343,7 +324,7 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
           </button>
         </div>
 
-        {/* Abonnement vs engangskjøp */}
+        {/* Abonnement/engangskjøp */}
         <div
           style={{
             marginBottom: "0.9rem",
@@ -366,8 +347,8 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
             />
             <span>
               <strong>Abonnement</strong> – fornyes automatisk hver{" "}
-              {selectedPlan === "month" ? "måned" : "år"}. Du kan si opp når som
-              helst via Stripe-kvitteringen.
+              {selectedPlan === "month" ? "måned" : "år"}. Du kan si opp
+              når som helst via Stripe-kvitteringen.
               <br />
               Når denne boksen ikke er krysset av, blir kjøpet behandlet som et{" "}
               <strong>enkeltkjøp</strong>.
@@ -375,7 +356,7 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
           </label>
         </div>
 
-        {/* Lovpålagt info – kortversjon */}
+        {/* Kort lovinfo (full info på egne sider senere) */}
         <div
           style={{
             fontSize: "0.75rem",
