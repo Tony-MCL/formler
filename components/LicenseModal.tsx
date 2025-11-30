@@ -1,3 +1,4 @@
+// components/LicenseModal.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -15,33 +16,135 @@ const workerUrl =
 
 const PRODUCT_ID = "formelsamling";
 
+// TODO: Fyll inn faktiske firmadata før produksjon
+const SELLER_NAME = "Morning Coffee Labs";
+const SELLER_ORGNO = "ORGNR-HER"; // f.eks. 123 456 789
+const SELLER_COUNTRY = "Norge";
+const SELLER_EMAIL = "post@morningcoffeelabs.no";
+
 export default function LicenseModal({ open, onClose }: LicenseModalProps) {
-  const { basePath } = useI18n();
+  const { basePath, lang } = useI18n();
   const [selectedPlan, setSelectedPlan] = useState<Plan>("month");
   // IKKE abonnement som default – bruker må selv krysse av
   const [isSubscription, setIsSubscription] = useState<boolean>(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedWaiver, setAcceptedWaiver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const isNO = lang === "no";
 
   // Nullstill state hver gang modalen åpnes
   useEffect(() => {
     if (open) {
       setBusy(false);
       setError(null);
-      // Vi lar valgt plan bli stående, men sørger for at brukeren
-      // alltid aktivt må skru på abonnement på nytt.
       setIsSubscription(false);
+      setAcceptedTerms(false);
+      setAcceptedWaiver(false);
     }
   }, [open]);
 
   if (!open) return null;
 
+  const planLabel = (plan: Plan) =>
+    plan === "month"
+      ? isNO
+        ? "Månedslisens"
+        : "Monthly license"
+      : isNO
+      ? "Årslisens"
+      : "Yearly license";
+
+  const planPriceLine = (plan: Plan) => {
+    if (isNO) {
+      return plan === "month"
+        ? "49,- per måned (inkl. MVA)"
+        : "490,- per år (inkl. MVA)";
+    }
+    return plan === "month"
+      ? "NOK 49 / month (VAT included)"
+      : "NOK 490 / year (VAT included)";
+  };
+
+  const subscriptionInfo = () => {
+    if (!isSubscription) {
+      return isNO
+        ? "Dette blir et enkeltkjøp uten automatisk fornyelse."
+        : "This will be a one-time purchase with no automatic renewal.";
+    }
+    if (selectedPlan === "month") {
+      return isNO
+        ? "Abonnementet fornyes automatisk hver måned til samme pris. Du kan stoppe fornyelsen når som helst via Stripe-kvittering eller kontosiden."
+        : "The subscription renews automatically every month at the same price. You can cancel renewal at any time via the Stripe receipt or account page.";
+    }
+    // year
+    return isNO
+      ? "Abonnementet fornyes automatisk hvert år til samme pris. Du kan stoppe fornyelsen når som helst via Stripe-kvittering eller kontosiden."
+      : "The subscription renews automatically every year at the same price. You can cancel renewal at any time via the Stripe receipt or account page.";
+  };
+
+  const legalHeading = isNO ? "Viktig informasjon før kjøp" : "Important information before purchase";
+
+  const legalDigitalContent = isNO
+    ? "Dette kjøpet gjelder digitalt innhold (programvare) som leveres umiddelbart. Når du ber om at leveringen starter nå, mister du angreretten etter angrerettloven § 22 bokstav n."
+    : "This purchase is for digital content (software) that is provided immediately. When you ask us to start delivery now, you waive your right of withdrawal under EU consumer rules for digital content.";
+
+  const waiverLabel = isNO
+    ? "Jeg ber om at leveringen starter umiddelbart og forstår at angreretten bortfaller."
+    : "I request immediate access and understand that my right of withdrawal will be waived.";
+
+  const termsLabel = isNO
+    ? "Jeg har lest og godtar kjøpsvilkår og personvernerklæring."
+    : "I have read and accept the terms of purchase and the privacy policy.";
+
+  const termsLinksLabel = isNO
+    ? "Les vilkår og personvern:"
+    : "Read terms and privacy:";
+
+  const goToCheckoutLabel = () => {
+    if (busy) {
+      return isNO ? "Sender deg til betaling..." : "Redirecting to checkout...";
+    }
+    const price = planPriceLine(selectedPlan);
+    if (isNO) {
+      return `Gå til betaling – ${planLabel(selectedPlan)} (${price})`;
+    }
+    return `Proceed to checkout – ${planLabel(selectedPlan)} (${price})`;
+  };
+
+  const validateBeforeCheckout = (): boolean => {
+    if (!acceptedWaiver) {
+      setError(
+        isNO
+          ? "Du må samtykke til at angreretten bortfaller for å kunne gjennomføre kjøpet."
+          : "You must consent to waiving the right of withdrawal in order to complete the purchase."
+      );
+      return false;
+    }
+    if (!acceptedTerms) {
+      setError(
+        isNO
+          ? "Du må godta kjøpsvilkår og personvernerklæring før du kan gå videre."
+          : "You must accept the terms of purchase and the privacy policy before continuing."
+      );
+      return false;
+    }
+    return true;
+  };
+
   const handleGoToCheckout = async () => {
     setError(null);
 
+    if (!validateBeforeCheckout()) {
+      return;
+    }
+
     if (!workerUrl) {
       setError(
-        "Stripe Worker URL mangler (NEXT_PUBLIC_STRIPE_WORKER_URL)."
+        isNO
+          ? "Stripe Worker URL mangler (NEXT_PUBLIC_STRIPE_WORKER_URL)."
+          : "Stripe Worker URL is missing (NEXT_PUBLIC_STRIPE_WORKER_URL)."
       );
       return;
     }
@@ -54,12 +157,13 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
         headers: {
           "Content-Type": "application/json"
         },
-        // Viktig: Vi sender origin: "app" for å få riktig success/cancel-url
+        // Viktig: origin: "app" → worker velger riktig success/cancel-URL
         body: JSON.stringify({
           product: PRODUCT_ID,
           billingPeriod: selectedPlan,
           autoRenew: isSubscription,
-          origin: "app"
+          origin: "app",
+          language: lang
         })
       });
 
@@ -67,14 +171,19 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
         const text = await response.text().catch(() => "");
         console.error("Worker error:", text);
         throw new Error(
-          `Kunne ikke opprette Checkout-session (HTTP ${response.status}).`
+          (isNO ? "Kunne ikke opprette Checkout-session" : "Could not create Checkout session") +
+            ` (HTTP ${response.status}).`
         );
       }
 
       const data = (await response.json()) as { url?: string };
 
       if (!data.url) {
-        throw new Error("Mottok ingen betalingslenke fra serveren.");
+        throw new Error(
+          isNO
+            ? "Mottok ingen betalingslenke fra serveren."
+            : "Did not receive a checkout URL from server."
+        );
       }
 
       window.location.href = data.url;
@@ -82,17 +191,13 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
       console.error(err);
       setError(
         err?.message ||
-          "Noe gikk galt ved opprettelse av betaling. Prøv igjen senere."
+          (isNO
+            ? "Noe gikk galt ved opprettelse av betaling. Prøv igjen senere."
+            : "Something went wrong while creating the payment. Please try again later.")
       );
       setBusy(false);
     }
   };
-
-  const planLabel = (plan: Plan) =>
-    plan === "month" ? "Månedslisens" : "Årslisens";
-
-  const planPrice = (plan: Plan) =>
-    plan === "month" ? "49,- per måned" : "490,- per år";
 
   return (
     <div
@@ -116,20 +221,22 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
         className="card"
         style={{
           position: "relative",
-          maxWidth: "520px",
+          maxWidth: "620px",
           width: "100%",
           padding: "1.5rem",
           borderRadius: 16,
           boxShadow: "0 18px 45px rgba(0,0,0,0.35)",
           background: "var(--mcl-surface)",
-          color: "var(--mcl-text)"
+          color: "var(--mcl-text)",
+          maxHeight: "90vh",
+          overflowY: "auto"
         }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          aria-label="Lukk"
+          aria-label={isNO ? "Lukk" : "Close"}
           style={{
             position: "absolute",
             top: "0.5rem",
@@ -144,6 +251,7 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
           ✕
         </button>
 
+        {/* Topp: logo + tittel */}
         <div
           style={{
             display: "flex",
@@ -161,12 +269,21 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
             id="license-modal-title"
             style={{ margin: 0, fontSize: "1.2rem" }}
           >
-            Oppgrader til fullversjon
+            {isNO ? "Oppgrader til fullversjon" : "Upgrade to full version"}
           </h2>
         </div>
 
-        <p style={{ fontSize: "0.9rem", marginTop: 0, marginBottom: "0.75rem" }}>
-          Med fullversjon får du:
+        {/* Hva får du? */}
+        <p
+          style={{
+            fontSize: "0.9rem",
+            marginTop: 0,
+            marginBottom: "0.75rem"
+          }}
+        >
+          {isNO
+            ? "Med fullversjon får du:"
+            : "With the full version you get:"}
         </p>
         <ul
           style={{
@@ -176,10 +293,56 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
             paddingLeft: "1.2rem"
           }}
         >
-          <li>Åpen kalkulator for alle formler</li>
-          <li>Utskrifter uten vannmerke</li>
-          <li>Løpende oppdateringer og nye formler</li>
+          <li>
+            {isNO
+              ? "Åpen kalkulator for alle formler"
+              : "Full access to the calculator for all formulas"}
+          </li>
+          <li>
+            {isNO
+              ? "Utskrifter uten vannmerke"
+              : "PDF exports without watermark"}
+          </li>
+          <li>
+            {isNO
+              ? "Løpende oppdateringer og nye formler"
+              : "Ongoing updates and new formulas"}
+          </li>
         </ul>
+
+        {/* Selger / pris / planvalg */}
+        <section
+          style={{
+            borderRadius: 12,
+            padding: "0.75rem 0.9rem",
+            background: "var(--mcl-bg-soft, rgba(15,23,42,0.4))",
+            marginBottom: "0.9rem",
+            fontSize: "0.8rem"
+          }}
+        >
+          <p style={{ margin: 0, marginBottom: "0.2rem" }}>
+            <strong>{isNO ? "Selger" : "Seller"}:</strong>{" "}
+            {SELLER_NAME}{" "}
+            {SELLER_ORGNO
+              ? `(org.nr ${SELLER_ORGNO}, ${SELLER_COUNTRY})`
+              : `(${SELLER_COUNTRY})`}
+          </p>
+          <p style={{ margin: 0, marginBottom: "0.2rem" }}>
+            <strong>{isNO ? "Kontakt" : "Contact"}:</strong>{" "}
+            <a
+              href={`mailto:${SELLER_EMAIL}`}
+              style={{ textDecoration: "underline" }}
+            >
+              {SELLER_EMAIL}
+            </a>
+          </p>
+          <p style={{ margin: 0 }}>
+            <strong>{isNO ? "Priser" : "Prices"}:</strong>{" "}
+            {isNO
+              ? "Alle priser vises i NOK og er inkludert merverdiavgift (MVA)."
+              : "All prices are in NOK and include VAT."}
+          </p>
+        </section>
 
         {/* Planvalg */}
         <div
@@ -215,13 +378,15 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
                 fontSize: "0.95rem"
               }}
             >
-              Månedslisens
+              {isNO ? "Månedslisens" : "Monthly license"}
             </div>
             <div style={{ fontSize: "0.85rem", marginBottom: "0.15rem" }}>
-              49,- per måned
+              {planPriceLine("month")}
             </div>
             <div style={{ fontSize: "0.75rem", color: "var(--mcl-muted)" }}>
-              Passer hvis du vil teste appen over tid.
+              {isNO
+                ? "Passer hvis du vil teste appen over tid."
+                : "Good if you want to test the app over time."}
             </div>
           </button>
 
@@ -250,13 +415,15 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
                 fontSize: "0.95rem"
               }}
             >
-              Årslisens
+              {isNO ? "Årslisens" : "Yearly license"}
             </div>
             <div style={{ fontSize: "0.85rem", marginBottom: "0.15rem" }}>
-              490,- per år
+              {planPriceLine("year")}
             </div>
             <div style={{ fontSize: "0.75rem", color: "var(--mcl-muted)" }}>
-              Best verdi hvis du bruker appen jevnlig.
+              {isNO
+                ? "Best verdi hvis du bruker appen jevnlig."
+                : "Best value if you use the app regularly."}
             </div>
           </button>
         </div>
@@ -283,14 +450,140 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
               style={{ marginTop: "0.1rem" }}
             />
             <span>
-              Gjør dette til et <strong>abonnement</strong> (fornyes automatisk
-              via Stripe).
-              <br />
-              Når denne boksen ikke er krysset av, blir kjøpet behandlet som et{" "}
-              <strong>enkeltkjøp</strong>.
+              {isNO ? (
+                <>
+                  Gjør dette til et <strong>abonnement</strong> (fornyes
+                  automatisk via Stripe).
+                  <br />
+                  Når denne boksen ikke er krysset av, blir kjøpet behandlet
+                  som et <strong>enkeltkjøp</strong> uten automatisk fornyelse.
+                </>
+              ) : (
+                <>
+                  Make this a <strong>subscription</strong> (auto-renews via
+                  Stripe).
+                  <br />
+                  When this box is not checked, the purchase is treated as a{" "}
+                  <strong>one-time payment</strong> with no automatic renewal.
+                </>
+              )}
             </span>
           </label>
+          <p
+            style={{
+              marginTop: "0.45rem",
+              fontSize: "0.8rem",
+              color: "var(--mcl-muted)"
+            }}
+          >
+            {subscriptionInfo()}
+          </p>
         </div>
+
+        {/* Juridisk seksjon */}
+        <section
+          style={{
+            borderTop: "1px solid var(--mcl-outline-soft, #e5e7eb)",
+            paddingTop: "0.75rem",
+            marginTop: "0.5rem",
+            marginBottom: "0.75rem"
+          }}
+        >
+          <h3
+            style={{
+              margin: 0,
+              marginBottom: "0.35rem",
+              fontSize: "0.95rem"
+            }}
+          >
+            {legalHeading}
+          </h3>
+          <p
+            style={{
+              fontSize: "0.8rem",
+              marginTop: 0,
+              marginBottom: "0.4rem"
+            }}
+          >
+            {legalDigitalContent}
+          </p>
+
+          {/* Angrerett-samtykke */}
+          <label
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "0.45rem",
+              fontSize: "0.8rem",
+              marginBottom: "0.4rem",
+              cursor: "pointer"
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={acceptedWaiver}
+              onChange={(e) => setAcceptedWaiver(e.target.checked)}
+              style={{ marginTop: "0.1rem" }}
+            />
+            <span>{waiverLabel}</span>
+          </label>
+
+          {/* Vilkår / personvern */}
+          <label
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "0.45rem",
+              fontSize: "0.8rem",
+              marginBottom: "0.35rem",
+              cursor: "pointer"
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              style={{ marginTop: "0.1rem" }}
+            />
+            <span>{termsLabel}</span>
+          </label>
+
+          <p
+            style={{
+              fontSize: "0.8rem",
+              marginTop: 0,
+              marginBottom: 0
+            }}
+          >
+            <strong>{termsLinksLabel}</strong>{" "}
+            <a
+              href={`${basePath}/vilkar/`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ textDecoration: "underline" }}
+            >
+              {isNO ? "Kjøpsvilkår" : "Terms of purchase"}
+            </a>{" "}
+            ·{" "}
+            <a
+              href={`${basePath}/personvern/`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ textDecoration: "underline" }}
+            >
+              {isNO ? "Personvernerklæring" : "Privacy policy"}
+            </a>{" "}
+            ·{" "}
+            <a
+              href={`${basePath}/angrerett/`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ textDecoration: "underline" }}
+            >
+              {isNO ? "Angrerett" : "Right of withdrawal"}
+            </a>
+          </p>
+        </section>
 
         {error && (
           <div
@@ -304,6 +597,7 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
           </div>
         )}
 
+        {/* Knapperad */}
         <div
           style={{
             display: "flex",
@@ -322,28 +616,27 @@ export default function LicenseModal({ open, onClose }: LicenseModalProps) {
               fontSize: "0.85rem"
             }}
           >
-            Avbryt
+            {isNO ? "Avbryt" : "Cancel"}
           </button>
           <button
             type="button"
             onClick={handleGoToCheckout}
             className="button"
-            disabled={busy}
+            disabled={busy || !acceptedTerms || !acceptedWaiver}
             style={{
               borderRadius: 999,
               paddingInline: "1.1rem",
               fontSize: "0.9rem",
               background: "var(--mcl-brand)",
               color: "#fff",
-              opacity: busy ? 0.7 : 1,
-              cursor: busy ? "wait" : "pointer"
+              opacity: busy || !acceptedTerms || !acceptedWaiver ? 0.7 : 1,
+              cursor:
+                busy || !acceptedTerms || !acceptedWaiver
+                  ? "not-allowed"
+                  : "pointer"
             }}
           >
-            {busy
-              ? "Sender deg til betaling..."
-              : `Gå til betaling – ${planLabel(selectedPlan)} (${planPrice(
-                  selectedPlan
-                )})`}
+            {goToCheckoutLabel()}
           </button>
         </div>
       </div>
