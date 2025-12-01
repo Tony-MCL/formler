@@ -7,11 +7,16 @@ import React, {
   useMemo,
   useState
 } from "react";
+import { getDb } from "./firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export type LicenseTier = "free" | "trial" | "pro";
 
+export type LicenseSource = "free" | "trial" | "token" | "email";
+
 export type LicenseState = {
   tier: LicenseTier;
+  source: LicenseSource;
   isTrialActive: boolean;
   isTrialExpired: boolean;
   trialEndsAt: string | null;
@@ -235,49 +240,27 @@ async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
 }
 
 /* ------------------------------------------------------------------ */
-/*  TRIAL-LOGG TIL FIRESTORE                                          */
+/*  FIRESTORE – LOGG PRØVEBRUKERE                                     */
 /* ------------------------------------------------------------------ */
 
-async function saveTrialSignupToFirestore(
-  emailRaw: string,
-  trialEndsAtIso: string
-): Promise<void> {
-  if (!FIRESTORE_PROJECT_ID || !FIREBASE_API_KEY) {
-    console.warn(
-      "Lisens: Firestore ikke konfigurert (mangler prosjekt-id eller api-key) – skipper trial-logg."
-    );
-    return;
-  }
-
+async function registerTrialUser(emailRaw: string, trialEndsAtIso: string | null) {
   const email = (emailRaw || "").trim().toLowerCase();
   if (!email) return;
 
-  const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/trialSignups?key=${FIREBASE_API_KEY}`;
-
-  const body = {
-    fields: {
-      email: { stringValue: email },
-      source: { stringValue: "formler-app" },
-      createdAt: { timestampValue: new Date().toISOString() },
-      trialEndsAt: { timestampValue: trialEndsAtIso }
-    }
-  };
-
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    });
+    const db = getDb();
+    if (!db) return;
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("Lisens: Klarte ikke å lagre trial-signup:", res.status, text);
-    }
+    await addDoc(collection(db, "trialUsers"), {
+      email,
+      product: "formelsamling",
+      source: "trial",
+      tier: "trial",
+      trialEndsAt: trialEndsAtIso,
+      createdAt: serverTimestamp()
+    });
   } catch (err) {
-    console.error("Lisens: Uventet feil ved lagring av trial-signup:", err);
+    console.error("Lisens: Klarte ikke å logge trial i Firestore:", err);
   }
 }
 
@@ -351,6 +334,7 @@ async function verifyStoredToken(): Promise<VerifyTokenResult> {
 
 function useLicenseInternal(): LicenseState {
   const [tier, setTier] = useState<LicenseTier>("free");
+  const [source, setSource] = useState<LicenseSource>("free");
   const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
   const [trialUsed, setTrialUsed] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
@@ -391,6 +375,7 @@ function useLicenseInternal(): LicenseState {
       }
 
       let nextTier: LicenseTier = "free";
+      let nextSource: LicenseSource = "free";
       let proByToken = false;
 
       // 1) Prøv token-modellen først
@@ -410,6 +395,7 @@ function useLicenseInternal(): LicenseState {
 
         if (hasFormelsamling) {
           nextTier = "pro";
+          nextSource = "token";
           proByToken = true;
         }
       } else {
@@ -431,6 +417,7 @@ function useLicenseInternal(): LicenseState {
           const ends = new Date(storedTrial.trialEndsAt);
           if (now < ends) {
             nextTier = "trial";
+            nextSource = "trial";
           }
         } catch {
           // ignorér ugyldig dato
@@ -442,11 +429,13 @@ function useLicenseInternal(): LicenseState {
         const hasRemote = await fetchRemoteLicense(storedEmail);
         if (hasRemote) {
           nextTier = "pro";
+          nextSource = "email";
         }
       }
 
       if (!cancelled) {
         setTier(nextTier);
+        setSource(nextSource);
         setLoading(false);
       }
     }
@@ -468,17 +457,18 @@ function useLicenseInternal(): LicenseState {
     }
 
     const now = new Date();
-    // F.eks. 14 dagers prøveperiode
-    now.setDate(now.getDate() + 14);
+    // F.eks. 10 dagers prøveperiode
+    now.setDate(now.getDate() + 10);
     const iso = now.toISOString();
 
     saveStoredTrial({ trialEndsAt: iso });
     setTrialEndsAt(iso);
     setTrialUsed(true);
     setTier("trial");
+    setSource("trial");
 
-    // Fire-and-forget logg til Firestore
-    void saveTrialSignupToFirestore(trimmed || "", iso);
+    // Logg prøvebruker i Firestore (best effort)
+    void registerTrialUser(trimmed, iso);
   };
 
   const linkEmail = (emailToLink: string) => {
@@ -521,6 +511,7 @@ function useLicenseInternal(): LicenseState {
 
   return {
     tier,
+    source,
     isTrialActive,
     isTrialExpired,
     trialEndsAt,
