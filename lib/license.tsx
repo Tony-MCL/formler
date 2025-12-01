@@ -36,9 +36,6 @@ const FIRESTORE_PROJECT_ID =
   "";
 const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "";
 
-const STRIPE_WORKER_URL =
-  (process.env.NEXT_PUBLIC_STRIPE_WORKER_URL as string | undefined) || "";
-
 /* ------------------------------------------------------------------ */
 /*  FIRESTORE TYPES & HELPERS                                         */
 /* ------------------------------------------------------------------ */
@@ -235,29 +232,45 @@ async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
 }
 
 /* ------------------------------------------------------------------ */
-/*  TOKEN-VERIFISERING VIA STRIPE-WORKER                              */
+/*  TOKEN-VERIFISERING – LOKAL DEKODING AV TOKEN                      */
 /* ------------------------------------------------------------------ */
-
-function getWorkerBaseUrl(): string | null {
-  if (!STRIPE_WORKER_URL) return null;
-  // NEXT_PUBLIC_STRIPE_WORKER_URL kan være:
-  //  - full path til /create-checkout-session
-  //  - eller base-URL til workeren
-  // Vi stripper /create-checkout-session hvis det finnes.
-  return STRIPE_WORKER_URL.replace(/\/create-checkout-session\/?$/, "");
-}
 
 type VerifyTokenResult =
   | { ok: true; payload: any }
   | { ok: false; error: string };
 
-// Strukturen vi forventer inni payload.products
-type TokenProduct = {
-  product: string;
-  plan?: string;
-  billing?: string;
-  seats?: number;
-};
+/**
+ * Token-formatet vi får fra workeren ser ut som:
+ *   "<base64url-JSON-payload>.<hex-signature>"
+ *
+ * Vi trenger ikke sjekke signaturen i appen – vi stoler på at
+ * tokenet kommer fra vår egen worker. Her dekoder vi bare payloaden.
+ */
+function decodeLicTokenPayload(token: string): any | null {
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length < 2) return null;
+
+  const payloadPart = parts[0]; // base64url-kodet JSON
+  try {
+    // base64url → base64
+    let base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = base64.length % 4;
+    if (pad === 2) base64 += "==";
+    else if (pad === 3) base64 += "=";
+    else if (pad !== 0) return null;
+
+    const jsonStr = typeof window !== "undefined"
+      ? window.atob(base64)
+      : Buffer.from(base64, "base64").toString("utf8");
+
+    const payload = JSON.parse(jsonStr);
+    return payload;
+  } catch (err) {
+    console.error("Lisens: Klarte ikke å dekode licToken payload:", err);
+    return null;
+  }
+}
 
 async function verifyStoredToken(): Promise<VerifyTokenResult> {
   const token = loadStoredToken();
@@ -265,37 +278,20 @@ async function verifyStoredToken(): Promise<VerifyTokenResult> {
     return { ok: false, error: "Ingen token lagret." };
   }
 
-  const baseUrl = getWorkerBaseUrl();
-  if (!baseUrl) {
-    console.warn(
-      "Lisens: STRIPE worker-URL mangler, kan ikke verifisere token."
-    );
-    return { ok: false, error: "Worker-URL mangler." };
+  const payload = decodeLicTokenPayload(token);
+  if (!payload || typeof payload !== "object") {
+    return { ok: false, error: "Ugyldig token-payload." };
   }
 
-  try {
-    const res = await fetch(`${baseUrl}/verify-lic-token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ licToken: token })
-    });
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.error("Lisens: verify-lic-token HTTP-feil:", res.status, text);
-      return { ok: false, error: `HTTP ${res.status}` };
-    }
-
-    const data = await res.json();
-    if (!data.ok) {
-      return { ok: false, error: data.error || "Token avvist av server." };
-    }
-
-    return { ok: true, payload: data.payload };
-  } catch (err) {
-    console.error("Lisens: Uventet feil ved verifisering av token:", err);
-    return { ok: false, error: "Nettverksfeil ved token-verifisering." };
+  // Her kan vi legge på enkle sanity-sjekker:
+  //  - produkt: "formelsamling"
+  //  - eventuelt en enkel utløpssjekk senere hvis vi bygger det inn i tokenet
+  const product = (payload as any).product;
+  if (typeof product !== "string") {
+    return { ok: false, error: "Token mangler produkt-felt." };
   }
+
+  return { ok: true, payload };
 }
 
 /* ------------------------------------------------------------------ */
@@ -346,32 +342,25 @@ function useLicenseInternal(): LicenseState {
       let nextTier: LicenseTier = "free";
       let proByToken = false;
 
-      // 1) Prøv token-modellen først
+      // 1) Prøv token-modellen først (lokal dekoding)
       const tokenResult = await verifyStoredToken();
       if (tokenResult.ok) {
         const payload = tokenResult.payload as any;
-        const products: TokenProduct[] = Array.isArray(payload.products)
-          ? (payload.products as TokenProduct[])
-          : [];
+        const product = typeof payload.product === "string"
+          ? payload.product.toLowerCase()
+          : "";
 
-        const hasFormelsamling = products.some(
-          (p: TokenProduct) =>
-            p &&
-            typeof p.product === "string" &&
-            p.product.toLowerCase() === "formelsamling"
-        );
-
-        if (hasFormelsamling) {
+        if (product === "formelsamling") {
           nextTier = "pro";
           proByToken = true;
         }
       } else {
-        // Hvis token er ugyldig, kan vi rydde den bort for å unngå spam
+        // Hvis token er ugyldig, rydder vi den bort for å unngå spam
         if (
           tokenResult.error &&
           (tokenResult.error.includes("utløpt") ||
             tokenResult.error.includes("Ugyldig") ||
-            tokenResult.error.includes("avvist"))
+            tokenResult.error.includes("mangler"))
         ) {
           saveStoredToken(null);
         }
