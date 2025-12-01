@@ -251,6 +251,14 @@ type VerifyTokenResult =
   | { ok: true; payload: any }
   | { ok: false; error: string };
 
+// Strukturen vi forventer inni payload.products
+type TokenProduct = {
+  product: string;
+  plan?: string;
+  billing?: string;
+  seats?: number;
+};
+
 async function verifyStoredToken(): Promise<VerifyTokenResult> {
   const token = loadStoredToken();
   if (!token) {
@@ -342,12 +350,12 @@ function useLicenseInternal(): LicenseState {
       const tokenResult = await verifyStoredToken();
       if (tokenResult.ok) {
         const payload = tokenResult.payload as any;
-        const products = Array.isArray(payload.products)
-          ? payload.products
+        const products: TokenProduct[] = Array.isArray(payload.products)
+          ? (payload.products as TokenProduct[])
           : [];
 
         const hasFormelsamling = products.some(
-          (p) =>
+          (p: TokenProduct) =>
             p &&
             typeof p.product === "string" &&
             p.product.toLowerCase() === "formelsamling"
