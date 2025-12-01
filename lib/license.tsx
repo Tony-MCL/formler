@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useState
 } from "react";
+import { recordTrialStart } from "./firebase";
 import { getDb } from "./firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
@@ -414,25 +415,29 @@ function useLicenseInternal(): LicenseState {
   }, [refreshToken]);
 
   const startTrial = (emailForTrial: string) => {
-    if (typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
 
-    const trimmed = (emailForTrial || "").trim().toLowerCase();
-    if (trimmed) {
-      saveStoredEmail(trimmed);
-      setEmail(trimmed);
-    }
+  const trimmed = (emailForTrial || "").trim().toLowerCase();
+  if (trimmed) {
+    saveStoredEmail(trimmed);
+    setEmail(trimmed);
+  }
 
-    const now = new Date();
-    // F.eks. 10 dagers prøveperiode (juster ved behov)
-    now.setDate(now.getDate() + 10);
-    const iso = now.toISOString();
+  const now = new Date();
+  // 10–14 dager, alt etter hva du vil – juster her
+  now.setDate(now.getDate() + 10);
+  const iso = now.toISOString();
 
-    // Lokal lagring (som før)
-    saveStoredTrial({ trialEndsAt: iso });
-    setTrialEndsAt(iso);
-    setTrialUsed(true);
-    setTier("trial");
+  saveStoredTrial({ trialEndsAt: iso });
+  setTrialEndsAt(iso);
+  setTrialUsed(true);
+  setTier("trial");
 
+  // Logg gratis prøvebruker til Firestore (best effort – vi venter ikke på respons)
+  if (trimmed) {
+    void recordTrialStart(trimmed);
+  }
+};
     // Nytt: logg trial-bruker til Firestore for admin-oversikt
     try {
       const db = getDb();
