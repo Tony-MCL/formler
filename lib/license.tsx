@@ -12,11 +12,8 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export type LicenseTier = "free" | "trial" | "pro";
 
-export type LicenseSource = "free" | "trial" | "token" | "email";
-
 export type LicenseState = {
   tier: LicenseTier;
-  source: LicenseSource;
   isTrialActive: boolean;
   isTrialExpired: boolean;
   trialEndsAt: string | null;
@@ -52,6 +49,7 @@ type FirestoreValue =
   | { stringValue: string }
   | { booleanValue: boolean }
   | { integerValue: string }
+  | { integerValue: string } // (duplikat, men ufarlig)
   | { doubleValue: number }
   | { timestampValue: string }
   | { nullValue: null };
@@ -81,7 +79,9 @@ function readBooleanField(
 /* ------------------------------------------------------------------ */
 
 type StoredTrial = {
+  email: string;
   trialEndsAt: string;
+  startedAt: string;
 };
 
 function loadStoredTrial(): StoredTrial | null {
@@ -90,8 +90,19 @@ function loadStoredTrial(): StoredTrial | null {
     const raw = window.localStorage.getItem(TRIAL_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed.trialEndsAt === "string") {
-      return { trialEndsAt: parsed.trialEndsAt };
+    if (
+      parsed &&
+      typeof parsed.trialEndsAt === "string" &&
+      typeof parsed.email === "string"
+    ) {
+      return {
+        email: parsed.email,
+        trialEndsAt: parsed.trialEndsAt,
+        startedAt:
+          typeof parsed.startedAt === "string"
+            ? parsed.startedAt
+            : parsed.trialEndsAt
+      };
     }
     return null;
   } catch {
@@ -240,31 +251,6 @@ async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
 }
 
 /* ------------------------------------------------------------------ */
-/*  FIRESTORE – LOGG PRØVEBRUKERE                                     */
-/* ------------------------------------------------------------------ */
-
-async function registerTrialUser(emailRaw: string, trialEndsAtIso: string | null) {
-  const email = (emailRaw || "").trim().toLowerCase();
-  if (!email) return;
-
-  try {
-    const db = getDb();
-    if (!db) return;
-
-    await addDoc(collection(db, "trialUsers"), {
-      email,
-      product: "formelsamling",
-      source: "trial",
-      tier: "trial",
-      trialEndsAt: trialEndsAtIso,
-      createdAt: serverTimestamp()
-    });
-  } catch (err) {
-    console.error("Lisens: Klarte ikke å logge trial i Firestore:", err);
-  }
-}
-
-/* ------------------------------------------------------------------ */
 /*  TOKEN-VERIFISERING VIA STRIPE-WORKER                              */
 /* ------------------------------------------------------------------ */
 
@@ -334,7 +320,6 @@ async function verifyStoredToken(): Promise<VerifyTokenResult> {
 
 function useLicenseInternal(): LicenseState {
   const [tier, setTier] = useState<LicenseTier>("free");
-  const [source, setSource] = useState<LicenseSource>("free");
   const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
   const [trialUsed, setTrialUsed] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
@@ -375,7 +360,6 @@ function useLicenseInternal(): LicenseState {
       }
 
       let nextTier: LicenseTier = "free";
-      let nextSource: LicenseSource = "free";
       let proByToken = false;
 
       // 1) Prøv token-modellen først
@@ -395,7 +379,6 @@ function useLicenseInternal(): LicenseState {
 
         if (hasFormelsamling) {
           nextTier = "pro";
-          nextSource = "token";
           proByToken = true;
         }
       } else {
@@ -417,7 +400,6 @@ function useLicenseInternal(): LicenseState {
           const ends = new Date(storedTrial.trialEndsAt);
           if (now < ends) {
             nextTier = "trial";
-            nextSource = "trial";
           }
         } catch {
           // ignorér ugyldig dato
@@ -429,13 +411,11 @@ function useLicenseInternal(): LicenseState {
         const hasRemote = await fetchRemoteLicense(storedEmail);
         if (hasRemote) {
           nextTier = "pro";
-          nextSource = "email";
         }
       }
 
       if (!cancelled) {
         setTier(nextTier);
-        setSource(nextSource);
         setLoading(false);
       }
     }
@@ -451,24 +431,47 @@ function useLicenseInternal(): LicenseState {
     if (typeof window === "undefined") return;
 
     const trimmed = (emailForTrial || "").trim().toLowerCase();
-    if (trimmed) {
-      saveStoredEmail(trimmed);
-      setEmail(trimmed);
+    if (!trimmed) {
+      setError("Vennligst oppgi en gyldig e-postadresse.");
+      return;
     }
 
-    const now = new Date();
-    // F.eks. 10 dagers prøveperiode
-    now.setDate(now.getDate() + 10);
-    const iso = now.toISOString();
+    // Lagre e-post lokalt
+    saveStoredEmail(trimmed);
+    setEmail(trimmed);
 
-    saveStoredTrial({ trialEndsAt: iso });
-    setTrialEndsAt(iso);
+    // Beregn trial-vindu (10 dager)
+    const start = new Date();
+    const startedIso = start.toISOString();
+    start.setDate(start.getDate() + 10); // 10 dagers prøveperiode
+    const trialEndsIso = start.toISOString();
+
+    const trial: StoredTrial = {
+      email: trimmed,
+      trialEndsAt: trialEndsIso,
+      startedAt: startedIso
+    };
+
+    saveStoredTrial(trial);
+    setTrialEndsAt(trialEndsIso);
     setTrialUsed(true);
     setTier("trial");
-    setSource("trial");
 
-    // Logg prøvebruker i Firestore (best effort)
-    void registerTrialUser(trimmed, iso);
+    // Prøv å logge trial-start i Firestore (best effort)
+    try {
+      const db = getDb();
+      const trialCol = collection(db, "trialSignups");
+      void addDoc(trialCol, {
+        email: trimmed,
+        product: "formelsamling",
+        source: "formelsamling-app",
+        startedAt: startedIso,
+        trialEndsAt: trialEndsIso,
+        createdAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Lisens: Klarte ikke å registrere trial i Firestore:", err);
+    }
   };
 
   const linkEmail = (emailToLink: string) => {
@@ -511,7 +514,6 @@ function useLicenseInternal(): LicenseState {
 
   return {
     tier,
-    source,
     isTrialActive,
     isTrialExpired,
     trialEndsAt,
