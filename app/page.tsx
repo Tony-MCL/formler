@@ -12,9 +12,6 @@ import type { FormulaId } from "../lib/types";
 
 type ViewMode = "home" | "formula";
 
-const workerUrl = process.env
-  .NEXT_PUBLIC_STRIPE_WORKER_URL as string | undefined;
-
 export default function HomePage() {
   const { t, basePath } = useI18n();
   const license = useLicense();
@@ -110,9 +107,7 @@ export default function HomePage() {
     setActivationInfo(
       "Sjekker etter lisens på denne adressen. Hvis du har kjøpt lisens med denne e-posten, blir fullversjon aktivert."
     );
-    // Knytt e-post til lisenssystemet
     license.linkEmail(trimmed);
-    // Trigg faktisk sjekk mot Firestore
     license.refresh();
   };
 
@@ -125,27 +120,50 @@ export default function HomePage() {
     }
   }, []);
 
-  // NYTT: Debug + token-flyt ved session_id i URL
+  /**
+   * TOKEN-FLOW:
+   *  - Etter kjøp i Stripe kommer brukeren tilbake til:
+   *    ?status=success&session_id=cs_test_...
+   *  - Her henter vi et lisens-token fra workeren (/issue-lic-token),
+   *    lagrer det i localStorage og kjører license.refresh().
+   *  - Hvis vi bare har ?status=success (uten session_id),
+   *    bruker vi dagens fallback (license.refresh()).
+   */
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const workerUrl = process.env.NEXT_PUBLIC_STRIPE_WORKER_URL as
+      | string
+      | undefined;
 
     console.log("[LIC-TOKEN] effect start");
     console.log("[LIC-TOKEN] workerUrl:", workerUrl);
 
-    const currentUrl = new URL(window.location.href);
-    console.log("[LIC-TOKEN] current URL:", currentUrl.toString());
+    const url = new URL(window.location.href);
+    console.log("[LIC-TOKEN] current URL:", url.toString());
 
-    const sessionId = currentUrl.searchParams.get("session_id");
+    const status = url.searchParams.get("status");
+    const sessionId = url.searchParams.get("session_id");
     console.log("[LIC-TOKEN] session_id from URL:", sessionId);
 
+    // Ingen session_id → bruk gammel oppførsel for status=success og hopp ut
     if (!sessionId) {
-      console.log("[LIC-TOKEN] Ingen session_id i URL – avbryter token-flow.");
+      if (status === "success") {
+        console.log(
+          "[LIC-TOKEN] status=success uten session_id → bare license.refresh()."
+        );
+        license.refresh();
+      } else {
+        console.log(
+          "[LIC-TOKEN] Ingen session_id i URL – avbryter token-flow."
+        );
+      }
       return;
     }
 
     if (!workerUrl) {
-      console.warn(
-        "[LIC-TOKEN] NEXT_PUBLIC_STRIPE_WORKER_URL er ikke satt – kan ikke hente token."
+      console.error(
+        "[LIC-TOKEN] NEXT_PUBLIC_STRIPE_WORKER_URL mangler – kan ikke hente token."
       );
       return;
     }
@@ -153,9 +171,7 @@ export default function HomePage() {
     const baseUrl = workerUrl.replace(/\/create-checkout-session\/?$/, "");
     console.log("[LIC-TOKEN] baseUrl for worker:", baseUrl);
 
-    let cancelled = false;
-
-    const run = async () => {
+    (async () => {
       try {
         console.log(
           "[LIC-TOKEN] Kaller /issue-lic-token med sessionId:",
@@ -168,81 +184,39 @@ export default function HomePage() {
           body: JSON.stringify({ sessionId })
         });
 
-        console.log(
-          "[LIC-TOKEN] /issue-lic-token status:",
-          res.status,
-          res.statusText
-        );
-
         let data: any = null;
         try {
           data = await res.json();
         } catch {
-          console.warn("[LIC-TOKEN] Klarte ikke å parse JSON fra /issue-lic-token.");
+          data = null;
         }
 
+        console.log("[LIC-TOKEN] /issue-lic-token status:", res.status);
         console.log("[LIC-TOKEN] /issue-lic-token response body:", data);
 
-        if (!res.ok || !data || !data.ok || !data.licToken) {
+        // Venter { ok: true, token: string, payload: {...} }
+        if (!res.ok || !data || data.ok !== true || typeof data.token !== "string") {
           console.error(
             "[LIC-TOKEN] Klarte ikke å hente gyldig lisens-token.",
             { resStatus: res.status, data }
           );
-          return;
-        }
-
-        if (!cancelled) {
-          try {
-            window.localStorage.setItem(
-              LICENSE_TOKEN_STORAGE_KEY,
-              data.licToken as string
-            );
-            console.log(
-              "[LIC-TOKEN] Token lagret i localStorage under nøkkel:",
-              LICENSE_TOKEN_STORAGE_KEY
-            );
-          } catch (err) {
-            console.error(
-              "[LIC-TOKEN] Klarte ikke å lagre token i localStorage:",
-              err
-            );
-          }
-
-          console.log("[LIC-TOKEN] Kaller license.refresh() etter token-lagring.");
+        } else {
+          const token = data.token as string;
+          window.localStorage.setItem(LICENSE_TOKEN_STORAGE_KEY, token);
+          console.log("[LIC-TOKEN] Lagret token i localStorage.");
+          // Nå som token er lagret, ber vi lisens-hooken gjøre en ny runde
           license.refresh();
         }
+
+        // Rens URL for session_id og status uansett utfall
+        url.searchParams.delete("session_id");
+        url.searchParams.delete("status");
+        window.history.replaceState({}, "", url.toString());
+        console.log("[LIC-TOKEN] Renset session_id/status fra URL.");
       } catch (err) {
-        console.error("Uventet feil ved henting av lisens-token:", err);
-      } finally {
-        if (!cancelled) {
-          const newUrl = new URL(window.location.href);
-          newUrl.searchParams.delete("session_id");
-          newUrl.searchParams.delete("status");
-          window.history.replaceState({}, "", newUrl.toString());
-          console.log("[LIC-TOKEN] Renset session_id/status fra URL.");
-        }
+        console.error("[LIC-TOKEN] Uventet feil i token-flow:", err);
       }
-    };
-
-    void run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [license]);
-
-  // GAMMEL FALBACK: Hvis vi kommer tilbake fra Stripe med ?status=success,
-  // trigges en ny lisens-sjekk mot Firestore (eller token, via refresh()).
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    const status = url.searchParams.get("status");
-    if (status === "success") {
-      console.log("[LIC-TOKEN] status=success funnet i URL → license.refresh().");
-      license.refresh();
-      url.searchParams.delete("status");
-      window.history.replaceState({}, "", url.toString());
-    }
+    })();
   }, [license]);
 
   return (
@@ -333,7 +307,7 @@ export default function HomePage() {
           onSelectFormula={handleSelectFormula}
         />
 
-      <main className="app-main">
+        <main className="app-main">
           {viewMode === "home" && (
             <>
               <section
@@ -357,7 +331,6 @@ export default function HomePage() {
               </section>
 
               {tier === "pro" ? (
-                // Kort ved AKTIV lisens (fullversjon)
                 <section className="card">
                   <h2 style={{ marginTop: 0 }}>Fullversjon aktiv</h2>
                   <p style={{ fontSize: "0.95rem", marginBottom: "0.4rem" }}>
@@ -407,7 +380,6 @@ export default function HomePage() {
                   </div>
                 </section>
               ) : (
-                // Kort for GRATIS / PRØVEPERIODE / KJØP LISENS
                 <section className="card">
                   <h2 style={{ marginTop: 0 }}>Lisens og prøveperiode</h2>
                   <p style={{ fontSize: "0.9rem" }}>
@@ -550,7 +522,6 @@ export default function HomePage() {
                     </p>
                   </div>
 
-                  {/* Har du allerede kjøpt lisens? */}
                   <div
                     style={{
                       marginTop: "1.1rem",
