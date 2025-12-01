@@ -24,37 +24,32 @@ export type LicenseState = {
   refresh: () => void;
 };
 
-const TRIAL_STORAGE_KEY = "mcl_formler_trial";
-const EMAIL_STORAGE_KEY = "mcl_formler_email";
+// Delt nøkkel mellom app/page.tsx og denne fila
+export const LICENSE_TOKEN_STORAGE_KEY = "mcl_fm_licToken_v1";
 
-type StoredTrial = {
-  email: string;
-  trialEndsAt: string; // ISO
-  startedAt: string; // ISO
-};
+const TRIAL_STORAGE_KEY = "mcl_fm_trial_v1";
+const EMAIL_STORAGE_KEY = "mcl_fm_license_email_v1";
 
-type FirestoreValue =
-  | { stringValue: string }
-  | { booleanValue: boolean }
-  | { timestampValue: string }
-  | { booleanValue: boolean }
-  | { nullValue: null };
-
-type FirestoreDocument = {
-  name?: string;
-  fields?: Record<string, FirestoreValue>;
-};
-
-/** Bruk samme prosjekt-id som Firebase-oppsettet */
 const FIRESTORE_PROJECT_ID =
   process.env.NEXT_PUBLIC_FIRESTORE_PROJECT_ID ||
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
   "";
 const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "";
 
+const STRIPE_WORKER_URL =
+  (process.env.NEXT_PUBLIC_STRIPE_WORKER_URL as string | undefined) || "";
+
 /* ------------------------------------------------------------------ */
-/*  HJELPERE                                                           */
+/*  FIRESTORE TYPES & HELPERS                                         */
 /* ------------------------------------------------------------------ */
+
+type FirestoreValue =
+  | { stringValue: string }
+  | { booleanValue: boolean }
+  | { integerValue: string }
+  | { doubleValue: number }
+  | { timestampValue: string }
+  | { nullValue: null };
 
 function readStringField(
   fields: Record<string, FirestoreValue> | undefined,
@@ -77,36 +72,44 @@ function readBooleanField(
 }
 
 /* ------------------------------------------------------------------ */
-/*  LOCALSTORAGE – TRIAL & E-POST                                     */
+/*  LOCALSTORAGE – TRIAL, E-POST, TOKEN                               */
 /* ------------------------------------------------------------------ */
+
+type StoredTrial = {
+  trialEndsAt: string;
+};
 
 function loadStoredTrial(): StoredTrial | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(TRIAL_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredTrial;
-    if (!parsed || !parsed.trialEndsAt) return null;
-    return parsed;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.trialEndsAt === "string") {
+      return { trialEndsAt: parsed.trialEndsAt };
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
-function saveStoredTrial(value: StoredTrial | null) {
+function saveStoredTrial(trial: StoredTrial | null) {
   if (typeof window === "undefined") return;
-  if (!value) {
+  if (!trial) {
     window.localStorage.removeItem(TRIAL_STORAGE_KEY);
     return;
   }
-  window.localStorage.setItem(TRIAL_STORAGE_KEY, JSON.stringify(value));
+  window.localStorage.setItem(TRIAL_STORAGE_KEY, JSON.stringify(trial));
 }
 
 function loadStoredEmail(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    const v = window.localStorage.getItem(EMAIL_STORAGE_KEY);
-    return v || null;
+    const raw = window.localStorage.getItem(EMAIL_STORAGE_KEY);
+    if (!raw) return null;
+    const trimmed = raw.trim().toLowerCase();
+    return trimmed || null;
   } catch {
     return null;
   }
@@ -117,12 +120,32 @@ function saveStoredEmail(email: string | null) {
   if (!email) {
     window.localStorage.removeItem(EMAIL_STORAGE_KEY);
   } else {
-    window.localStorage.setItem(EMAIL_STORAGE_KEY, email);
+    window.localStorage.setItem(EMAIL_STORAGE_KEY, email.trim().toLowerCase());
+  }
+}
+
+function loadStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LICENSE_TOKEN_STORAGE_KEY);
+    if (!raw) return null;
+    return raw;
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredToken(token: string | null) {
+  if (typeof window === "undefined") return;
+  if (!token) {
+    window.localStorage.removeItem(LICENSE_TOKEN_STORAGE_KEY);
+  } else {
+    window.localStorage.setItem(LICENSE_TOKEN_STORAGE_KEY, token);
   }
 }
 
 /* ------------------------------------------------------------------ */
-/*  FIRESTORE-LISENSSJEKK                                             */
+/*  FIRESTORE-LISENSSJEKK (FALLBACK VIA E-POST)                       */
 /* ------------------------------------------------------------------ */
 
 async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
@@ -154,59 +177,121 @@ async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
             },
             {
               fieldFilter: {
-                field: { fieldPath: "product" },
+                field: { fieldPath: "status" },
                 op: "EQUAL",
-                value: { stringValue: "formelsamling" }
+                value: { stringValue: "active" }
               }
             },
             {
               fieldFilter: {
-                field: { fieldPath: "status" },
+                field: { fieldPath: "paid" },
                 op: "EQUAL",
-                value: { stringValue: "active" }
+                value: { booleanValue: true }
               }
             }
           ]
         }
       },
-      orderBy: [
-        {
-          field: { fieldPath: "createdAt" },
-          direction: "DESCENDING"
-        }
-      ],
       limit: 1
     }
   };
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    console.error("Feil ved henting av lisens fra Firestore:", text);
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Lisens: Firestore runQuery-feil:", text);
+      return false;
+    }
+
+    const data = await res.json();
+    if (!Array.isArray(data)) return false;
+
+    for (const row of data) {
+      if (row && row.document && row.document.fields) {
+        const fields = row.document.fields as Record<string, FirestoreValue>;
+        const status = readStringField(fields, "status");
+        const paid = readBooleanField(fields, "paid");
+        const product = readStringField(fields, "product");
+
+        if (status === "active" && paid && product === "formelsamling") {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  } catch (err) {
+    console.error("Lisens: Uventet feil ved Firestore-forespørsel:", err);
     return false;
   }
-
-  const rows = (await res.json()) as Array<{ document?: FirestoreDocument }>;
-  const doc = rows.find((r) => r.document && r.document.fields)?.document;
-  if (!doc || !doc.fields) return false;
-
-  const fields = doc.fields;
-  const status = readStringField(fields, "status");
-  const paid = readBooleanField(fields, "paid");
-
-  if (status !== "active") return false;
-  if (!paid) return false;
-
-  return true;
 }
 
 /* ------------------------------------------------------------------ */
-/*  INTERN LISENSLOGIKK                                               */
+/*  TOKEN-VERIFISERING VIA STRIPE-WORKER                              */
+/* ------------------------------------------------------------------ */
+
+function getWorkerBaseUrl(): string | null {
+  if (!STRIPE_WORKER_URL) return null;
+  // NEXT_PUBLIC_STRIPE_WORKER_URL kan være:
+  //  - full path til /create-checkout-session
+  //  - eller base-URL til workeren
+  // Vi stripper /create-checkout-session hvis det finnes.
+  return STRIPE_WORKER_URL.replace(/\/create-checkout-session\/?$/, "");
+}
+
+type VerifyTokenResult =
+  | { ok: true; payload: any }
+  | { ok: false; error: string };
+
+async function verifyStoredToken(): Promise<VerifyTokenResult> {
+  const token = loadStoredToken();
+  if (!token) {
+    return { ok: false, error: "Ingen token lagret." };
+  }
+
+  const baseUrl = getWorkerBaseUrl();
+  if (!baseUrl) {
+    console.warn(
+      "Lisens: STRIPE worker-URL mangler, kan ikke verifisere token."
+    );
+    return { ok: false, error: "Worker-URL mangler." };
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/verify-lic-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ licToken: token })
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("Lisens: verify-lic-token HTTP-feil:", res.status, text);
+      return { ok: false, error: `HTTP ${res.status}` };
+    }
+
+    const data = await res.json();
+    if (!data.ok) {
+      return { ok: false, error: data.error || "Token avvist av server." };
+    }
+
+    return { ok: true, payload: data.payload };
+  } catch (err) {
+    console.error("Lisens: Uventet feil ved verifisering av token:", err);
+    return { ok: false, error: "Nettverksfeil ved token-verifisering." };
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  HOVEDHOOK                                                          */
 /* ------------------------------------------------------------------ */
 
 function useLicenseInternal(): LicenseState {
@@ -218,106 +303,159 @@ function useLicenseInternal(): LicenseState {
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
-  // Init fra localStorage
+  // Last inn lokalt lagret trial, e-post og token + beregn lisensstatus
   useEffect(() => {
-    const storedTrial = loadStoredTrial();
-    const storedEmail = loadStoredEmail();
-
-    if (storedTrial) {
-      setTrialEndsAt(storedTrial.trialEndsAt);
-      setTrialUsed(true);
-      const now = new Date();
-      const ends = new Date(storedTrial.trialEndsAt);
-      if (now < ends) {
-        setTier("trial");
-      }
-    }
-
-    if (storedEmail) {
-      setEmail(storedEmail.toLowerCase());
-    }
-
-    setLoading(false);
-  }, []);
-
-  // Sjekk lisens i Firestore når e-post endres eller vi refresher
-  useEffect(() => {
-    if (!email) return;
     let cancelled = false;
 
-    async function run(emailLocal: string) {
+    async function run() {
+      if (typeof window === "undefined") {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
-      try {
-        const hasLicense = await fetchRemoteLicense(emailLocal);
-        if (cancelled) return;
-        if (hasLicense) {
-          setTier("pro");
+
+      const storedTrial = loadStoredTrial();
+      const storedEmail = loadStoredEmail();
+
+      if (!cancelled) {
+        if (storedTrial?.trialEndsAt) {
+          setTrialEndsAt(storedTrial.trialEndsAt);
+          setTrialUsed(true);
+        } else {
+          setTrialEndsAt(null);
+          setTrialUsed(false);
         }
-      } catch (err: any) {
-        if (cancelled) return;
-        console.error("Feil ved lisenskall:", err);
-        setError("Kunne ikke sjekke lisensstatus nå.");
-      } finally {
-        if (!cancelled) setLoading(false);
+
+        if (storedEmail) {
+          setEmail(storedEmail);
+        } else {
+          setEmail(null);
+        }
+      }
+
+      let nextTier: LicenseTier = "free";
+      let proByToken = false;
+
+      // 1) Prøv token-modellen først
+      const tokenResult = await verifyStoredToken();
+      if (tokenResult.ok) {
+        const payload = tokenResult.payload as any;
+        const products = Array.isArray(payload.products)
+          ? payload.products
+          : [];
+
+        const hasFormelsamling = products.some(
+          (p) =>
+            p &&
+            typeof p.product === "string" &&
+            p.product.toLowerCase() === "formelsamling"
+        );
+
+        if (hasFormelsamling) {
+          nextTier = "pro";
+          proByToken = true;
+        }
+      } else {
+        // Hvis token er ugyldig, kan vi rydde den bort for å unngå spam
+        if (
+          tokenResult.error &&
+          (tokenResult.error.includes("utløpt") ||
+            tokenResult.error.includes("Ugyldig") ||
+            tokenResult.error.includes("avvist"))
+        ) {
+          saveStoredToken(null);
+        }
+      }
+
+      // 2) Fallback: lokal trial
+      if (!proByToken && storedTrial?.trialEndsAt) {
+        try {
+          const now = new Date();
+          const ends = new Date(storedTrial.trialEndsAt);
+          if (now < ends) {
+            nextTier = "trial";
+          }
+        } catch {
+          // ignorér ugyldig dato
+        }
+      }
+
+      // 3) Fallback: Firestore-lookup på e-post
+      if (!proByToken && storedEmail) {
+        const hasRemote = await fetchRemoteLicense(storedEmail);
+        if (hasRemote) {
+          nextTier = "pro";
+        }
+      }
+
+      if (!cancelled) {
+        setTier(nextTier);
+        setLoading(false);
       }
     }
 
-    run(email);
+    void run();
 
     return () => {
       cancelled = true;
     };
-  }, [email, refreshToken]);
+  }, [refreshToken]);
 
-  const startTrial = (inputEmail: string) => {
-    const trimmed = (inputEmail || "").trim().toLowerCase();
-    if (!trimmed) return;
+  const startTrial = (emailForTrial: string) => {
+    if (typeof window === "undefined") return;
+
+    const trimmed = (emailForTrial || "").trim().toLowerCase();
+    if (trimmed) {
+      saveStoredEmail(trimmed);
+      setEmail(trimmed);
+    }
 
     const now = new Date();
-    const ends = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000);
+    // F.eks. 14 dagers prøveperiode
+    now.setDate(now.getDate() + 14);
+    const iso = now.toISOString();
 
-    const stored: StoredTrial = {
-      email: trimmed,
-      startedAt: now.toISOString(),
-      trialEndsAt: ends.toISOString()
-    };
-
-    saveStoredTrial(stored);
-    saveStoredEmail(trimmed);
-
-    setEmail(trimmed);
+    saveStoredTrial({ trialEndsAt: iso });
+    setTrialEndsAt(iso);
     setTrialUsed(true);
-    setTrialEndsAt(stored.trialEndsAt);
     setTier("trial");
   };
 
-  const linkEmail = (inputEmail: string) => {
-    const trimmed = (inputEmail || "").trim().toLowerCase();
+  const linkEmail = (emailToLink: string) => {
+    const trimmed = (emailToLink || "").trim().toLowerCase();
     if (!trimmed) return;
-
     saveStoredEmail(trimmed);
     setEmail(trimmed);
+    // Kjør en ny runde med lisenssjekk
     setRefreshToken((x) => x + 1);
   };
 
   const refresh = () => {
-    if (!email) return;
     setRefreshToken((x) => x + 1);
   };
 
   const isTrialActive = useMemo(() => {
     if (!trialEndsAt) return false;
-    const now = new Date();
-    const ends = new Date(trialEndsAt);
-    return now < ends;
+    try {
+      const now = new Date();
+      const ends = new Date(trialEndsAt);
+      return now < ends;
+    } catch {
+      return false;
+    }
   }, [trialEndsAt]);
 
   const isTrialExpired = useMemo(() => {
     if (!trialEndsAt) return false;
-    const now = new Date();
-    const ends = new Date(trialEndsAt);
-    return now >= ends;
+    try {
+      const now = new Date();
+      const ends = new Date(trialEndsAt);
+      return now >= ends;
+    } catch {
+      return false;
+    }
   }, [trialEndsAt]);
 
   const hasFullAccess =
