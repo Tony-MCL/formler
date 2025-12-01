@@ -38,15 +38,11 @@ export default function HomePage() {
   const heroSubKey = "fm_hero_sub";
 
   const appName =
-    t(appNameKey) === appNameKey
-      ? "Digital Formelsamling"
-      : t(appNameKey);
-
+    t(appNameKey) === appNameKey ? "Digital Formelsamling" : t(appNameKey);
   const heroTitle =
     t(heroTitleKey) === heroTitleKey
-      ? "Interaktiv formelsamling for elkraft og maskiner."
+      ? "Formler du faktisk bruker – samlet på ett sted"
       : t(heroTitleKey);
-
   const heroSub =
     t(heroSubKey) === heroSubKey
       ? "Beregninger for elkraft og maskiner, med pen visning og innebygde kalkulatorer."
@@ -252,8 +248,8 @@ export default function HomePage() {
         <Sidebar
           open={sidebarOpen}
           onClose={closeSidebar}
+          selectedFormulaId={selectedFormulaId}
           onSelectFormula={handleSelectFormula}
-          activeFormulaId={selectedFormulaId}
         />
 
         <main className="main-content">
