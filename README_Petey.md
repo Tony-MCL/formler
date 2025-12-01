@@ -9,8 +9,8 @@
       └─────────────────────────────┘
                  │
       ┌──────────┼──────────┐
-      ▼                       ▼
-[GYLDIG TOKEN]         [INGEN / UGYLDIG TOKEN]
+      ▼                     ▼
+[GYLDIG TOKEN]       [INGEN / UGYLDIG TOKEN]
       │                       │
       ▼                       ▼
 Fullversjon åpnes       Gratisversjon åpnes
@@ -36,15 +36,15 @@ Fullversjon åpnes       Gratisversjon åpnes
                           │
                           ▼
 ┌────────────────────────────────────────────────────────────┐
-│ 4. Stripe Webhook → Cloudflare Worker → Firestore License   │
-│    - Kjøp registreres                                        │
-│    - Utløpsdato settes                                       │
-│    - Token genereres                                         │
+│ 4. Stripe Webhook → Cloudflare Worker → Firestore License  │
+│    - Kjøp registreres                                      │
+│    - Utløpsdato settes                                     │
+│    - Token genereres                                       │
 └────────────────────────────────────────────────────────────┘
                           │
                           ▼
       ┌──────────────────────────────────────┐
-      │ 5. App returnerer med ?status=success │
+      │5. App returnerer med ?status=success │
       └──────────────────────────────────────┘
                           │
                           ▼
@@ -63,3 +63,26 @@ Fullversjon åpnes       Gratisversjon åpnes
 │   - PDF uten watermark                                        │
 │   - Klart for fremtidige MCL-apptokens                        │
 └───────────────────────────────────────────────────────────────┘
+
+                             Fornyelsesflyt:
+
+┌────────────────────┐
+│  App åpnes         │
+└────────────────────┘
+          │
+          ▼
+   Sjekk token expiry
+          │
+     ┌────┴─────┐
+     ▼          ▼
+  Ikke utløpt   Utløpt
+     │          │
+     ▼          ▼
+     OK      license.refresh()
+               │
+     ┌─────────┼─────────┐
+     ▼                   ▼
+Stripe aktiv      Stripe inaktiv / kjøp utløpt
+     │                   │
+     ▼                   ▼
+Forny token       Gå tilbake til gratisversjon
