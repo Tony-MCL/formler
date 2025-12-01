@@ -125,46 +125,90 @@ export default function HomePage() {
     }
   }, []);
 
-  // NYTT: Hvis vi kommer tilbake fra Stripe med session_id i URL,
-  // henter vi et signert lisens-token fra Stripe-workeren og lagrer det lokalt.
+  // NYTT: Debug + token-flyt ved session_id i URL
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!workerUrl) return;
+
+    console.log("[LIC-TOKEN] effect start");
+    console.log("[LIC-TOKEN] workerUrl:", workerUrl);
 
     const currentUrl = new URL(window.location.href);
+    console.log("[LIC-TOKEN] current URL:", currentUrl.toString());
+
     const sessionId = currentUrl.searchParams.get("session_id");
-    if (!sessionId) return;
+    console.log("[LIC-TOKEN] session_id from URL:", sessionId);
+
+    if (!sessionId) {
+      console.log("[LIC-TOKEN] Ingen session_id i URL – avbryter token-flow.");
+      return;
+    }
+
+    if (!workerUrl) {
+      console.warn(
+        "[LIC-TOKEN] NEXT_PUBLIC_STRIPE_WORKER_URL er ikke satt – kan ikke hente token."
+      );
+      return;
+    }
 
     const baseUrl = workerUrl.replace(/\/create-checkout-session\/?$/, "");
-    if (!baseUrl) return;
+    console.log("[LIC-TOKEN] baseUrl for worker:", baseUrl);
 
     let cancelled = false;
 
     const run = async () => {
       try {
+        console.log(
+          "[LIC-TOKEN] Kaller /issue-lic-token med sessionId:",
+          sessionId
+        );
+
         const res = await fetch(`${baseUrl}/issue-lic-token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId })
         });
 
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          console.error("Klarte ikke å hente lisens-token:", res.status, text);
+        console.log(
+          "[LIC-TOKEN] /issue-lic-token status:",
+          res.status,
+          res.statusText
+        );
+
+        let data: any = null;
+        try {
+          data = await res.json();
+        } catch {
+          console.warn("[LIC-TOKEN] Klarte ikke å parse JSON fra /issue-lic-token.");
+        }
+
+        console.log("[LIC-TOKEN] /issue-lic-token response body:", data);
+
+        if (!res.ok || !data || !data.ok || !data.licToken) {
+          console.error(
+            "[LIC-TOKEN] Klarte ikke å hente gyldig lisens-token.",
+            { resStatus: res.status, data }
+          );
           return;
         }
 
-        const data = await res.json();
-        if (!cancelled && data && data.ok && data.licToken) {
+        if (!cancelled) {
           try {
             window.localStorage.setItem(
               LICENSE_TOKEN_STORAGE_KEY,
               data.licToken as string
             );
-          } catch {
-            // Ignorer lagringsfeil hvis f.eks. localStorage er deaktivert
+            console.log(
+              "[LIC-TOKEN] Token lagret i localStorage under nøkkel:",
+              LICENSE_TOKEN_STORAGE_KEY
+            );
+          } catch (err) {
+            console.error(
+              "[LIC-TOKEN] Klarte ikke å lagre token i localStorage:",
+              err
+            );
           }
 
+          console.log("[LIC-TOKEN] Kaller license.refresh() etter token-lagring.");
           license.refresh();
         }
       } catch (err) {
@@ -175,6 +219,7 @@ export default function HomePage() {
           newUrl.searchParams.delete("session_id");
           newUrl.searchParams.delete("status");
           window.history.replaceState({}, "", newUrl.toString());
+          console.log("[LIC-TOKEN] Renset session_id/status fra URL.");
         }
       }
     };
@@ -193,6 +238,7 @@ export default function HomePage() {
     const url = new URL(window.location.href);
     const status = url.searchParams.get("status");
     if (status === "success") {
+      console.log("[LIC-TOKEN] status=success funnet i URL → license.refresh().");
       license.refresh();
       url.searchParams.delete("status");
       window.history.replaceState({}, "", url.toString());
@@ -287,7 +333,7 @@ export default function HomePage() {
           onSelectFormula={handleSelectFormula}
         />
 
-        <main className="app-main">
+      <main className="app-main">
           {viewMode === "home" && (
             <>
               <section
