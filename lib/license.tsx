@@ -7,9 +7,6 @@ import React, {
   useMemo,
   useState
 } from "react";
-import { recordTrialStart } from "./firebase";
-import { getDb } from "./firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export type LicenseTier = "free" | "trial" | "pro";
 
@@ -238,6 +235,53 @@ async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
 }
 
 /* ------------------------------------------------------------------ */
+/*  TRIAL-LOGG TIL FIRESTORE                                          */
+/* ------------------------------------------------------------------ */
+
+async function saveTrialSignupToFirestore(
+  emailRaw: string,
+  trialEndsAtIso: string
+): Promise<void> {
+  if (!FIRESTORE_PROJECT_ID || !FIREBASE_API_KEY) {
+    console.warn(
+      "Lisens: Firestore ikke konfigurert (mangler prosjekt-id eller api-key) – skipper trial-logg."
+    );
+    return;
+  }
+
+  const email = (emailRaw || "").trim().toLowerCase();
+  if (!email) return;
+
+  const url = `https://firestore.googleapis.com/v1/projects/${FIRESTORE_PROJECT_ID}/databases/(default)/documents/trialSignups?key=${FIREBASE_API_KEY}`;
+
+  const body = {
+    fields: {
+      email: { stringValue: email },
+      source: { stringValue: "formler-app" },
+      createdAt: { timestampValue: new Date().toISOString() },
+      trialEndsAt: { timestampValue: trialEndsAtIso }
+    }
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("Lisens: Klarte ikke å lagre trial-signup:", res.status, text);
+    }
+  } catch (err) {
+    console.error("Lisens: Uventet feil ved lagring av trial-signup:", err);
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  TOKEN-VERIFISERING VIA STRIPE-WORKER                              */
 /* ------------------------------------------------------------------ */
 
@@ -415,46 +459,26 @@ function useLicenseInternal(): LicenseState {
   }, [refreshToken]);
 
   const startTrial = (emailForTrial: string) => {
-  if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
 
-  const trimmed = (emailForTrial || "").trim().toLowerCase();
-  if (trimmed) {
-    saveStoredEmail(trimmed);
-    setEmail(trimmed);
-  }
-
-  const now = new Date();
-  // 10–14 dager, alt etter hva du vil – juster her
-  now.setDate(now.getDate() + 10);
-  const iso = now.toISOString();
-
-  saveStoredTrial({ trialEndsAt: iso });
-  setTrialEndsAt(iso);
-  setTrialUsed(true);
-  setTier("trial");
-
-  // Logg gratis prøvebruker til Firestore (best effort – vi venter ikke på respons)
-  if (trimmed) {
-    void recordTrialStart(trimmed);
-  }
-};
-    // Nytt: logg trial-bruker til Firestore for admin-oversikt
-    try {
-      const db = getDb();
-      // Vi gjør kallet "fire-and-forget" for ikke å blokkere UI
-      void addDoc(collection(db, "trialSignups"), {
-        email: trimmed || null,
-        product: "formelsamling",
-        startedAt: serverTimestamp(),
-        trialEndsAt: iso,
-        source: "formler-app"
-      });
-    } catch (err) {
-      console.error(
-        "Lisens: Klarte ikke å lagre trial-bruker i Firestore:",
-        err
-      );
+    const trimmed = (emailForTrial || "").trim().toLowerCase();
+    if (trimmed) {
+      saveStoredEmail(trimmed);
+      setEmail(trimmed);
     }
+
+    const now = new Date();
+    // F.eks. 14 dagers prøveperiode
+    now.setDate(now.getDate() + 14);
+    const iso = now.toISOString();
+
+    saveStoredTrial({ trialEndsAt: iso });
+    setTrialEndsAt(iso);
+    setTrialUsed(true);
+    setTier("trial");
+
+    // Fire-and-forget logg til Firestore
+    void saveTrialSignupToFirestore(trimmed || "", iso);
   };
 
   const linkEmail = (emailToLink: string) => {
