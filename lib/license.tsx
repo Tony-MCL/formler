@@ -7,11 +7,10 @@ import React, {
   useMemo,
   useState
 } from "react";
+import { getDb } from "./firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 export type LicenseTier = "free" | "trial" | "pro";
-
-// Hvor kom lisensen fra?
-export type LicenseSource = "none" | "token" | "trial" | "firestore";
 
 export type LicenseState = {
   tier: LicenseTier;
@@ -22,9 +21,6 @@ export type LicenseState = {
   loading: boolean;
   error: string | null;
   hasFullAccess: boolean;
-  // Debug/info:
-  source: LicenseSource;
-  // API:
   startTrial: (email: string) => void;
   linkEmail: (email: string) => void;
   refresh: () => void;
@@ -241,40 +237,29 @@ async function fetchRemoteLicense(emailRaw: string): Promise<boolean> {
 }
 
 /* ------------------------------------------------------------------ */
-/*  TOKEN-DEKODING (HELT LOKALT – INGEN NETTVERK)                     */
+/*  TOKEN-VERIFISERING VIA STRIPE-WORKER                              */
 /* ------------------------------------------------------------------ */
+
+function getWorkerBaseUrl(): string | null {
+  if (!STRIPE_WORKER_URL) return null;
+  // NEXT_PUBLIC_STRIPE_WORKER_URL kan være:
+  //  - full path til /create-checkout-session
+  //  - eller base-URL til workeren
+  // Vi stripper /create-checkout-session hvis det finnes.
+  return STRIPE_WORKER_URL.replace(/\/create-checkout-session\/?$/, "");
+}
 
 type VerifyTokenResult =
   | { ok: true; payload: any }
   | { ok: false; error: string };
 
-type DecodedTokenPayload = {
-  v: number;
-  product?: string;
-  licenseId?: string;
-  issuedAt?: string;
-  seatsTotal?: number;
-  seatsUsed?: number;
+// Strukturen vi forventer inni payload.products
+type TokenProduct = {
+  product: string;
+  plan?: string;
+  billing?: string;
+  seats?: number;
 };
-
-function decodeLicToken(token: string): DecodedTokenPayload | null {
-  try {
-    const [payloadPart] = token.split(".");
-    if (!payloadPart) return null;
-
-    // Base64url → base64
-    let base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
-    const pad = base64.length % 4;
-    if (pad === 2) base64 += "==";
-    else if (pad === 3) base64 += "=";
-
-    const json = atob(base64);
-    return JSON.parse(json);
-  } catch (err) {
-    console.error("Lisens: Klarte ikke å dekode licToken:", err);
-    return null;
-  }
-}
 
 async function verifyStoredToken(): Promise<VerifyTokenResult> {
   const token = loadStoredToken();
@@ -282,16 +267,37 @@ async function verifyStoredToken(): Promise<VerifyTokenResult> {
     return { ok: false, error: "Ingen token lagret." };
   }
 
-  const payload = decodeLicToken(token);
-  if (!payload) {
-    return { ok: false, error: "Ugyldig token-format." };
+  const baseUrl = getWorkerBaseUrl();
+  if (!baseUrl) {
+    console.warn(
+      "Lisens: STRIPE worker-URL mangler, kan ikke verifisere token."
+    );
+    return { ok: false, error: "Worker-URL mangler." };
   }
 
-  if (typeof payload.product !== "string") {
-    return { ok: false, error: "Token mangler produkt." };
-  }
+  try {
+    const res = await fetch(`${baseUrl}/verify-lic-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ licToken: token })
+    });
 
-  return { ok: true, payload };
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("Lisens: verify-lic-token HTTP-feil:", res.status, text);
+      return { ok: false, error: `HTTP ${res.status}` };
+    }
+
+    const data = await res.json();
+    if (!data.ok) {
+      return { ok: false, error: data.error || "Token avvist av server." };
+    }
+
+    return { ok: true, payload: data.payload };
+  } catch (err) {
+    console.error("Lisens: Uventet feil ved verifisering av token:", err);
+    return { ok: false, error: "Nettverksfeil ved token-verifisering." };
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -306,8 +312,8 @@ function useLicenseInternal(): LicenseState {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
-  const [source, setSource] = useState<LicenseSource>("none");
 
+  // Last inn lokalt lagret trial, e-post og token + beregn lisensstatus
   useEffect(() => {
     let cancelled = false;
 
@@ -341,21 +347,25 @@ function useLicenseInternal(): LicenseState {
 
       let nextTier: LicenseTier = "free";
       let proByToken = false;
-      let nextSource: LicenseSource = "none";
 
-      // 1) Prøv token-modellen først (lokalt dekodet)
+      // 1) Prøv token-modellen først
       const tokenResult = await verifyStoredToken();
       if (tokenResult.ok) {
-        const payload = tokenResult.payload as DecodedTokenPayload;
-        const product =
-          typeof payload.product === "string"
-            ? payload.product.toLowerCase()
-            : "";
+        const payload = tokenResult.payload as any;
+        const products: TokenProduct[] = Array.isArray(payload.products)
+          ? (payload.products as TokenProduct[])
+          : [];
 
-        if (product === "formelsamling") {
+        const hasFormelsamling = products.some(
+          (p: TokenProduct) =>
+            p &&
+            typeof p.product === "string" &&
+            p.product.toLowerCase() === "formelsamling"
+        );
+
+        if (hasFormelsamling) {
           nextTier = "pro";
           proByToken = true;
-          nextSource = "token";
         }
       } else {
         // Hvis token er ugyldig, kan vi rydde den bort for å unngå spam
@@ -376,7 +386,6 @@ function useLicenseInternal(): LicenseState {
           const ends = new Date(storedTrial.trialEndsAt);
           if (now < ends) {
             nextTier = "trial";
-            nextSource = "trial";
           }
         } catch {
           // ignorér ugyldig dato
@@ -388,13 +397,11 @@ function useLicenseInternal(): LicenseState {
         const hasRemote = await fetchRemoteLicense(storedEmail);
         if (hasRemote) {
           nextTier = "pro";
-          nextSource = "firestore";
         }
       }
 
       if (!cancelled) {
         setTier(nextTier);
-        setSource(nextSource);
         setLoading(false);
       }
     }
@@ -416,15 +423,33 @@ function useLicenseInternal(): LicenseState {
     }
 
     const now = new Date();
-    // f.eks. 14 dagers prøveperiode
-    now.setDate(now.getDate() + 14);
+    // F.eks. 10 dagers prøveperiode (juster ved behov)
+    now.setDate(now.getDate() + 10);
     const iso = now.toISOString();
 
+    // Lokal lagring (som før)
     saveStoredTrial({ trialEndsAt: iso });
     setTrialEndsAt(iso);
     setTrialUsed(true);
     setTier("trial");
-    setSource("trial");
+
+    // Nytt: logg trial-bruker til Firestore for admin-oversikt
+    try {
+      const db = getDb();
+      // Vi gjør kallet "fire-and-forget" for ikke å blokkere UI
+      void addDoc(collection(db, "trialSignups"), {
+        email: trimmed || null,
+        product: "formelsamling",
+        startedAt: serverTimestamp(),
+        trialEndsAt: iso,
+        source: "formler-app"
+      });
+    } catch (err) {
+      console.error(
+        "Lisens: Klarte ikke å lagre trial-bruker i Firestore:",
+        err
+      );
+    }
   };
 
   const linkEmail = (emailToLink: string) => {
@@ -474,7 +499,6 @@ function useLicenseInternal(): LicenseState {
     loading,
     error,
     hasFullAccess,
-    source,
     startTrial,
     linkEmail,
     refresh
